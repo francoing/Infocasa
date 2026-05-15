@@ -1,6 +1,7 @@
 // src/api/api.js
 
-const API_URL = "http://localhost:4000";
+const isLocal = window.location.hostname === "localhost";
+const API_URL = isLocal ? "http://localhost:4000" : "/api";
 
 export const api = {
   get: async (endpoint) => {
