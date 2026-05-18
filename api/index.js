@@ -9,39 +9,43 @@ const __dirname = path.dirname(__filename);
 
 const server = jsonServer.create();
 
-// Buscar los archivos de base de datos y rutas
-const dbPath = fs.existsSync(path.join(__dirname, '../db.json')) 
-  ? path.join(__dirname, '../db.json') 
-  : path.join(process.cwd(), 'db.json');
-
-const routesPath = fs.existsSync(path.join(__dirname, '../routes.json'))
-  ? path.join(__dirname, '../routes.json')
-  : path.join(process.cwd(), 'routes.json');
-
-// Vercel tiene un sistema de archivos de SOLO LECTURA.
-// Si le pasamos el path del archivo a json-server, intentará escribir y lanzará Error 500.
-// Para solucionarlo, leemos el archivo y le pasamos el OBJETO en memoria.
-const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-const router = jsonServer.router(db);
-
-const middlewares = jsonServer.defaults();
-
-server.use(middlewares);
-
-// Middleware manual para limpiar el prefijo /api
-server.use((req, res, next) => {
-  if (req.url.startsWith('/api')) {
-    req.url = req.url.replace(/^\/api/, '');
+let router;
+try {
+  const dbPath1 = path.join(__dirname, '../db.json');
+  const dbPath2 = path.join(process.cwd(), 'db.json');
+  let dbContent;
+  
+  if (fs.existsSync(dbPath1)) {
+    dbContent = fs.readFileSync(dbPath1, 'utf8');
+  } else if (fs.existsSync(dbPath2)) {
+    dbContent = fs.readFileSync(dbPath2, 'utf8');
+  } else {
+    // Si no lo encuentra, mostramos qué archivos hay en las carpetas para diagnosticar
+    const cwdFiles = fs.readdirSync(process.cwd()).join(', ');
+    const dirFiles = fs.readdirSync(__dirname).join(', ');
+    throw new Error(`db.json not found. cwd: ${cwdFiles} | dirname: ${dirFiles}`);
   }
-  next();
-});
-
-// Cargar rutas personalizadas si existen
-if (fs.existsSync(routesPath)) {
-  const routes = JSON.parse(fs.readFileSync(routesPath, 'utf8'));
-  server.use(jsonServer.rewriter(routes));
+  
+  const db = JSON.parse(dbContent);
+  router = jsonServer.router(db);
+  
+  const routesPath = path.join(process.cwd(), 'routes.json');
+  if (fs.existsSync(routesPath)) {
+    const routes = JSON.parse(fs.readFileSync(routesPath, 'utf8'));
+    server.use(jsonServer.rewriter(routes));
+  }
+  
+  server.use(router);
+} catch (error) {
+  // Si algo falla, creamos una ruta temporal para ver el error real
+  server.use((req, res) => {
+    res.status(500).json({
+      message: "Error de inicializacion",
+      error: error.message,
+      stack: error.stack
+    });
+  });
 }
 
-server.use(router);
-
 export default server;
+
