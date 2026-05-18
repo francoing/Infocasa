@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Users, Home, BarChart3, Shield, Power, Trash2, CreditCard, ChevronRight, Loader2, Search, MessageSquare, Mail, Phone, Calendar } from "lucide-react";
+import { Users, Home, BarChart3, Shield, Power, Trash2, CreditCard, ChevronRight, Loader2, Search, MessageSquare, Mail, Phone, Calendar, Star, Edit } from "lucide-react";
+import { Link } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import { api } from "../../../api/api";
 import { useAuth } from "../../../hooks/useAuth";
@@ -85,6 +86,15 @@ export default function AdminPage() {
       } catch (err) {
         alert("Error al eliminar propiedad.");
       }
+    }
+  };
+
+  const toggleFeatured = async (id, currentFeatured) => {
+    try {
+      await api.patch(`/properties/${id}`, { featured: !currentFeatured });
+      setProperties(properties.map(p => p.id === id ? { ...p, featured: !currentFeatured } : p));
+    } catch (err) {
+      alert("Error al actualizar propiedad destacada.");
     }
   };
 
@@ -239,7 +249,21 @@ export default function AdminPage() {
                           </td>
                           <td className="px-8 py-5 text-sm font-bold text-slate-500">{p.location}</td>
                           <td className="px-8 py-5 text-sm font-black text-slate-900">USD {p.price.toLocaleString()}</td>
-                          <td className="px-8 py-5 text-right">
+                          <td className="px-8 py-5 text-right flex justify-end gap-2">
+                             <button 
+                               onClick={() => toggleFeatured(p.id, p.featured)} 
+                               className={`p-3 rounded-xl transition-all ${p.featured ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                               title={p.featured ? "Quitar destacado" : "Destacar"}
+                             >
+                               <Star className="w-5 h-5" fill={p.featured ? "currentColor" : "none"} />
+                             </button>
+                             <Link 
+                               to={`/dashboard/properties/edit/${p.id}`} 
+                               className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                               title="Editar propiedad"
+                             >
+                               <Edit className="w-5 h-5" />
+                             </Link>
                              <button onClick={() => deleteProperty(p.id)} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                                <Trash2 className="w-5 h-5" />
                              </button>

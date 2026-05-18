@@ -15,6 +15,7 @@ export default function EditPropertyPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!user) return;
     const fetchProperty = async () => {
       try {
         const data = await getPropertyById(id);
@@ -33,7 +34,7 @@ export default function EditPropertyPage() {
       }
     };
     fetchProperty();
-  }, [id, user.id, user.role, navigate]);
+  }, [id, user?.id, user?.role, navigate]);
 
   const handleSubmit = async (formData) => {
     try {

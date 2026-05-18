@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Search as SearchIcon, MapPin, SlidersHorizontal, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Search as SearchIcon, MapPin, SlidersHorizontal, ChevronLeft, ChevronRight, Loader2, X, Filter } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
@@ -14,6 +14,8 @@ export default function SearchPage() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Todos");
   const [sort, setSort] = useState(searchParams.get("sort") || "recent");
+  const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Memoize filters to avoid unnecessary re-renders in useProperties
   const currentFilters = useMemo(() => ({
@@ -21,7 +23,8 @@ export default function SearchPage() {
     minPrice: searchParams.get("minPrice"),
     maxPrice: searchParams.get("maxPrice"),
     type: searchParams.get("type"),
-    sort: searchParams.get("sort") || "recent"
+    sort: searchParams.get("sort") || "recent",
+    page: parseInt(searchParams.get("page")) || 1
   }), [searchParams]);
 
   const { data: properties, loading, error } = useProperties(currentFilters);
@@ -33,7 +36,9 @@ export default function SearchPage() {
     if (maxPrice) params.maxPrice = maxPrice;
     if (selectedType !== "Todos") params.type = selectedType;
     params.sort = sort;
+    params.page = 1;
     setSearchParams(params);
+    setShowMobileFilters(false);
   };
 
   const handleReset = () => {
@@ -43,23 +48,38 @@ export default function SearchPage() {
     setSelectedType("Todos");
     setSort("recent");
     setSearchParams({});
+    setShowMobileFilters(false);
+  };
+
+  const handlePageChange = (newPage) => {
+    const nextParams = Object.fromEntries(searchParams.entries());
+    nextParams.page = newPage;
+    setSearchParams(nextParams);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row gap-12 py-12">
         {/* Sidebar Filters */}
-        <aside className="w-full lg:w-72 flex-shrink-0">
-          <div className="lg:sticky lg:top-28 space-y-10 bg-slate-50 p-6 rounded-2xl border border-slate-100 lg:bg-transparent lg:p-0 lg:border-0 lg:rounded-none">
+        <aside className={`fixed inset-y-0 left-0 z-[100] w-full md:w-80 bg-white shadow-2xl transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-auto ${showMobileFilters ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="h-full flex flex-col p-6 overflow-y-auto lg:sticky lg:top-28 lg:overflow-visible bg-slate-50 lg:bg-transparent rounded-none lg:border-0 lg:p-0">
+            <div className="flex justify-between items-center lg:hidden mb-6">
+               <h2 className="text-2xl font-bold text-slate-900">Filtros</h2>
+               <button onClick={() => setShowMobileFilters(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><X className="w-6 h-6" /></button>
+            </div>
             <div>
-              <div className="flex items-center justify-between lg:block mb-6">
+              <div className="hidden lg:flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-slate-900">Filtros</h2>
                 <button 
                   onClick={handleReset}
-                  className="text-xs font-bold text-blue-600 hover:underline lg:mt-2 lg:block"
+                  className="text-xs font-bold text-blue-600 hover:underline"
                 >
                   Restablecer todo
                 </button>
+              </div>
+              <div className="lg:hidden mb-6">
+                 <button onClick={handleReset} className="text-sm font-bold text-blue-600 hover:underline w-full text-left">Restablecer filtros</button>
               </div>
               <div className="space-y-8">
                 {/* Location */}
@@ -135,10 +155,17 @@ export default function SearchPage() {
             <div>
               <h1 className="text-4xl font-bold text-slate-900">Propiedades Disponibles</h1>
               <p className="text-slate-500 mt-2">
-                {loading ? "Buscando..." : `Mostrando ${properties.length} propiedades encontradas`}
+                {loading ? "Buscando..." : `Mostrando página ${page}`}
               </p>
             </div>
-            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex gap-2 w-full md:w-auto">
+              <button 
+                onClick={() => setShowMobileFilters(true)}
+                className="lg:hidden flex-1 flex justify-center items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
+              >
+                <Filter className="w-4 h-4" /> Filtros
+              </button>
+              <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start gap-4 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
               <span className="text-sm font-medium text-slate-500">Ordenar por:</span>
               <select 
                 value={sort}
@@ -154,6 +181,7 @@ export default function SearchPage() {
                 <option value="price_asc">Precio: Menor a Mayor</option>
                 <option value="price_desc">Precio: Mayor a Menor</option>
               </select>
+              </div>
             </div>
           </div>
 
@@ -194,11 +222,19 @@ export default function SearchPage() {
           {/* Pagination (Simplified) */}
           {!loading && properties.length > 0 && (
             <div className="mt-20 flex justify-center items-center gap-2">
-              <button className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30" disabled>
+              <button 
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page <= 1}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+              >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <button className="w-10 h-10 rounded-lg bg-blue-600 text-white font-bold text-sm">1</button>
-              <button className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30" disabled>
+              <button className="w-10 h-10 rounded-lg bg-blue-600 text-white font-bold text-sm cursor-default">{page}</button>
+              <button 
+                onClick={() => handlePageChange(page + 1)}
+                disabled={properties.length < 6}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+              >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>

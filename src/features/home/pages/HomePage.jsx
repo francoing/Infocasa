@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, MapPin, Home as HomeIcon, Wallet, ShieldCheck, Map, ArrowRight, BarChart3, Loader2 } from "lucide-react";
+import { Search, MapPin, Home as HomeIcon, Wallet, ShieldCheck, Map, ArrowRight, BarChart3, Loader2, Building } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Layout from "../../../common/components/Layout";
@@ -12,6 +12,7 @@ export default function HomePage() {
   const [location, setLocation] = useState("");
   const [operation, setOperation] = useState("Comprar Propiedad");
   const [priceRange, setPriceRange] = useState("$500k - $1M");
+  const [type, setType] = useState("Todos");
   const navigate = useNavigate();
 
   const featured = properties.filter(p => p.featured);
@@ -22,6 +23,7 @@ export default function HomePage() {
     if (location) queryParams.set("location", location);
     queryParams.set("operation", operation);
     queryParams.set("priceRange", priceRange);
+    if (type !== "Todos") queryParams.set("type", type);
     navigate(`/search?${queryParams.toString()}`);
   };
 
@@ -93,6 +95,21 @@ export default function HomePage() {
                     <option>$500k - $1M</option>
                     <option>$1M - $5M</option>
                     <option>$5M+</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex-1 flex items-center px-4 py-3 gap-3 border-b md:border-b-0 md:border-r border-slate-100">
+                <Building className="text-slate-400 w-5 h-5" />
+                <div className="text-left w-full">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500">Tipo</label>
+                  <select 
+                    className="w-full border-none p-0 focus:ring-0 text-slate-900 text-sm font-medium bg-transparent appearance-none"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                  >
+                    <option>Todos</option>
+                    <option>Casa</option>
+                    <option>Departamento</option>
                   </select>
                 </div>
               </div>

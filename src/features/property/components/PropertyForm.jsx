@@ -25,7 +25,10 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...INITIAL_STATE,
+        ...initialData
+      });
     }
   }, [initialData]);
 
@@ -191,7 +194,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <button type="button" onClick={handleAddFeature} className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all">OK</button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {formData.features.map((feature, index) => (
+              {(formData.features || []).map((feature, index) => (
                 <span key={index} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-black border border-blue-100 uppercase tracking-tighter">
                   {feature}
                   <button type="button" onClick={() => removeFeature(index)} className="hover:text-red-600"><X className="w-4 h-4" /></button>

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Layout from "../../../common/components/Layout";
 import { getPropertyById, getPublisherById } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
+import { api } from "../../../api/api";
 import PropertyCard from "../../../common/components/PropertyCard";
 
 export default function PropertyDetailPage() {
@@ -18,6 +19,37 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showGallery, setShowGallery] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  const handleSubmitLead = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      setSubmitError("Por favor completa los campos obligatorios.");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      await api.post("/leads", {
+        propertyId: property.id,
+        publisherId: property.userId,
+        ...formData,
+        status: "pendiente",
+        createdAt: new Date().toISOString()
+      });
+      setSubmitSuccess(true);
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (err) {
+      setSubmitError("Hubo un error al enviar tu consulta. Intenta nuevamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -171,12 +203,65 @@ export default function PropertyDetailPage() {
               )}
 
               <div className="space-y-3">
-                <button className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-600/20 active:scale-[0.98]">
-                  <MessageCircle className="w-6 h-6" /> Contactar ahora
-                </button>
-                <button className="w-full bg-slate-100 text-slate-900 py-5 rounded-2xl font-black hover:bg-slate-200 transition-all active:scale-[0.98]">
-                  Pedir visita
-                </button>
+                {submitSuccess ? (
+                  <div className="p-4 bg-green-50 text-green-700 rounded-2xl border border-green-200 text-center">
+                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                    <p className="font-bold">¡Consulta enviada!</p>
+                    <p className="text-sm mt-1">El vendedor se pondrá en contacto pronto.</p>
+                    <button 
+                      onClick={() => setSubmitSuccess(false)}
+                      className="mt-4 text-xs font-bold uppercase tracking-widest text-green-800 hover:underline"
+                    >
+                      Enviar otra consulta
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmitLead} className="space-y-4">
+                    <h4 className="font-black text-slate-900 uppercase tracking-tighter text-sm mb-2">Contactar al vendedor</h4>
+                    
+                    {submitError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold">{submitError}</div>}
+                    
+                    <input 
+                      type="text" 
+                      placeholder="Tu nombre completo *" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                    />
+                    <input 
+                      type="email" 
+                      placeholder="Tu email *" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      required
+                    />
+                    <input 
+                      type="tel" 
+                      placeholder="Tu teléfono" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    />
+                    <textarea 
+                      placeholder="Hola, me interesa esta propiedad..." 
+                      rows={4}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none resize-none"
+                      value={formData.message}
+                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      required
+                    />
+                    
+                    <button 
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-600/20 disabled:opacity-70"
+                    >
+                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><MessageCircle className="w-5 h-5" /> Enviar Consulta</>}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </div>

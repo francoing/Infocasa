@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 
-export default function PlanStatusCard({ plan, usage, limit }) {
+export default function PlanStatusCard({ plan, usage, limit, onUpgrade }) {
   if (!plan) return null;
 
   const percentage = Math.min((usage / limit) * 100, 100);
@@ -35,9 +35,16 @@ export default function PlanStatusCard({ plan, usage, limit }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-xs font-medium text-slate-400 pt-2 border-t border-slate-50">
-        <Calendar className="w-4 h-4" />
-        <span>{plan.expiryDate ? `Vence el ${new Date(plan.expiryDate).toLocaleDateString()}` : 'Plan Vitalicio'}</span>
+      <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+          <Calendar className="w-4 h-4" />
+          <span>{plan.expiryDate ? `Vence el ${new Date(plan.expiryDate).toLocaleDateString()}` : 'Plan Vitalicio'}</span>
+        </div>
+        {onUpgrade && (
+          <button onClick={onUpgrade} className="text-[10px] text-blue-600 font-bold uppercase tracking-widest hover:underline">
+            Mejorar Plan
+          </button>
+        )}
       </div>
     </div>
   );

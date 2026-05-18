@@ -39,6 +39,10 @@ export const useProperties = (filters = {}) => {
         }
       }
 
+      if (filters.page) {
+        endpoint += `_page=${filters.page}&_limit=6&`;
+      }
+
       const properties = await api.get(endpoint);
       setData(properties);
       setError(null);
@@ -47,7 +51,7 @@ export const useProperties = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [filters.location, filters.type, filters.minPrice, filters.maxPrice, filters.sort]);
+  }, [filters.location, filters.type, filters.minPrice, filters.maxPrice, filters.sort, filters.page]);
 
   useEffect(() => {
     fetchProperties();

@@ -6,15 +6,18 @@ import { useAuth } from "../../../hooks/useAuth";
 import { usePlans } from "../../../hooks/usePlans";
 import { api } from "../../../api/api";
 import PlanStatusCard from "../../../common/components/PlanStatusCard";
+import CheckoutModal from "../components/CheckoutModal";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { getUserPlan } = usePlans();
+  const { getUserPlan, getPlans, assignPlan } = usePlans();
   const [properties, setProperties] = useState([]);
   const [leads, setLeads] = useState([]);
   const [userPlan, setUserPlan] = useState(null);
+  const [plansList, setPlansList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("properties");
+  const [showCheckout, setShowCheckout] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,6 +26,9 @@ export default function DashboardPage() {
         // Obtener plan del usuario
         const plan = await getUserPlan(user.id);
         setUserPlan(plan);
+
+        const allPlans = await getPlans();
+        setPlansList(allPlans);
 
         // Obtener propiedades del usuario
         const myProps = await api.get(`/properties?userId=${user.id}`);
@@ -78,6 +84,7 @@ export default function DashboardPage() {
                 plan={userPlan} 
                 usage={properties.length} 
                 limit={userPlan.details.propertyLimit} 
+                onUpgrade={() => setShowCheckout(true)}
               />
             )}
           </div>
@@ -198,6 +205,18 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {showCheckout && (
+        <CheckoutModal 
+          plan={plansList.find(p => p.id === 'premium') || plansList[1]}
+          onConfirm={async (planId) => {
+            await assignPlan(user.id, planId);
+            setShowCheckout(false);
+            window.location.reload();
+          }}
+          onCancel={() => setShowCheckout(false)}
+        />
+      )}
     </Layout>
   );
 }
