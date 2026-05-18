@@ -12,7 +12,7 @@
   ],
   "functions": {
     "api/index.js": {
-      "includeFiles": "db.json"
+      "includeFiles": "api/*.json"
     }
   }
 }
