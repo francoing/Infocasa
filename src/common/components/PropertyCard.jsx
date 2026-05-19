@@ -1,6 +1,15 @@
 import React from 'react';
 import { Link } from "react-router-dom";
-import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, Heart, Calendar } from "lucide-react";
+
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString('es-AR', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+}
 
 export default function PropertyCard({ property }) {
   if (!property) return null;
@@ -28,9 +37,13 @@ export default function PropertyCard({ property }) {
           {property.status === 'alquiler' ? `$${property.price.toLocaleString()}/mes` : `$${property.price.toLocaleString()}`}
         </div>
         <h3 className="font-semibold text-lg mb-2 truncate">{property.title}</h3>
-        <p className="text-slate-500 text-sm flex items-center gap-1 mb-6">
+        <p className="text-slate-500 text-sm flex items-center gap-1 mb-2">
           <MapPin className="w-4 h-4" /> {property.location}
         </p>
+        <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium mb-6">
+          <Calendar className="w-3 h-3" />
+          <span>Publicado {formatDate(property.publishedAt || property.createdAt)}</span>
+        </div>
         <div className="flex items-center justify-between pt-6 border-t border-slate-100">
           <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
             <div className="flex items-center gap-1.5">

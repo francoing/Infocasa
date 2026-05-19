@@ -30,7 +30,8 @@ export default function CreatePropertyPage() {
 
       await createProperty({
         ...formData,
-        userId: user.id
+        userId: user.id,
+        publishedAt: new Date().toISOString()
       });
       navigate("/dashboard");
     } catch (err) {

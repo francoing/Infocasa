@@ -3,12 +3,12 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { 
   MapPin, Bed, Bath, Maximize, Home, Share2, Heart, 
   ChevronLeft, ChevronRight, X, Image as ImageIcon,
-  CheckCircle2, Loader2, Calendar, User, MessageCircle
+  CheckCircle2, Loader2, Calendar, User, MessageCircle,
+  TrendingDown, Percent
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "../../../common/components/Layout";
 import { getPropertyById, getPublisherById } from "../../../hooks/useProperties";
-import { useAuth } from "../../../hooks/useAuth";
 import { api } from "../../../api/api";
 import PropertyCard from "../../../common/components/PropertyCard";
 import PropertyMap from "../components/PropertyMap";
@@ -162,6 +162,10 @@ export default function PropertyDetailPage() {
                 <MapPin className="w-5 h-5 text-blue-600" />
                 {property.location} {property.address && `• ${property.address}`}
               </div>
+              <p className="flex items-center gap-1.5 text-sm text-slate-400 font-medium mt-3">
+                <Calendar className="w-4 h-4" />
+                <span>Publicado el {new Date(property.publishedAt || property.createdAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </p>
             </section>
 
             <section className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
@@ -170,6 +174,32 @@ export default function PropertyDetailPage() {
               <SpecItem icon={<Maximize />} value={`${property.area} m²`} label="Superficie" />
               <SpecItem icon={<Home />} value={property.type} label="Tipo" />
             </section>
+
+            {property.priceHistory?.length > 0 && (
+              <section className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingDown className="w-5 h-5 text-amber-600" />
+                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Historial de Precio</h2>
+                </div>
+                <div className="space-y-3">
+                  {[...property.priceHistory].reverse().map((entry, i) => (
+                    <div key={i} className="flex items-center justify-between bg-white p-4 rounded-xl border border-amber-100">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-slate-400 line-through">USD {entry.oldPrice.toLocaleString()}</span>
+                        <span className="text-amber-600 font-black text-lg">→ USD {entry.newPrice.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm font-bold text-green-600">
+                        <Percent className="w-3 h-3" />
+                        <span>-{entry.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-3 font-medium">
+                  Última reducción: {new Date(property.priceHistory[property.priceHistory.length - 1].date).toLocaleDateString('es-AR')}
+                </p>
+              </section>
+            )}
 
             <section>
               <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">Descripción</h2>
