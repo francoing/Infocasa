@@ -1,6 +1,6 @@
 import jsonServer from 'json-server';
 import db from './db.js';
-import routes from './routes.js';
+import routes from './rewriteRules.js';
 
 const server = jsonServer.create();
 const router = jsonServer.router(db);
