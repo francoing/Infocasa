@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Mail, Lock, CheckCircle2, Chrome, Loader2 } from "lucide-react";
+import { User, Mail, Lock, CheckCircle2, Chrome, Loader2, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../hooks/useAuth";
 import Layout from "../../../common/components/Layout";
@@ -9,6 +9,8 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneArea, setPhoneArea] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,6 +25,8 @@ export default function RegisterPage() {
       await register({
         name: `${name} ${lastName}`,
         email,
+        phoneArea,
+        phoneNumber,
         password, // En un sistema real esto se hashearía en el backend
         avatar: "",
         role: "publisher"
@@ -95,6 +99,34 @@ export default function RegisterPage() {
                   placeholder="juan@ejemplo.com"
                   required
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-1 space-y-2">
+                <label className="text-sm font-bold text-slate-900 ml-1">Cód. Área</label>
+                <input 
+                  type="text" 
+                  value={phoneArea}
+                  onChange={(e) => setPhoneArea(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 text-center font-bold" 
+                  placeholder="Ej: 11 o 381"
+                  required
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-sm font-bold text-slate-900 ml-1">Número de Teléfono</label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input 
+                    type="text" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-semibold" 
+                    placeholder="Ej: 1544445555"
+                    required
+                  />
+                </div>
               </div>
             </div>
 

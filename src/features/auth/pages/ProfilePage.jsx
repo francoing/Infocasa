@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, Mail, Shield, CreditCard, Check, Crown, Loader2, Calendar } from "lucide-react";
+import { User, Mail, Shield, CreditCard, Check, Crown, Loader2, Calendar, Phone } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import { useAuth } from "../../../hooks/useAuth";
 import { usePlans } from "../../../hooks/usePlans";
@@ -75,6 +75,9 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <InfoItem icon={<Mail />} label="Email" value={user?.email} />
                 <InfoItem icon={<Shield />} label="Rol" value={user?.role} />
+                {user?.phoneArea && user?.phoneNumber && (
+                  <InfoItem icon={<Phone />} label="Teléfono" value={`(${user.phoneArea}) ${user.phoneNumber}`} />
+                )}
                 {currentPlan && (
                   <InfoItem 
                     icon={<Calendar />} 

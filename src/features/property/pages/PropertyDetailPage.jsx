@@ -11,6 +11,7 @@ import { getPropertyById, getPublisherById } from "../../../hooks/useProperties"
 import { useAuth } from "../../../hooks/useAuth";
 import { api } from "../../../api/api";
 import PropertyCard from "../../../common/components/PropertyCard";
+import PropertyMap from "../components/PropertyMap";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -20,7 +21,12 @@ export default function PropertyDetailPage() {
   const [showGallery, setShowGallery] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
 
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    email: "", 
+    phone: "", 
+    message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -43,7 +49,12 @@ export default function PropertyDetailPage() {
         createdAt: new Date().toISOString()
       });
       setSubmitSuccess(true);
-      setFormData({ name: "", email: "", phone: "", message: "" });
+      setFormData({ 
+        name: "", 
+        email: "", 
+        phone: "", 
+        message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
+      });
     } catch (err) {
       setSubmitError("Hubo un error al enviar tu consulta. Intenta nuevamente.");
     } finally {
@@ -178,6 +189,25 @@ export default function PropertyDetailPage() {
                 ))}
               </div>
             </section>
+
+            {property.latitude && property.longitude && (
+              <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">Ubicación</h2>
+                <div className="h-96 rounded-3xl overflow-hidden border border-slate-100 z-10 relative">
+                  <PropertyMap 
+                    latitude={property.latitude} 
+                    longitude={property.longitude} 
+                    showExactAddress={property.showExactAddress}
+                    title={property.title}
+                  />
+                </div>
+                {!property.showExactAddress && (
+                  <p className="text-xs font-medium text-slate-400 mt-4 italic">
+                    * La ubicación mostrada en el mapa es aproximada para proteger la privacidad del propietario.
+                  </p>
+                )}
+              </section>
+            )}
           </div>
 
           {/* Sidebar */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, X, Sparkles } from "lucide-react";
 import ImageUploader from "./ImageUploader";
+import MapLocationSelector from "./MapLocationSelector";
 
 const INITIAL_STATE = {
   title: "",
@@ -16,7 +17,10 @@ const INITIAL_STATE = {
   imageUrl: "",
   gallery: [],
   features: [],
-  featured: false
+  featured: false,
+  latitude: null,
+  longitude: null,
+  showExactAddress: true
 };
 
 export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false }) {
@@ -73,7 +77,10 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       price: Number(formData.price),
       bedrooms: Number(formData.bedrooms),
       bathrooms: Number(formData.bathrooms),
-      area: Number(formData.area)
+      area: Number(formData.area),
+      latitude: formData.latitude ? Number(formData.latitude) : null,
+      longitude: formData.longitude ? Number(formData.longitude) : null,
+      showExactAddress: formData.showExactAddress !== undefined ? !!formData.showExactAddress : true
     };
     onSubmit(finalData);
   };
@@ -164,6 +171,43 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           <div className="space-y-2">
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ciudad / Zona</label>
             <input required name="location" value={formData.location} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none" placeholder="Ej: Nordelta, Tigre" />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación en el mapa</label>
+              {formData.latitude && formData.longitude && (
+                <span className="text-xs font-bold text-blue-600">
+                  {formData.latitude}, {formData.longitude}
+                </span>
+              )}
+            </div>
+            <MapLocationSelector 
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              onChange={({ latitude, longitude }) => {
+                setFormData(prev => ({
+                  ...prev,
+                  latitude,
+                  longitude
+                }));
+              }}
+            />
+            <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <input 
+              type="checkbox"
+              id="showExactAddress"
+              name="showExactAddress"
+              checked={formData.showExactAddress}
+              onChange={handleChange}
+              className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+            />
+            <label htmlFor="showExactAddress" className="text-sm font-bold text-slate-700 cursor-pointer selection:bg-transparent select-none">
+              Mostrar dirección exacta en la web (si está desmarcado, se mostrará un radio aproximado)
+            </label>
           </div>
 
           <div className="grid grid-cols-3 gap-4">

@@ -15,6 +15,8 @@ export default {
       "name": "Juan Pérez",
       "role": "publisher",
       "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+      "phoneArea": "11",
+      "phoneNumber": "44445555",
       "active": true
     },
     {
@@ -24,6 +26,8 @@ export default {
       "name": "Maria García",
       "role": "publisher",
       "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+      "phoneArea": "381",
+      "phoneNumber": "1234567",
       "active": true
     }
   ],
@@ -43,6 +47,9 @@ export default {
       "area": 450,
       "imageUrl": "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80",
       "featured": true,
+      "latitude": -34.4087,
+      "longitude": -58.6477,
+      "showExactAddress": true,
       "createdAt": "2024-05-01T10:00:00Z"
     },
     {
@@ -60,6 +67,9 @@ export default {
       "area": 200,
       "imageUrl": "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80",
       "featured": false,
+      "latitude": -34.5062,
+      "longitude": -58.4846,
+      "showExactAddress": false,
       "createdAt": "2024-05-03T09:15:00Z"
     },
     {
@@ -77,6 +87,9 @@ export default {
       "area": 60,
       "imageUrl": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
       "featured": false,
+      "latitude": -34.5889,
+      "longitude": -58.4306,
+      "showExactAddress": true,
       "createdAt": "2024-05-04T14:20:00Z"
     },
     {
@@ -94,6 +107,9 @@ export default {
       "area": 150,
       "imageUrl": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
       "featured": true,
+      "latitude": -38.0313,
+      "longitude": -57.5312,
+      "showExactAddress": false,
       "createdAt": "2024-05-05T16:45:00Z"
     },
     {
