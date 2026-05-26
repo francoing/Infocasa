@@ -4,7 +4,7 @@ import {
   MapPin, Bed, Bath, Maximize, Home, Share2, Heart, 
   ChevronLeft, ChevronRight, X, Image as ImageIcon,
   CheckCircle2, Loader2, Calendar, User, MessageCircle,
-  TrendingDown, Percent
+  TrendingDown, Percent, Phone
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "@/common/components/Layout";
