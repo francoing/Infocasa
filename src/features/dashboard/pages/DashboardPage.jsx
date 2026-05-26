@@ -108,7 +108,7 @@ export default function DashboardPage() {
               <PlanStatusCard 
                 plan={userPlan} 
                 usage={properties.length} 
-                limit={userPlan.details.propertyLimit} 
+                limit={userPlan.details.limit} 
                 onUpgrade={() => setShowCheckout(true)}
               />
             )}
