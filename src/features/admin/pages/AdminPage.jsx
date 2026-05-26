@@ -1,119 +1,43 @@
-import React, { useEffect, useState } from "react";
-import { Users, Home, BarChart3, Shield, Power, Trash2, CreditCard, ChevronRight, Loader2, Search, MessageSquare, Mail, Phone, Calendar, Star, Edit } from "lucide-react";
+import React, { useState } from "react";
+import { Users, Home, Shield, Power, Trash2, CreditCard, ChevronRight, Loader2, Search, MessageSquare, Mail, Phone, Calendar, Star, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
-import Layout from "../../../common/components/Layout";
-import { api } from "../../../api/api";
-import { useAuth } from "../../../hooks/useAuth";
-import { usePlans } from "../../../hooks/usePlans";
-import PlanBadge from "../../../common/components/PlanBadge";
+import Layout from "@/common/components/Layout";
+import PlanBadge from "@/common/components/PlanBadge";
+import { useAdminData } from "@/hooks/useAdminData";
 
 export default function AdminPage() {
-  const { user: currentUser } = useAuth();
-  const { getPlans, assignPlan } = usePlans();
-  const [users, setUsers] = useState([]);
-  const [properties, setProperties] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    currentUser,
+    plans,
+    loading,
+    selectedUser,
+    setSelectedUser,
+    userSearch,
+    setUserSearch,
+    propertySearch,
+    setPropertySearch,
+    leadSearch,
+    setLeadSearch,
+    filteredUsers,
+    filteredProperties,
+    filteredLeads,
+    toggleUserStatus,
+    handleAssignPlan,
+    deleteProperty,
+    toggleFeatured,
+    usersCount,
+    propertiesCount,
+    leadsCount,
+    subscriptionsCount
+  } = useAdminData();
+
   const [activeTab, setActiveTab] = useState("users");
-  const [selectedUser, setSelectedUser] = useState(null);
 
-  // Search states
-  const [userSearch, setUserSearch] = useState("");
-  const [propertySearch, setPropertySearch] = useState("");
-  const [leadSearch, setLeadSearch] = useState("");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [allUsers, allProps, allLeads, allPlans] = await Promise.all([
-          api.get("/users"),
-          api.get("/properties"),
-          api.get("/leads"),
-          getPlans()
-        ]);
-
-        // Enriquecer usuarios con sus planes activos
-        const usersWithPlans = await Promise.all(allUsers.map(async (u) => {
-          const userPlans = await api.get(`/userPlans?userId=${u.id}`);
-          if (userPlans.length > 0) {
-            const planDetails = allPlans.find(p => p.id === userPlans[userPlans.length - 1].planId);
-            return { ...u, currentPlan: planDetails?.name || 'Ninguno' };
-          }
-          return { ...u, currentPlan: 'Ninguno' };
-        }));
-
-        setUsers(usersWithPlans);
-        setProperties(allProps);
-        setLeads(allLeads);
-        setPlans(allPlans);
-      } catch (err) {
-        console.error("Error fetching admin data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [getPlans]);
-
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      await api.patch(`/users/${userId}`, { active: !currentStatus });
-      setUsers(users.map(u => u.id === userId ? { ...u, active: !currentStatus } : u));
-    } catch (err) {
-      alert("Error al actualizar estado del usuario.");
-    }
-  };
-
-  const handleAssignPlan = async (userId, planId) => {
-    try {
-      await assignPlan(userId, planId);
-      const planName = plans.find(p => p.id === planId).name;
-      setUsers(users.map(u => u.id === userId ? { ...u, currentPlan: planName } : u));
-      setSelectedUser(null);
-      alert("Plan asignado correctamente.");
-    } catch (err) {
-      alert("Error al asignar plan.");
-    }
-  };
-
-  const deleteProperty = async (id) => {
+  const handleDeletePropertyConfirm = (id) => {
     if (window.confirm("¿Estás seguro de eliminar esta propiedad?")) {
-      try {
-        await api.delete(`/properties/${id}`);
-        setProperties(properties.filter(p => p.id !== id));
-      } catch (err) {
-        alert("Error al eliminar propiedad.");
-      }
+      deleteProperty(id);
     }
   };
-
-  const toggleFeatured = async (id, currentFeatured) => {
-    try {
-      await api.patch(`/properties/${id}`, { featured: !currentFeatured });
-      setProperties(properties.map(p => p.id === id ? { ...p, featured: !currentFeatured } : p));
-    } catch (err) {
-      alert("Error al actualizar propiedad destacada.");
-    }
-  };
-
-  // Filtered data
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
-    u.email.toLowerCase().includes(userSearch.toLowerCase())
-  );
-
-  const filteredProperties = properties.filter(p => 
-    p.title.toLowerCase().includes(propertySearch.toLowerCase()) || 
-    p.location.toLowerCase().includes(propertySearch.toLowerCase())
-  );
-
-  const filteredLeads = leads.filter(l => 
-    l.name.toLowerCase().includes(leadSearch.toLowerCase()) || 
-    l.email.toLowerCase().includes(leadSearch.toLowerCase()) ||
-    l.message.toLowerCase().includes(leadSearch.toLowerCase())
-  );
 
   return (
     <Layout>
@@ -131,10 +55,10 @@ export default function AdminPage() {
 
         {/* Global Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <StatCard icon={<Users />} count={users.length} label="Usuarios" color="blue" />
-          <StatCard icon={<Home />} count={properties.length} label="Propiedades" color="indigo" />
-          <StatCard icon={<MessageSquare />} count={leads.length} label="Consultas" color="green" />
-          <StatCard icon={<CreditCard />} count={users.filter(u => u.currentPlan !== 'Básico' && u.currentPlan !== 'Ninguno').length} label="Suscripciones" color="amber" />
+          <StatCard icon={<Users />} count={usersCount} label="Usuarios" color="blue" />
+          <StatCard icon={<Home />} count={propertiesCount} label="Propiedades" color="indigo" />
+          <StatCard icon={<MessageSquare />} count={leadsCount} label="Consultas" color="green" />
+          <StatCard icon={<CreditCard />} count={subscriptionsCount} label="Suscripciones" color="amber" />
         </div>
 
         {/* Tabs */}
@@ -216,7 +140,7 @@ export default function AdminPage() {
                                 <CreditCard className="w-5 h-5" />
                               </button>
                             )}
-                            {u.id !== currentUser.id && (
+                            {u.id !== currentUser?.id && (
                               <button 
                                 onClick={() => toggleUserStatus(u.id, u.active)}
                                 className={`p-3 rounded-xl transition-all ${u.active ? 'text-slate-400 hover:text-red-600 hover:bg-red-50' : 'text-slate-400 hover:text-green-600 hover:bg-green-50'}`}
@@ -264,7 +188,7 @@ export default function AdminPage() {
                              >
                                <Edit className="w-5 h-5" />
                              </Link>
-                             <button onClick={() => deleteProperty(p.id)} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                             <button onClick={() => handleDeletePropertyConfirm(p.id)} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                                <Trash2 className="w-5 h-5" />
                              </button>
                           </td>
@@ -323,7 +247,7 @@ export default function AdminPage() {
             </div>
 
             {/* Plan Selector Sidebar */}
-            {selectedUser && ( activeTab === "users" && (
+            {selectedUser && activeTab === "users" && (
               <div className="lg:col-span-4 space-y-6">
                 <div className="bg-white p-8 rounded-[2.5rem] border border-blue-200 shadow-2xl shadow-blue-600/5 sticky top-28">
                   <div className="flex justify-between items-center mb-6">
@@ -354,7 +278,7 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

@@ -1,87 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { LayoutDashboard, Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import Layout from "../../../common/components/Layout";
-import { useAuth } from "../../../hooks/useAuth";
-import { usePlans } from "../../../hooks/usePlans";
-import { api } from "../../../api/api";
-import PlanStatusCard from "../../../common/components/PlanStatusCard";
-import CheckoutModal from "../components/CheckoutModal";
+import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp } from "lucide-react";
+import Layout from "@/common/components/Layout";
+import PlanStatusCard from "@/common/components/PlanStatusCard";
+import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { getUserPlan, getPlans, assignPlan } = usePlans();
-  const [properties, setProperties] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [userPlan, setUserPlan] = useState(null);
-  const [plansList, setPlansList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    user,
+    properties,
+    leads,
+    userPlan,
+    plansList,
+    loading,
+    showCheckout,
+    setShowCheckout,
+    reductionPercent,
+    setReductionPercent,
+    reductionCustom,
+    setReductionCustom,
+    reducingId,
+    handleReducePrice,
+    deleteProperty,
+    handleAssignPlan
+  } = useDashboardData();
+
   const [activeTab, setActiveTab] = useState("properties");
-  const [showCheckout, setShowCheckout] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
-  const [reductionPercent, setReductionPercent] = useState(5);
-  const [reductionCustom, setReductionCustom] = useState({});
-  const [reducingId, setReducingId] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Obtener plan del usuario
-        const plan = await getUserPlan(user.id);
-        setUserPlan(plan);
-
-        const allPlans = await getPlans();
-        setPlansList(allPlans);
-
-        // Obtener propiedades del usuario
-        const myProps = await api.get(`/properties?userId=${user.id}`);
-        setProperties(myProps);
-
-        // Obtener consultas para sus propiedades
-        const myLeads = await api.get(`/leads?publisherId=${user.id}`);
-        setLeads(myLeads);
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchData();
-    }
-  }, [user, getUserPlan]);
-
-  const handleReducePrice = async (prop) => {
-    const pct = reductionCustom[prop.id] ? parseFloat(reductionCustom[prop.id]) : reductionPercent;
-    if (!pct || pct <= 0 || pct > 100) return;
-    const reduction = prop.price * (pct / 100);
-    const newPrice = Math.round(prop.price - reduction);
-    try {
-      setReducingId(prop.id);
-      const historyEntry = { oldPrice: prop.price, newPrice, percentage: pct, date: new Date().toISOString() };
-      const updated = await api.patch(`/properties/${prop.id}`, {
-        price: newPrice,
-        priceHistory: [...(prop.priceHistory || []), historyEntry]
-      });
-      setProperties(prev => prev.map(p => p.id === prop.id ? { ...p, price: newPrice, priceHistory: updated.priceHistory } : p));
-      setReductionCustom(prev => ({ ...prev, [prop.id]: "" }));
-    } catch (err) {
-      console.error("Error al reducir precio:", err);
-    } finally {
-      setReducingId(null);
-    }
-  };
-
-  const handleDeleteProperty = async (id) => {
+  const handleDeletePropertyConfirm = (id) => {
     if (window.confirm("¿Estás seguro de eliminar esta propiedad?")) {
-      try {
-        await api.delete(`/properties/${id}`);
-        setProperties(properties.filter(p => p.id !== id));
-      } catch (err) {
-        alert("Error al eliminar la propiedad.");
-      }
+      deleteProperty(id);
     }
   };
 
@@ -177,111 +127,97 @@ export default function DashboardPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-slate-500 text-sm flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {prop.location}
+                          <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
+                            <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
                           </p>
-                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-400 font-medium">
-                            <Calendar className="w-3 h-3" />
-                            <span>Publicado {new Date(prop.publishedAt || prop.createdAt).toLocaleDateString('es-AR')}</span>
-                          </div>
-                          <div className="mt-2 flex items-center gap-3">
-                            <span className="text-xs font-bold px-2 py-1 bg-slate-100 rounded-md uppercase text-slate-600">{prop.type}</span>
-                            <span className="text-xs font-bold px-2 py-1 bg-blue-50 rounded-md uppercase text-blue-600">{prop.status}</span>
-                            <span className="font-bold text-blue-600">
-                              USD {prop.price.toLocaleString()}
-                            </span>
-                          </div>
+                          <p className="font-black text-slate-900 mt-2">USD {prop.price.toLocaleString()}</p>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setExpandedId(expandedId === prop.id ? null : prop.id)}
-                            className="p-2 text-slate-400 hover:text-amber-600 transition-colors"
+                        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                          <Link 
+                            to={`/properties/${prop.id}`}
+                            className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            title="Ver publicación"
+                            target="_blank"
                           >
-                            {expandedId === prop.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </button>
-                          <Link to={`/property/${prop.id}`} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
                             <ExternalLink className="w-5 h-5" />
                           </Link>
-                          <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                          <Link 
+                            to={`/dashboard/properties/edit/${prop.id}`}
+                            className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            title="Editar"
+                          >
                             <Edit className="w-5 h-5" />
                           </Link>
                           <button 
-                            onClick={() => handleDeleteProperty(prop.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                            onClick={() => handleDeletePropertyConfirm(prop.id)}
+                            className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            title="Eliminar"
                           >
                             <Trash2 className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => setExpandedId(expandedId === prop.id ? null : prop.id)}
+                            className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                            title="Ajustar Precio"
+                          >
+                            {expandedId === prop.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                           </button>
                         </div>
                       </div>
 
                       {expandedId === prop.id && (
-                        <div className="border-t border-slate-100 bg-slate-50/50 p-6 space-y-6">
-                          {/* Price History */}
-                          <div>
-                            <h4 className="text-sm font-black text-slate-900 uppercase tracking-tighter mb-3 flex items-center gap-2">
-                              <TrendingDown className="w-4 h-4 text-amber-600" /> Historial de Precio
-                            </h4>
-                            {prop.priceHistory?.length > 0 ? (
-                              <div className="space-y-2">
-                                {[...prop.priceHistory].reverse().map((entry, i) => (
-                                  <div key={i} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <span className="text-slate-400 line-through">USD {entry.oldPrice.toLocaleString()}</span>
-                                      <span className="text-amber-600 font-bold">→ USD {entry.newPrice.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-xs font-bold text-green-600">
-                                      <Percent className="w-3 h-3" /> -{entry.percentage}%
-                                    </div>
-                                  </div>
+                        <div className="bg-slate-50/50 p-6 border-t border-slate-100 flex flex-col md:flex-row justify-between gap-6">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-slate-900 text-sm mb-1">Ajustar Precio (Reducción Directa)</h4>
+                            <p className="text-slate-500 text-xs">Aplica una reducción porcentual al valor de venta y registra un badge visual de descuento en la publicación.</p>
+                            {prop.priceHistory?.length > 0 && (
+                              <div className="mt-3 space-y-1">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Historial de rebajas:</p>
+                                {prop.priceHistory.map((h, i) => (
+                                  <p key={i} className="text-xs font-semibold text-green-600">
+                                    Rebaja del {h.percentage}% (USD {h.oldPrice.toLocaleString()} → USD {h.newPrice.toLocaleString()}) el {new Date(h.date).toLocaleDateString()}
+                                  </p>
                                 ))}
                               </div>
-                            ) : (
-                              <p className="text-sm text-slate-400 italic">Sin reducciones de precio registradas.</p>
                             )}
                           </div>
-
-                          {/* Price Reduction */}
-                          <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200">
-                            <h4 className="text-sm font-black text-slate-900 uppercase tracking-tighter mb-3 flex items-center gap-2">
-                              <TrendingDown className="w-4 h-4 text-amber-600" /> Reducir Precio
-                            </h4>
-                            <p className="text-xs font-medium text-slate-500 mb-3">
-                              Precio actual: <span className="font-black text-slate-900">USD {prop.price.toLocaleString()}</span>
-                            </p>
-                            <div className="flex gap-2 mb-3">
-                              {[5, 10, 15].map(pct => (
-                                <button
-                                  key={pct}
-                                  onClick={() => { setReductionPercent(pct); setReductionCustom(prev => ({ ...prev, [prop.id]: "" })); }}
-                                  className={`flex-1 py-2 rounded-xl font-bold text-xs border transition-all ${
-                                    reductionPercent === pct && !reductionCustom[prop.id]
-                                      ? 'bg-amber-600 text-white border-amber-600'
-                                      : 'bg-white text-slate-700 border-slate-200 hover:border-amber-300'
-                                  }`}
-                                >
-                                  {pct}%
-                                </button>
-                              ))}
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="relative flex-1">
-                                <input
-                                  type="number"
-                                  placeholder="% personalizado"
-                                  value={reductionCustom[prop.id] || ""}
-                                  onChange={(e) => setReductionCustom(prev => ({ ...prev, [prop.id]: e.target.value }))}
-                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-amber-600 outline-none text-xs font-bold"
-                                />
-                                <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                          <div className="flex items-center gap-4 flex-shrink-0">
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descuento</span>
+                              <div className="flex gap-2">
+                                {[5, 10, 15].map(pct => (
+                                  <button
+                                    key={pct}
+                                    onClick={() => setReductionPercent(pct)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${reductionPercent === pct && !reductionCustom[prop.id] ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                                  >
+                                    {pct}%
+                                  </button>
+                                ))}
                               </div>
-                              <button
-                                onClick={() => handleReducePrice(prop)}
-                                disabled={reducingId === prop.id || (!reductionCustom[prop.id] && !reductionPercent)}
-                                className="px-5 py-2 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-1"
-                              >
-                                {reducingId === prop.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingDown className="w-3 h-3" />}
-                                Aplicar
-                              </button>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Otro % / Aplicar</span>
+                              <div className="flex items-center gap-2">
+                                <div className="relative w-28">
+                                  <input 
+                                    type="number"
+                                    placeholder="% personalizado"
+                                    value={reductionCustom[prop.id] || ""}
+                                    onChange={(e) => setReductionCustom(prev => ({ ...prev, [prop.id]: e.target.value }))}
+                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-amber-600 outline-none text-xs font-bold"
+                                  />
+                                  <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                                </div>
+                                <button
+                                  onClick={() => handleReducePrice(prop)}
+                                  disabled={reducingId === prop.id || (!reductionCustom[prop.id] && !reductionPercent)}
+                                  className="px-5 py-2 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-1"
+                                >
+                                  {reducingId === prop.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingDown className="w-3 h-3" />}
+                                  Aplicar
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -329,11 +265,7 @@ export default function DashboardPage() {
       {showCheckout && (
         <CheckoutModal 
           plan={plansList.find(p => p.id === 'premium') || plansList[1]}
-          onConfirm={async (planId) => {
-            await assignPlan(user.id, planId);
-            setShowCheckout(false);
-            window.location.reload();
-          }}
+          onConfirm={(planId) => handleAssignPlan(planId)}
           onCancel={() => setShowCheckout(false)}
         />
       )}

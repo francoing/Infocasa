@@ -5,6 +5,7 @@ import PropertyForm from "../components/PropertyForm";
 import { createProperty } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { usePlans } from "../../../hooks/usePlans";
+import { useToast } from "../../../hooks/useToast";
 import { AlertCircle } from "lucide-react";
 
 export default function CreatePropertyPage() {
@@ -13,6 +14,7 @@ export default function CreatePropertyPage() {
   const { user } = useAuth();
   const { validateLimit } = usePlans();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (formData) => {
     try {
@@ -25,6 +27,7 @@ export default function CreatePropertyPage() {
       if (!validation.allowed) {
         setLimitError(validation.message);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.error(validation.message);
         return;
       }
 
@@ -33,9 +36,10 @@ export default function CreatePropertyPage() {
         userId: user.id,
         publishedAt: new Date().toISOString()
       });
+      toast.success("Propiedad creada correctamente.");
       navigate("/dashboard");
     } catch (err) {
-      alert("Error al crear la propiedad.");
+      toast.error("Error al crear la propiedad.");
     } finally {
       setLoading(false);
     }

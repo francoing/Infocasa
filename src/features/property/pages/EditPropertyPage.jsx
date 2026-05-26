@@ -4,6 +4,7 @@ import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
 import { getPropertyById, updateProperty } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
+import { useToast } from "../../../hooks/useToast";
 import { Loader2 } from "lucide-react";
 
 export default function EditPropertyPage() {
@@ -13,6 +14,7 @@ export default function EditPropertyPage() {
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -21,7 +23,7 @@ export default function EditPropertyPage() {
         const data = await getPropertyById(id);
         // Validar que la propiedad pertenezca al usuario o sea admin
         if (data.userId !== user.id && user.role !== 'admin') {
-          alert("No tienes permiso para editar esta propiedad.");
+          toast.error("No tienes permiso para editar esta propiedad.");
           navigate("/dashboard");
           return;
         }
@@ -40,9 +42,10 @@ export default function EditPropertyPage() {
     try {
       setSubmitting(true);
       await updateProperty(id, formData);
+      toast.success("Propiedad actualizada correctamente.");
       navigate("/dashboard");
     } catch (err) {
-      alert("Error al actualizar la propiedad.");
+      toast.error("Error al actualizar la propiedad.");
     } finally {
       setSubmitting(false);
     }

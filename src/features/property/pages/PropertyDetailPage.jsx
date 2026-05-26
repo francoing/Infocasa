@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import { 
   MapPin, Bed, Bath, Maximize, Home, Share2, Heart, 
   ChevronLeft, ChevronRight, X, Image as ImageIcon,
@@ -7,122 +7,33 @@ import {
   TrendingDown, Percent
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Layout from "../../../common/components/Layout";
-import { getPropertyById, getPublisherById } from "../../../hooks/useProperties";
-import { api } from "../../../api/api";
-import PropertyCard from "../../../common/components/PropertyCard";
+import Layout from "@/common/components/Layout";
+import PropertyCard from "@/common/components/PropertyCard";
 import PropertyMap from "../components/PropertyMap";
+import { usePropertyDetail } from "@/hooks/usePropertyDetail";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
-  const [property, setProperty] = useState(null);
-  const [publisher, setPublisher] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showGallery, setShowGallery] = useState(false);
-  const [activeImage, setActiveImage] = useState(0);
-  const [relatedProperties, setRelatedProperties] = useState([]);
-
-  const [formData, setFormData] = useState({ 
-    name: "", 
-    email: "", 
-    phone: "", 
-    message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
-
-  const handleSubmitLead = async (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      setSubmitError("Por favor completa los campos obligatorios.");
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      setSubmitError(null);
-      await api.post("/leads", {
-        propertyId: property.id,
-        publisherId: property.userId,
-        ...formData,
-        status: "pendiente",
-        createdAt: new Date().toISOString()
-      });
-      setSubmitSuccess(true);
-      setFormData({ 
-        name: "", 
-        email: "", 
-        phone: "", 
-        message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
-      });
-    } catch (err) {
-      setSubmitError("Hubo un error al enviar tu consulta. Intenta nuevamente.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    property,
+    publisher,
+    loading,
+    showGallery,
+    setShowGallery,
+    activeImage,
+    setActiveImage,
+    relatedProperties,
+    formData,
+    setFormData,
+    isSubmitting,
+    submitSuccess,
+    setSubmitSuccess,
+    submitError,
+    handleSubmitLead
+  } = usePropertyDetail(id);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const propData = await getPropertyById(id);
-        setProperty(propData);
-        
-        if (propData.userId) {
-          const userData = await getPublisherById(propData.userId);
-          setPublisher(userData);
-        }
-
-        // Fetch related properties and rank them
-        const allProps = await api.get("/properties");
-        const currentType = propData.type;
-        const currentLocation = propData.location;
-        const currentBedrooms = propData.bedrooms;
-        const currentStatus = propData.status;
-
-        const related = allProps
-          .filter(p => p.id !== propData.id)
-          .map(p => {
-            let score = 0;
-            // Matching type (3 points)
-            if (p.type && currentType && p.type.toLowerCase() === currentType.toLowerCase()) score += 3;
-            // Matching status - alquiler vs venta (2 points)
-            if (p.status && currentStatus && p.status.toLowerCase() === currentStatus.toLowerCase()) score += 2;
-            // Matching location (3 points)
-            if (p.location && currentLocation) {
-              const pLoc = p.location.toLowerCase();
-              const cLoc = currentLocation.toLowerCase();
-              if (pLoc.includes(cLoc) || cLoc.includes(pLoc)) {
-                score += 3;
-              }
-            }
-            // Matching bedrooms (2 points for exact, 1 point for +/- 1)
-            if (p.bedrooms === currentBedrooms) {
-              score += 2;
-            } else if (Math.abs((p.bedrooms || 0) - (currentBedrooms || 0)) <= 1) {
-              score += 1;
-            }
-            return { property: p, score };
-          })
-          .filter(item => item.score > 0) // Only keep properties that have some relevance
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 3)
-          .map(item => item.property);
-
-        setRelatedProperties(related);
-      } catch (err) {
-        console.error("Error fetching property:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
   }, [id]);
 
   if (loading) {
@@ -151,327 +62,345 @@ export default function PropertyDetailPage() {
             <ChevronRight className="w-4 h-4" />
             <Link to="/search" className="hover:text-blue-600 transition-colors">Propiedades</Link>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-slate-900 truncate max-w-[200px]">{property.title}</span>
+            <span className="text-slate-600 truncate max-w-xs">{property.title}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-              <Share2 className="w-5 h-5 text-slate-600" />
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">
+              <Share2 className="w-4 h-4" /> Compartir
             </button>
-            <button className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-              <Heart className="w-5 h-5 text-slate-600" />
+            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold rounded-xl transition-all text-sm">
+              <Heart className="w-4 h-4" /> Guardar
             </button>
           </div>
         </div>
 
-        {/* Hero Gallery Bento */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-12 aspect-[16/9] md:aspect-[21/9] lg:aspect-[25/9]">
-          <div 
-            className="lg:col-span-8 rounded-[2.5rem] overflow-hidden relative group cursor-pointer border border-slate-100"
-            onClick={() => setShowGallery(true)}
-          >
-            <img src={images[0]} alt={property.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-8">
-              <button className="bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 border border-white/30 hover:bg-white/30 transition-all">
-                <ImageIcon className="w-5 h-5" /> Ver todas las fotos
-              </button>
-            </div>
-          </div>
-          <div className="hidden lg:grid lg:col-span-4 grid-rows-2 gap-4">
-            <div className="rounded-[2.5rem] overflow-hidden relative group cursor-pointer border border-slate-100" onClick={() => setShowGallery(true)}>
-              <img src={images[1] || images[0]} alt="Gallery 1" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            </div>
-            <div className="rounded-[2.5rem] overflow-hidden relative group cursor-pointer border border-slate-100" onClick={() => setShowGallery(true)}>
-              <img src={images[2] || images[0]} alt="Gallery 2" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              {images.length > 3 && (
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white">
-                  <span className="text-3xl font-black">+{images.length - 3}</span>
-                  <span className="text-xs font-black uppercase tracking-widest mt-1">Fotos</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Content */}
-          <div className="lg:col-span-8 space-y-12">
-            <section>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{property.status}</span>
-                <span className="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{property.type}</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight mb-4">{property.title}</h1>
-              <div className="flex items-center gap-2 text-slate-500 font-bold">
-                <MapPin className="w-5 h-5 text-blue-600" />
-                {property.location} {property.address && `• ${property.address}`}
-              </div>
-              <p className="flex items-center gap-1.5 text-sm text-slate-400 font-medium mt-3">
-                <Calendar className="w-4 h-4" />
-                <span>Publicado el {new Date(property.publishedAt || property.createdAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              </p>
-            </section>
-
-            <section className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-              <SpecItem icon={<Bed />} value={property.bedrooms} label="Dormitorios" />
-              <SpecItem icon={<Bath />} value={property.bathrooms} label="Baños" />
-              <SpecItem icon={<Maximize />} value={`${property.area} m²`} label="Superficie" />
-              <SpecItem icon={<Home />} value={property.type} label="Tipo" />
-            </section>
-
+        {/* Gallery Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10 h-[30rem] md:h-[35rem] rounded-[2.5rem] overflow-hidden shadow-md relative group">
+          <div className="md:col-span-2 md:row-span-2 relative overflow-hidden h-full">
+            <img 
+              src={images[0]} 
+              alt={property.title} 
+              className="w-full h-full object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
+              onClick={() => { setActiveImage(0); setShowGallery(true); }}
+            />
             {property.priceHistory?.length > 0 && (
-              <section className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-200 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingDown className="w-5 h-5 text-amber-600" />
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Historial de Precio</h2>
-                </div>
-                <div className="space-y-3">
-                  {[...property.priceHistory].reverse().map((entry, i) => (
-                    <div key={i} className="flex items-center justify-between bg-white p-4 rounded-xl border border-amber-100">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-slate-400 line-through">USD {entry.oldPrice.toLocaleString()}</span>
-                        <span className="text-amber-600 font-black text-lg">→ USD {entry.newPrice.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm font-bold text-green-600">
-                        <Percent className="w-3 h-3" />
-                        <span>-{entry.percentage}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-3 font-medium">
-                  Última reducción: {new Date(property.priceHistory[property.priceHistory.length - 1].date).toLocaleDateString('es-AR')}
-                </p>
-              </section>
-            )}
-
-            <section>
-              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">Descripción</h2>
-              <p className="text-slate-600 leading-relaxed text-lg font-medium whitespace-pre-line selection:bg-blue-100">
-                {property.description}
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">Características</h2>
-              <div className="flex flex-wrap gap-3">
-                {property.features?.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100 shadow-sm transition-all hover:bg-white hover:border-blue-200 group">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-bold text-slate-700">{f}</span>
-                  </div>
-                ))}
+              <div className="absolute top-6 left-6 bg-green-500 text-white font-black px-4 py-2 rounded-2xl text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-green-500/20">
+                <TrendingDown className="w-4 h-4" /> Precio Reducido
               </div>
-            </section>
-
-            {property.latitude && property.longitude && (
-              <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">Ubicación</h2>
-                <div className="h-96 rounded-3xl overflow-hidden border border-slate-100 z-10 relative">
-                  <PropertyMap 
-                    latitude={property.latitude} 
-                    longitude={property.longitude} 
-                    showExactAddress={property.showExactAddress}
-                    title={property.title}
-                  />
-                </div>
-                {!property.showExactAddress && (
-                  <p className="text-xs font-medium text-slate-400 mt-4 italic">
-                    * La ubicación mostrada en el mapa es aproximada para proteger la privacidad del propietario.
-                  </p>
-                )}
-              </section>
             )}
           </div>
+          <div className="hidden md:block relative overflow-hidden h-full">
+            <img 
+              src={images[1] || images[0]} 
+              alt={property.title} 
+              className="w-full h-full object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
+              onClick={() => { setActiveImage(1 % images.length); setShowGallery(true); }}
+            />
+          </div>
+          <div className="hidden md:block relative overflow-hidden h-full">
+            <img 
+              src={images[2] || images[0]} 
+              alt={property.title} 
+              className="w-full h-full object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
+              onClick={() => { setActiveImage(2 % images.length); setShowGallery(true); }}
+            />
+          </div>
+          <div className="hidden md:block relative overflow-hidden h-full">
+            <img 
+              src={images[3] || images[0]} 
+              alt={property.title} 
+              className="w-full h-full object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
+              onClick={() => { setActiveImage(3 % images.length); setShowGallery(true); }}
+            />
+          </div>
+          <div className="hidden md:block relative overflow-hidden h-full">
+            <img 
+              src={images[4] || images[0]} 
+              alt={property.title} 
+              className="w-full h-full object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
+              onClick={() => { setActiveImage(4 % images.length); setShowGallery(true); }}
+            />
+          </div>
+          
+          <button 
+            onClick={() => setShowGallery(true)}
+            className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md text-slate-900 px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wide hover:bg-white shadow-lg flex items-center gap-2 transition-all active:scale-95 border border-slate-200/50"
+          >
+            <ImageIcon className="w-4 h-4 text-slate-700" /> Ver {images.length} fotos
+          </button>
+        </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-4">
-            <div className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-2xl shadow-blue-600/5 sticky top-28">
-              <div className="mb-8">
-                <p className="text-slate-400 font-black text-xs uppercase tracking-widest mb-1">Precio de {property.status}</p>
-                <div className="text-4xl font-black text-slate-900 tracking-tighter">
-                  USD {property.price.toLocaleString()}
+        {/* Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          
+          {/* Main Info */}
+          <div className="lg:col-span-8 space-y-10">
+            <div>
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className="bg-blue-50 text-blue-600 font-black px-4 py-1.5 rounded-full text-xs uppercase tracking-wider border border-blue-100">
+                  {property.type} en {property.status}
+                </span>
+                {property.featured && (
+                  <span className="bg-amber-50 text-amber-600 font-black px-4 py-1.5 rounded-full text-xs uppercase tracking-wider border border-amber-100">
+                    Propiedad Destacada
+                  </span>
+                )}
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-none tracking-tight mb-4">{property.title}</h1>
+              <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm">
+                <MapPin className="w-5 h-5 text-slate-400" /> {property.location}
+              </div>
+            </div>
+
+            {/* Quick Specs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
+                  <Bed className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Dormitorios</p>
+                  <p className="text-lg font-black text-slate-900">{property.bedrooms}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
+                  <Bath className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Baños</p>
+                  <p className="text-lg font-black text-slate-900">{property.bathrooms}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
+                  <Maximize className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Superficie</p>
+                  <p className="text-lg font-black text-slate-900">{property.area} m²</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-white text-blue-600 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
+                  <Home className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tipo</p>
+                  <p className="text-lg font-black text-slate-900 capitalize">{property.type}</p>
+                </div>
+              </div>
+            </div>
 
+            {/* Description */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Descripción de la Propiedad</h2>
+              <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-line">{property.description}</p>
+            </div>
+
+            {/* Map Section */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Ubicación</h2>
+                <span className="text-xs font-semibold text-slate-400">
+                  {property.showExactAddress ? "Dirección exacta" : "Zona aproximada"}
+                </span>
+              </div>
+              <PropertyMap property={property} />
+            </div>
+          </div>
+
+          {/* Sidebar Forms */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Price Box */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
+              <div>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Precio de Venta</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-slate-900">USD {property.price.toLocaleString()}</span>
+                </div>
+                {property.priceHistory?.length > 0 && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-green-600">
+                    <TrendingDown className="w-4 h-4" />
+                    <span>Rebajado de USD {property.priceHistory[property.priceHistory.length - 1].oldPrice.toLocaleString()} ({property.priceHistory[property.priceHistory.length - 1].percentage}% off)</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Contact Form */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Contactar Anunciante</h3>
+              
               {publisher && (
-                <div className="flex items-center gap-4 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-xl overflow-hidden border-2 border-white shadow-lg">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-black text-base uppercase overflow-hidden border border-blue-200">
                     {publisher.avatar ? <img src={publisher.avatar} className="w-full h-full object-cover" /> : publisher.name.charAt(0)}
                   </div>
-                  <div className="overflow-hidden">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Publicado por</p>
-                    <p className="text-lg font-black text-slate-900 truncate">{publisher.name}</p>
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Inmobiliaria / Agente</p>
+                    <h4 className="font-bold text-slate-900 text-base leading-tight">{publisher.name}</h4>
+                    {publisher.phoneArea && publisher.phoneNumber && (
+                      <p className="text-xs text-slate-500 font-bold mt-1 flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5" /> ({publisher.phoneArea}) {publisher.phoneNumber}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
-              <div className="space-y-3">
-                {submitSuccess ? (
-                  <div className="p-4 bg-green-50 text-green-700 rounded-2xl border border-green-200 text-center">
-                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                    <p className="font-bold">¡Consulta enviada!</p>
-                    <p className="text-sm mt-1">El vendedor se pondrá en contacto pronto.</p>
-                    <button 
-                      onClick={() => setSubmitSuccess(false)}
-                      className="mt-4 text-xs font-bold uppercase tracking-widest text-green-800 hover:underline"
-                    >
-                      Enviar otra consulta
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmitLead} className="space-y-4">
-                    <h4 className="font-black text-slate-900 uppercase tracking-tighter text-sm mb-2">Contactar al vendedor</h4>
-                    
-                    {submitError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold">{submitError}</div>}
-                    
+              {submitSuccess ? (
+                <div className="p-6 bg-green-50 border border-green-200 text-green-700 rounded-3xl text-center space-y-3">
+                  <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto" />
+                  <h4 className="font-black uppercase text-sm tracking-widest">¡Consulta Enviada!</h4>
+                  <p className="text-xs font-medium">Hemos registrado tu contacto correctamente. El publicador se comunicará contigo a la brevedad.</p>
+                  <button 
+                    onClick={() => setSubmitSuccess(false)}
+                    className="text-xs font-bold underline text-green-700 hover:text-green-800 pt-2 block mx-auto"
+                  >
+                    Enviar otro mensaje
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitLead} className="space-y-4">
+                  {submitError && (
+                    <p className="text-xs font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">{submitError}</p>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Nombre Completo</label>
                     <input 
-                      type="text" 
-                      placeholder="Tu nombre completo *" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      type="text"
+                      required
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Tu nombre"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all text-sm font-medium"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Correo Electrónico</label>
                     <input 
-                      type="email" 
-                      placeholder="Tu email *" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      type="email"
+                      required
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="tu@email.com"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all text-sm font-medium"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Teléfono (Opcional)</label>
                     <input 
-                      type="tel" 
-                      placeholder="Tu teléfono" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Tu celular"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all text-sm font-medium"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Mensaje</label>
                     <textarea 
-                      placeholder="Hola, me interesa esta propiedad..." 
-                      rows={4}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none resize-none"
-                      value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
                       required
+                      rows="4"
+                      value={formData.message}
+                      onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all text-sm font-medium resize-none leading-relaxed"
                     />
-                    
-                    <button 
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-600/20 disabled:opacity-70"
-                    >
-                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><MessageCircle className="w-5 h-5" /> Enviar Consulta</>}
-                    </button>
-                  </form>
-                )}
-              </div>
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-600/10 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                    Enviar Consulta
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Propiedades Sugeridas */}
+        {/* Related/Suggested Properties */}
         {relatedProperties.length > 0 && (
-          <section className="mt-16 pt-16 border-t border-slate-100 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="mt-20 space-y-8 border-t border-slate-100 pt-16">
+            <div className="flex justify-between items-end">
               <div>
-                <span className="text-blue-600 font-black text-xs uppercase tracking-widest">Te puede interesar</span>
-                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mt-1">Propiedades Sugeridas</h2>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Propiedades Sugeridas</h2>
+                <p className="text-slate-500 font-medium mt-1">Opciones recomendadas con características y ubicación similares.</p>
               </div>
-              <p className="text-slate-500 font-bold max-w-md text-sm md:text-right">
-                Opciones similares según tipo, ubicación y cantidad de ambientes.
-              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {relatedProperties.map(prop => (
                 <PropertyCard key={prop.id} property={prop} />
               ))}
             </div>
-          </section>
+          </div>
         )}
       </div>
 
-      {/* Gallery Modal */}
+      {/* Fullscreen Gallery Lightbox */}
       <AnimatePresence>
         {showGallery && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-slate-900 flex flex-col"
+            className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-6"
           >
-            {/* Header */}
-            <div className="p-6 flex justify-between items-center text-white bg-slate-900/50 backdrop-blur-md border-b border-white/10 z-10">
-              <div className="font-black tracking-tighter">
-                <span className="text-blue-400">{activeImage + 1}</span> / {images.length}
-              </div>
-              <h3 className="hidden md:block font-bold truncate max-w-md">{property.title}</h3>
+            <div className="flex justify-between items-center text-white">
+              <span className="text-sm font-bold uppercase tracking-wider">{activeImage + 1} / {images.length}</span>
               <button 
                 onClick={() => setShowGallery(false)}
-                className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all"
+                className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            {/* Slider Content */}
-            <div className="flex-1 relative flex items-center justify-center p-4 md:p-12 overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.img 
-                  key={activeImage}
-                  src={images[activeImage]}
-                  initial={{ opacity: 0, x: 100, scale: 0.9 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -100, scale: 0.9 }}
-                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="max-h-full max-w-full object-contain rounded-3xl shadow-2xl"
-                />
-              </AnimatePresence>
-
-              {/* Navigation Arrows */}
+            <div className="relative flex items-center justify-center flex-1 max-w-5xl mx-auto w-full group">
               <button 
-                onClick={() => setActiveImage(prev => (prev === 0 ? images.length - 1 : prev - 1))}
-                className="absolute left-4 md:left-12 p-4 bg-white/10 text-white rounded-full backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all"
+                onClick={() => setActiveImage((activeImage - 1 + images.length) % images.length)}
+                className="absolute left-4 p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all opacity-0 group-hover:opacity-100 z-10"
               >
-                <ChevronLeft className="w-8 h-8" />
+                <ChevronLeft className="w-6 h-6" />
               </button>
+              
+              <motion.img 
+                key={activeImage}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                src={images[activeImage]} 
+                alt="Property View" 
+                className="max-h-[70vh] max-w-full object-contain rounded-3xl"
+              />
+
               <button 
-                onClick={() => setActiveImage(prev => (prev === images.length - 1 ? 0 : prev + 1))}
-                className="absolute right-4 md:right-12 p-4 bg-white/10 text-white rounded-full backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all"
+                onClick={() => setActiveImage((activeImage + 1) % images.length)}
+                className="absolute right-4 p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all opacity-0 group-hover:opacity-100 z-10"
               >
-                <ChevronRight className="w-8 h-8" />
+                <ChevronRight className="w-6 h-6" />
               </button>
             </div>
 
-            {/* Thumbnails Bar */}
-            <div className="p-6 bg-slate-900/50 backdrop-blur-md border-t border-white/10 overflow-x-auto">
-              <div className="flex justify-center gap-4 min-w-max mx-auto">
-                {images.map((img, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => setActiveImage(i)}
-                    className={`w-20 h-14 rounded-xl overflow-hidden border-2 transition-all ${activeImage === i ? 'border-blue-500 scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                  >
-                    <img src={img} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+            {/* Thumbnail Navigation */}
+            <div className="flex justify-center gap-2 overflow-x-auto py-4">
+              {images.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveImage(index)}
+                  className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${activeImage === index ? "border-blue-500 scale-105" : "border-transparent opacity-50 hover:opacity-100"}`}
+                >
+                  <img src={img} className="w-full h-full object-cover" alt="Thumbnail" />
+                </button>
+              ))}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </Layout>
-  );
-}
-
-function SpecItem({ icon, value, label }) {
-  return (
-    <div className="text-center md:text-left">
-      <div className="inline-flex p-3 bg-blue-50 text-blue-600 rounded-xl mb-3">
-        {React.cloneElement(icon, { className: "w-5 h-5" })}
-      </div>
-      <div className="text-lg font-black text-slate-900 leading-none">{value}</div>
-      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{label}</div>
-    </div>
   );
 }

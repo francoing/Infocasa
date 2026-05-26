@@ -3,12 +3,14 @@ import { User, Mail, Shield, CreditCard, Check, Crown, Loader2, Calendar, Phone 
 import Layout from "../../../common/components/Layout";
 import { useAuth } from "../../../hooks/useAuth";
 import { usePlans } from "../../../hooks/usePlans";
+import { useToast } from "../../../hooks/useToast";
 import PlanBadge from "../../../common/components/PlanBadge";
 import CheckoutModal from "../../dashboard/components/CheckoutModal";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { getPlans, getUserPlan, assignPlan } = usePlans();
+  const toast = useToast();
   const [plans, setPlans] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,8 +41,9 @@ export default function ProfilePage() {
       const updatedPlan = await getUserPlan(user.id);
       setCurrentPlan(updatedPlan);
       setShowCheckout(null);
+      toast.success("Plan actualizado con éxito.");
     } catch (err) {
-      alert("Error al actualizar el plan.");
+      toast.error("Error al actualizar el plan.");
     }
   };
 
