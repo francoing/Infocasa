@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, Heart, User, Globe, Home, LogOut, LayoutDashboard, PlusCircle, MessageSquare } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
+import Logo from "./Logo";
 
 export default function Layout({ children }) {
   const location = useLocation();
@@ -42,8 +43,8 @@ function Header() {
   return (
     <header className="bg-white/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-slate-200 shadow-sm">
       <div className="flex justify-between items-center px-6 lg:px-12 h-20 max-w-7xl mx-auto w-full">
-        <Link to="/" className="text-2xl font-black tracking-tighter text-slate-900">
-          Estate<span className="text-blue-600">Pro</span>
+        <Link to="/" className="flex items-center">
+          <Logo size="text-2xl" />
         </Link>
         <nav className="hidden md:flex items-center space-x-10">
           {navItems.map((item) => (
@@ -99,8 +100,10 @@ function Footer() {
     <footer className="w-full border-t border-slate-200 bg-slate-50 mt-20">
       <div className="flex flex-col md:flex-row justify-between items-center px-12 py-16 max-w-7xl mx-auto w-full gap-8">
         <div className="text-center md:text-left">
-          <div className="text-2xl font-black tracking-tighter text-slate-900 mb-4">Estate<span className="text-blue-600">Pro</span></div>
-          <p className="text-xs text-slate-500 font-medium">© 2024 EstatePro Premium. Elevando el estándar inmobiliario.</p>
+          <div className="mb-4">
+            <Logo size="text-2xl" />
+          </div>
+          <p className="text-xs text-slate-500 font-medium">© {new Date().getFullYear()} InfoCasa Premium. Elevando el estándar inmobiliario.</p>
         </div>
         <div className="flex flex-wrap justify-center gap-12 text-xs font-bold text-slate-500 uppercase tracking-widest">
           <a href="#" className="hover:text-blue-600 transition-colors">Privacidad</a>
@@ -141,8 +144,10 @@ function AdminLayout({ children }) {
     <div className="flex min-h-screen bg-slate-50">
        <aside className="h-screen w-72 border-r border-slate-200 bg-white flex flex-col py-8 space-y-4 sticky top-0 hidden lg:flex shadow-2xl">
         <div className="px-10 mb-12">
-          <Link to="/" className="text-2xl font-black text-slate-900 tracking-tighter block mb-1">Estate<span className="text-blue-600">Pro</span></Link>
-          <div className="h-1 w-12 bg-blue-600 rounded-full"></div>
+          <Link to="/" className="block mb-2">
+            <Logo size="text-2xl" />
+          </Link>
+          <div className="h-1 w-12 bg-[#cca425] rounded-full"></div>
         </div>
         <nav className="flex-1 px-4 space-y-2">
           <SidebarLink 

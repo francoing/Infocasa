@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
+import { api } from "../../../api/api";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -13,9 +14,35 @@ export default function SearchPage() {
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Todos");
+  const [userId, setUserId] = useState(searchParams.get("userId") || "");
   const [sort, setSort] = useState(searchParams.get("sort") || "recent");
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [agencies, setAgencies] = useState([]);
+
+  // Fetch publishers (inmobiliarias) on mount
+  useEffect(() => {
+    const fetchAgencies = async () => {
+      try {
+        const users = await api.get("/users?role=publisher");
+        setAgencies(users);
+      } catch (err) {
+        console.error("Error fetching agencies:", err);
+      }
+    };
+    fetchAgencies();
+  }, []);
+
+  // Update local states when search parameters change (e.g. from reset or back navigation)
+  useEffect(() => {
+    setLocation(searchParams.get("location") || "");
+    setMinPrice(searchParams.get("minPrice") || "");
+    setMaxPrice(searchParams.get("maxPrice") || "");
+    setSelectedType(searchParams.get("type") || "Todos");
+    setUserId(searchParams.get("userId") || "");
+    setSort(searchParams.get("sort") || "recent");
+    setPage(parseInt(searchParams.get("page")) || 1);
+  }, [searchParams]);
 
   // Memoize filters to avoid unnecessary re-renders in useProperties
   const currentFilters = useMemo(() => ({
@@ -23,6 +50,7 @@ export default function SearchPage() {
     minPrice: searchParams.get("minPrice"),
     maxPrice: searchParams.get("maxPrice"),
     type: searchParams.get("type"),
+    userId: searchParams.get("userId"),
     sort: searchParams.get("sort") || "recent",
     page: parseInt(searchParams.get("page")) || 1
   }), [searchParams]);
@@ -35,6 +63,7 @@ export default function SearchPage() {
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
     if (selectedType !== "Todos") params.type = selectedType;
+    if (userId) params.userId = userId;
     params.sort = sort;
     params.page = 1;
     setSearchParams(params);
@@ -46,6 +75,7 @@ export default function SearchPage() {
     setMinPrice("");
     setMaxPrice("");
     setSelectedType("Todos");
+    setUserId("");
     setSort("recent");
     setSearchParams({});
     setShowMobileFilters(false);
@@ -136,6 +166,23 @@ export default function SearchPage() {
                       </label>
                     ))}
                   </div>
+                </div>
+
+                {/* Inmobiliaria Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-500 block">Inmobiliaria</label>
+                  <select 
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none cursor-pointer"
+                  >
+                    <option value="">Todas las inmobiliarias</option>
+                    {agencies.map((agency) => (
+                      <option key={agency.id} value={agency.id}>
+                        {agency.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <button 

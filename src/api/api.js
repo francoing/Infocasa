@@ -1,7 +1,6 @@
 // src/api/api.js
 
-const isLocal = window.location.hostname === "localhost";
-const API_URL = isLocal ? "http://localhost:4000" : "/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export const api = {
   get: async (endpoint) => {

@@ -20,6 +20,7 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showGallery, setShowGallery] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [relatedProperties, setRelatedProperties] = useState([]);
 
   const [formData, setFormData] = useState({ 
     name: "", 
@@ -63,6 +64,10 @@ export default function PropertyDetailPage() {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -73,6 +78,44 @@ export default function PropertyDetailPage() {
           const userData = await getPublisherById(propData.userId);
           setPublisher(userData);
         }
+
+        // Fetch related properties and rank them
+        const allProps = await api.get("/properties");
+        const currentType = propData.type;
+        const currentLocation = propData.location;
+        const currentBedrooms = propData.bedrooms;
+        const currentStatus = propData.status;
+
+        const related = allProps
+          .filter(p => p.id !== propData.id)
+          .map(p => {
+            let score = 0;
+            // Matching type (3 points)
+            if (p.type && currentType && p.type.toLowerCase() === currentType.toLowerCase()) score += 3;
+            // Matching status - alquiler vs venta (2 points)
+            if (p.status && currentStatus && p.status.toLowerCase() === currentStatus.toLowerCase()) score += 2;
+            // Matching location (3 points)
+            if (p.location && currentLocation) {
+              const pLoc = p.location.toLowerCase();
+              const cLoc = currentLocation.toLowerCase();
+              if (pLoc.includes(cLoc) || cLoc.includes(pLoc)) {
+                score += 3;
+              }
+            }
+            // Matching bedrooms (2 points for exact, 1 point for +/- 1)
+            if (p.bedrooms === currentBedrooms) {
+              score += 2;
+            } else if (Math.abs((p.bedrooms || 0) - (currentBedrooms || 0)) <= 1) {
+              score += 1;
+            }
+            return { property: p, score };
+          })
+          .filter(item => item.score > 0) // Only keep properties that have some relevance
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)
+          .map(item => item.property);
+
+        setRelatedProperties(related);
       } catch (err) {
         console.error("Error fetching property:", err);
       } finally {
@@ -326,6 +369,26 @@ export default function PropertyDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Propiedades Sugeridas */}
+        {relatedProperties.length > 0 && (
+          <section className="mt-16 pt-16 border-t border-slate-100 animate-fade-in">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+              <div>
+                <span className="text-blue-600 font-black text-xs uppercase tracking-widest">Te puede interesar</span>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mt-1">Propiedades Sugeridas</h2>
+              </div>
+              <p className="text-slate-500 font-bold max-w-md text-sm md:text-right">
+                Opciones similares según tipo, ubicación y cantidad de ambientes.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {relatedProperties.map(prop => (
+                <PropertyCard key={prop.id} property={prop} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Gallery Modal */}

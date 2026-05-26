@@ -152,7 +152,7 @@ export default function CheckoutModal({ plan, onConfirm, onCancel }) {
                 <CheckCircle className="w-12 h-12" />
               </div>
               <h3 className="text-2xl font-black text-slate-900">¡Plan Activado!</h3>
-              <p className="text-slate-500 text-sm mt-2">Gracias por confiar en EstatePro. Ya podés disfrutar de tus nuevos beneficios.</p>
+              <p className="text-slate-500 text-sm mt-2">Gracias por confiar en InfoCasa. Ya podés disfrutar de tus nuevos beneficios.</p>
             </motion.div>
           )}
         </AnimatePresence>

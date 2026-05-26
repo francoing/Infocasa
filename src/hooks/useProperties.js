@@ -11,7 +11,7 @@ export const useProperties = (filters = {}) => {
       setLoading(true);
       
       // Construir query string para json-server
-      let endpoint = "/properties?";
+      let endpoint = "/properties?_expand=user&";
       
       if (filters.location) {
         endpoint += `location_like=${encodeURIComponent(filters.location)}&`;
@@ -27,6 +27,10 @@ export const useProperties = (filters = {}) => {
       
       if (filters.maxPrice) {
         endpoint += `price_lte=${filters.maxPrice}&`;
+      }
+
+      if (filters.userId) {
+        endpoint += `userId=${filters.userId}&`;
       }
 
       if (filters.sort) {
@@ -51,7 +55,7 @@ export const useProperties = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [filters.location, filters.type, filters.minPrice, filters.maxPrice, filters.sort, filters.page]);
+  }, [filters.location, filters.type, filters.minPrice, filters.maxPrice, filters.userId, filters.sort, filters.page]);
 
   useEffect(() => {
     fetchProperties();

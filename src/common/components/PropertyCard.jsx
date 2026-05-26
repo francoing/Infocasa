@@ -40,6 +40,12 @@ export default function PropertyCard({ property }) {
         <p className="text-slate-500 text-sm flex items-center gap-1 mb-2">
           <MapPin className="w-4 h-4" /> {property.location}
         </p>
+        {property.user && (
+          <div className="text-[11px] font-black text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5 mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+            <span className="uppercase tracking-wider">Inmobiliaria: {property.user.name}</span>
+          </div>
+        )}
         <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium mb-6">
           <Calendar className="w-3 h-3" />
           <span>Publicado {formatDate(property.publishedAt || property.createdAt)}</span>
