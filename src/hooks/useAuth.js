@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api } from "../api/api";
 
-export const useAuth = () => {
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -79,7 +81,7 @@ export const useAuth = () => {
     }
   };
 
-  return {
+  const value = {
     user,
     loading,
     error,
@@ -91,4 +93,15 @@ export const useAuth = () => {
     isAdmin: user?.role === 'admin',
     isPublisher: user?.role === 'publisher'
   };
+
+  return React.createElement(AuthContext.Provider, { value }, children);
 };
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
+  }
+  return context;
+};
+
