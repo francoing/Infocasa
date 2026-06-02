@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [phoneArea, setPhoneArea] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("buyer");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -22,18 +23,29 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      await register({
+      const user = await register({
         name: `${name} ${lastName}`,
         email,
         phoneArea,
         phoneNumber,
-        password, // En un sistema real esto se hashearía en el backend
+        password,
         avatar: "",
-        role: "publisher"
+        role: role
       });
-      navigate("/");
+      
+      // Si es propietario o agente, va al dashboard a activar su plan
+      if (role === "owner" || role === "agent") {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
-      setError(err.message || "Error al crear la cuenta.");
+      if (err.errors) {
+        const errorMessages = Object.values(err.errors).flat();
+        setError(errorMessages.join(" "));
+      } else {
+        setError(err.message || "Error al crear la cuenta.");
+      }
     } finally {
       setLoading(false);
     }
@@ -59,6 +71,31 @@ export default function RegisterPage() {
           )}
 
           <form className="space-y-6" onSubmit={handleRegister}>
+            <div className="space-y-2 mb-6">
+              <label className="text-sm font-bold text-slate-900 ml-1">Tipo de Cuenta</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { id: "buyer", label: "Interesado / Comprador", desc: "Quiero buscar y consultar propiedades" },
+                  { id: "owner", label: "Dueño Directo", desc: "Quiero publicar mis propiedades y recibir consultas" },
+                  { id: "agent", label: "Agente / Inmobiliaria", desc: "Quiero publicar propiedades y gestionar leads" }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setRole(item.id)}
+                    className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all duration-200 ${
+                      role === item.id 
+                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/10" 
+                        : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span className="font-bold text-xs text-slate-900">{item.label}</span>
+                    <span className="text-[10px] text-slate-500 mt-1.5 leading-normal font-medium">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-900 ml-1">Nombre</label>

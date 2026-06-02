@@ -1,17 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
-import { getPropertyById, getPublisherById } from "./useProperties";
+import { fetchPropertyById, mapProperty } from "./useProperties";
 import { useToast } from "./useToast";
 
 export const usePropertyDetail = (id) => {
   const toast = useToast();
-  
-  const [property, setProperty] = useState(null);
-  const [publisher, setPublisher] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
   const [showGallery, setShowGallery] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const [relatedProperties, setRelatedProperties] = useState([]);
 
   const [formData, setFormData] = useState({ 
     name: "", 
@@ -19,64 +17,46 @@ export const usePropertyDetail = (id) => {
     phone: "", 
     message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
 
-  const handleSubmitLead = async (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      setSubmitError("Por favor completa los campos obligatorios.");
-      toast.error("Por favor completa todos los campos obligatorios.");
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      setSubmitError(null);
-      await api.post("/leads", {
-        propertyId: property.id,
-        publisherId: property.userId,
-        ...formData,
-        status: "pendiente",
-        createdAt: new Date().toISOString()
-      });
-      setSubmitSuccess(true);
-      setFormData({ 
-        name: "", 
-        email: "", 
-        phone: "", 
-        message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
-      });
-      toast.success("Consulta enviada con éxito. La inmobiliaria te contactará a la brevedad.");
-    } catch (err) {
-      setSubmitError("Hubo un error al enviar tu consulta. Intenta nuevamente.");
-      toast.error("Error al enviar la consulta. Por favor, reintenta.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // 1. Query para el detalle de la propiedad
+  const propertyQuery = useQuery({
+    queryKey: ["property", id],
+    queryFn: () => fetchPropertyById(id),
+    enabled: !!id
+  });
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const propData = await getPropertyById(id);
-      setProperty(propData);
+  const property = propertyQuery.data || null;
+  const publisher = property?.owner || (property?.userId ? { id: property.userId, name: "Propietario" } : null);
+
+  // 2. Mutación para registrar visitas a la propiedad
+  const registerViewMutation = useMutation({
+    mutationFn: () => api.post(`/properties/${id}/view`),
+  });
+
+  // Registrar visita en el mount/cambio de ID
+  useEffect(() => {
+    if (id) {
+      registerViewMutation.mutate();
+    }
+  }, [id]);
+
+  // 3. Query para propiedades relacionadas
+  const relatedPropertiesQuery = useQuery({
+    queryKey: ["properties", "related", id],
+    queryFn: async () => {
+      const res = await api.get("/properties");
+      const rawProps = res.data || [];
+      const allProps = rawProps.map(p => mapProperty(p));
       
-      if (propData.userId) {
-        const userData = await getPublisherById(propData.userId);
-        setPublisher(userData);
-      }
+      if (!property) return [];
 
-      // Fetch related properties and rank them
-      const allProps = await api.get("/properties");
-      const currentType = propData.type;
-      const currentLocation = propData.location;
-      const currentBedrooms = propData.bedrooms;
-      const currentStatus = propData.status;
+      const currentType = property.type;
+      const currentLocation = property.location;
+      const currentBedrooms = property.bedrooms;
+      const currentStatus = property.status;
 
-      const related = allProps
-        .filter(p => p.id !== propData.id)
+      return allProps
+        .filter(p => p.id !== property.id)
         .map(p => {
           let score = 0;
           if (p.type && currentType && p.type.toLowerCase() === currentType.toLowerCase()) score += 3;
@@ -99,19 +79,95 @@ export const usePropertyDetail = (id) => {
         .sort((a, b) => b.score - a.score)
         .slice(0, 3)
         .map(item => item.property);
+    },
+    enabled: !!property,
+    staleTime: 5 * 60 * 1000
+  });
 
-      setRelatedProperties(related);
-    } catch (err) {
-      console.error("Error fetching property:", err);
-      toast.error("Error al cargar la información detallada del inmueble.");
-    } finally {
-      setLoading(false);
+  // 4. Mutación para alternar favorito con actualizaciones optimistas
+  const favoriteMutation = useMutation({
+    mutationFn: async (isFavorited) => {
+      if (isFavorited) {
+        return api.delete(`/properties/${id}/favorite`);
+      } else {
+        return api.post(`/properties/${id}/favorite`);
+      }
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["property", id] });
+      const previousProperty = queryClient.getQueryData(["property", id]);
+      
+      if (previousProperty) {
+        queryClient.setQueryData(["property", id], {
+          ...previousProperty,
+          isFavorited: !previousProperty.isFavorited,
+          favoritesCount: previousProperty.isFavorited
+            ? Math.max(0, (previousProperty.favoritesCount || 0) - 1)
+            : (previousProperty.favoritesCount || 0) + 1
+        });
+      }
+      return { previousProperty };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProperty) {
+        queryClient.setQueryData(["property", id], context.previousProperty);
+      }
+      toast.error("Debes iniciar sesión para guardar favoritos.");
+    },
+    onSuccess: (data, variables) => {
+      if (variables) {
+        toast.info("Eliminado de favoritos");
+      } else {
+        toast.success("Agregado a favoritos");
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["property", id] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
     }
-  }, [id, toast]);
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [id, fetchData]);
+  const toggleFavorite = useCallback(async () => {
+    if (!property) return;
+    favoriteMutation.mutate(property.isFavorited);
+  }, [property, favoriteMutation]);
+
+  // 5. Mutación para enviar Leads
+  const submitLeadMutation = useMutation({
+    mutationFn: async (leadData) => {
+      return api.post("/leads", leadData);
+    },
+    onSuccess: () => {
+      setFormData({ 
+        name: "", 
+        email: "", 
+        phone: "", 
+        message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
+      });
+      toast.success("Consulta enviada con éxito. La inmobiliaria te contactará a la brevedad.");
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => {
+      toast.error("Error al enviar la consulta. Por favor, reintenta.");
+    }
+  });
+
+  const handleSubmitLead = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.error("Por favor completa todos los campos obligatorios.");
+      return;
+    }
+    submitLeadMutation.mutate({
+      property_id: id,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      message: formData.message
+    });
+  };
+
+  const loading = propertyQuery.isLoading || relatedPropertiesQuery.isLoading;
 
   return {
     property,
@@ -121,13 +177,14 @@ export const usePropertyDetail = (id) => {
     setShowGallery,
     activeImage,
     setActiveImage,
-    relatedProperties,
+    relatedProperties: relatedPropertiesQuery.data || [],
     formData,
     setFormData,
-    isSubmitting,
-    submitSuccess,
-    setSubmitSuccess,
-    submitError,
-    handleSubmitLead
+    isSubmitting: submitLeadMutation.isPending,
+    submitSuccess: submitLeadMutation.isSuccess,
+    submitError: submitLeadMutation.error?.message || null,
+    handleSubmitLead,
+    toggleFavorite,
+    loadingFavorite: favoriteMutation.isPending
   };
 };

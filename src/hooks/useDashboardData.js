@@ -1,51 +1,77 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { useAuth } from "./useAuth";
 import { usePlans } from "./usePlans";
 import { useToast } from "./useToast";
+import { mapProperty, getPropertiesByUser } from "./useProperties";
 
 export const useDashboardData = () => {
   const { user } = useAuth();
-  const { getUserPlan, getPlans, assignPlan } = usePlans();
+  const { getUserPlan, getPlans, assignPlan, usePlansQuery, useUserPlanQuery } = usePlans();
   const toast = useToast();
+  const queryClient = useQueryClient();
 
-  const [properties, setProperties] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [userPlan, setUserPlan] = useState(null);
-  const [plansList, setPlansList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Estados locales para control de la interfaz (UI)
   const [showCheckout, setShowCheckout] = useState(false);
   const [reductionPercent, setReductionPercent] = useState(5);
   const [reductionCustom, setReductionCustom] = useState({});
   const [reducingId, setReducingId] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const plan = await getUserPlan(user.id);
-      setUserPlan(plan);
+  // Queries con React Query
+  const plansQuery = usePlansQuery();
+  const userPlanQuery = useUserPlanQuery({ enabled: !!user });
 
-      const allPlans = await getPlans();
-      setPlansList(allPlans);
+  const propertiesQuery = useQuery({
+    queryKey: ["me_properties"],
+    queryFn: () => getPropertiesByUser(user?.id),
+    select: (data) => data.map(p => mapProperty(p)),
+    enabled: !!user
+  });
 
-      const myProps = await api.get(`/properties?userId=${user.id}`);
-      setProperties(myProps);
+  const leadsQuery = useQuery({
+    queryKey: ["leads"],
+    queryFn: async () => {
+      const res = await api.get("/leads");
+      return res.data || [];
+    },
+    select: (data) => data.map(l => ({
+      id: l.id,
+      name: l.name,
+      email: l.email,
+      phone: l.phone,
+      message: l.message,
+      status: l.status === "pending" ? "Pendiente" : l.status === "contacted" ? "Contactado" : "Cerrado",
+      statusRaw: l.status,
+      createdAt: l.created_at,
+      property: mapProperty(l.property)
+    })),
+    enabled: !!user
+  });
 
-      const myLeads = await api.get(`/leads?publisherId=${user.id}`);
-      setLeads(myLeads);
-    } catch (err) {
-      console.error("Error fetching dashboard data:", err);
-      toast.error("Error al cargar los datos del panel.");
-    } finally {
-      setLoading(false);
+  // Mutación para reducir precio
+  const reducePriceMutation = useMutation({
+    mutationFn: async ({ id, newPrice }) => {
+      return api.patch(`/properties/${id}`, {
+        price_usd: newPrice,
+        price_amount: newPrice
+      });
+    },
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["property", variables.id] });
+      setReductionCustom(prev => ({ ...prev, [variables.id]: "" }));
+      toast.success("Precio reducido y actualizado con éxito.");
+    },
+    onError: (err) => {
+      console.error("Error al reducir precio:", err);
+      toast.error("Error al reducir el precio de la propiedad.");
+    },
+    onSettled: () => {
+      setReducingId(null);
     }
-  }, [user, getUserPlan, getPlans, toast]);
-
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user, fetchData]);
+  });
 
   const handleReducePrice = async (prop) => {
     const pct = reductionCustom[prop.id] ? parseFloat(reductionCustom[prop.id]) : reductionPercent;
@@ -55,32 +81,47 @@ export const useDashboardData = () => {
     }
     const reduction = prop.price * (pct / 100);
     const newPrice = Math.round(prop.price - reduction);
-    try {
-      setReducingId(prop.id);
-      const historyEntry = { oldPrice: prop.price, newPrice, percentage: pct, date: new Date().toISOString() };
-      const updated = await api.patch(`/properties/${prop.id}`, {
-        price: newPrice,
-        priceHistory: [...(prop.priceHistory || []), historyEntry]
-      });
-      setProperties(prev => prev.map(p => p.id === prop.id ? { ...p, price: newPrice, priceHistory: updated.priceHistory } : p));
-      setReductionCustom(prev => ({ ...prev, [prop.id]: "" }));
-      toast.success("Precio reducido y actualizado con éxito.");
-    } catch (err) {
-      console.error("Error al reducir precio:", err);
-      toast.error("Error al reducir el precio de la propiedad.");
-    } finally {
-      setReducingId(null);
-    }
+    
+    setReducingId(prop.id);
+    reducePriceMutation.mutate({ id: prop.id, newPrice });
   };
 
-  const deleteProperty = async (id) => {
-    try {
-      await api.delete(`/properties/${id}`);
-      setProperties(prev => prev.filter(p => p.id !== id));
+  // Mutación para borrar propiedad
+  const deletePropertyMutation = useMutation({
+    mutationFn: async (id) => {
+      return api.delete(`/properties/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("Propiedad eliminada con éxito.");
-    } catch (err) {
+    },
+    onError: () => {
       toast.error("Error al eliminar la propiedad.");
     }
+  });
+
+  const deleteProperty = async (id) => {
+    deletePropertyMutation.mutate(id);
+  };
+
+  // Mutación para cambiar el estado de un lead
+  const updateLeadStatusMutation = useMutation({
+    mutationFn: async ({ leadId, newStatus }) => {
+      return api.patch(`/leads/${leadId}`, { status: newStatus });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast.success("Estado de consulta actualizado.");
+    },
+    onError: (err) => {
+      console.error("Error updating lead status:", err);
+      toast.error("Error al actualizar el estado de la consulta.");
+    }
+  });
+
+  const updateLeadStatus = async (leadId, newStatus) => {
+    updateLeadStatusMutation.mutate({ leadId, newStatus });
   };
 
   const handleAssignPlan = async (planId) => {
@@ -88,19 +129,23 @@ export const useDashboardData = () => {
       await assignPlan(user.id, planId);
       setShowCheckout(false);
       toast.success("Plan actualizado con éxito.");
-      // Recargar datos actualizados
-      await fetchData();
     } catch (err) {
       toast.error("Error al procesar el pago del plan.");
     }
   };
 
+  const loading = 
+    propertiesQuery.isLoading || 
+    leadsQuery.isLoading || 
+    userPlanQuery.isLoading || 
+    plansQuery.isLoading;
+
   return {
     user,
-    properties,
-    leads,
-    userPlan,
-    plansList,
+    properties: propertiesQuery.data || [],
+    leads: leadsQuery.data || [],
+    userPlan: userPlanQuery.data || null,
+    plansList: plansQuery.data || [],
     loading,
     showCheckout,
     setShowCheckout,
@@ -111,6 +156,7 @@ export const useDashboardData = () => {
     reducingId,
     handleReducePrice,
     deleteProperty,
+    updateLeadStatus,
     handleAssignPlan
   };
 };

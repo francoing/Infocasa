@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { MapPin, Bed, Bath, Maximize, Heart, Calendar } from "lucide-react";
+import { api } from "../../api/api";
+import { useToast } from "../../hooks/useToast";
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -13,6 +15,35 @@ function formatDate(dateStr) {
 
 export default function PropertyCard({ property }) {
   if (!property) return null;
+
+  const toast = useToast();
+  const [isFavorited, setIsFavorited] = useState(property.isFavorited || false);
+  const [loading, setLoading] = useState(false);
+
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      if (isFavorited) {
+        await api.delete(`/properties/${property.id}/favorite`);
+        setIsFavorited(false);
+        toast.info("Eliminado de favoritos");
+      } else {
+        await api.post(`/properties/${property.id}/favorite`);
+        setIsFavorited(true);
+        toast.success("Agregado a favoritos");
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast.error("Debes iniciar sesión para guardar favoritos.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Link 
@@ -28,8 +59,14 @@ export default function PropertyCard({ property }) {
         <div className="absolute top-4 left-4 bg-blue-600/90 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
           {property.status}
         </div>
-        <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full text-blue-600 hover:bg-white transition-colors">
-          <Heart className="w-4 h-4" />
+        <button 
+          onClick={handleFavoriteClick}
+          disabled={loading}
+          className={`absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full transition-colors z-20 ${
+            isFavorited ? "text-rose-500 hover:bg-rose-100" : "text-blue-600 hover:bg-white"
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${isFavorited ? "fill-rose-500" : ""}`} />
         </button>
       </div>
       <div className="p-6">

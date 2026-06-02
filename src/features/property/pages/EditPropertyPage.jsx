@@ -6,6 +6,7 @@ import { getPropertyById, updateProperty } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 import { Loader2 } from "lucide-react";
+import { api } from "../../../api/api";
 
 export default function EditPropertyPage() {
   const { id } = useParams();
@@ -22,7 +23,7 @@ export default function EditPropertyPage() {
       try {
         const data = await getPropertyById(id);
         // Validar que la propiedad pertenezca al usuario o sea admin
-        if (data.userId !== user.id && user.role !== 'admin') {
+        if (data.owner?.id !== user.id && user.role !== 'admin') {
           toast.error("No tienes permiso para editar esta propiedad.");
           navigate("/dashboard");
           return;
@@ -41,10 +42,37 @@ export default function EditPropertyPage() {
   const handleSubmit = async (formData) => {
     try {
       setSubmitting(true);
-      await updateProperty(id, formData);
+      
+      // Separamos la galería del payload de texto
+      const { gallery, ...textData } = formData;
+
+      // 1. Actualizar datos de texto
+      await updateProperty(id, textData);
+
+      // 2. Gestionar eliminación de imágenes viejas
+      const originalImages = initialData.images || [];
+      const currentGalleryUrls = gallery.filter(item => typeof item === 'string');
+      const deletedImages = originalImages.filter(origImg => !currentGalleryUrls.includes(origImg.url));
+
+      for (const deletedImg of deletedImages) {
+        await api.delete(`/properties/${id}/images/${deletedImg.id}`);
+      }
+
+      // 3. Gestionar subida de imágenes nuevas (instancias de File)
+      const newImageFiles = gallery.filter(item => item instanceof File);
+      if (newImageFiles.length > 0) {
+        const uploadFormData = new FormData();
+        newImageFiles.forEach(file => {
+          uploadFormData.append("files[]", file);
+        });
+        
+        await api.post(`/properties/${id}/images`, uploadFormData);
+      }
+
       toast.success("Propiedad actualizada correctamente.");
       navigate("/dashboard");
     } catch (err) {
+      console.error("Error al actualizar la propiedad:", err);
       toast.error("Error al actualizar la propiedad.");
     } finally {
       setSubmitting(false);

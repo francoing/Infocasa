@@ -1,7 +1,0 @@
-{
-  "/api/users": "/users",
-  "/api/properties": "/properties",
-  "/api/leads": "/leads",
-  "/api/plans": "/plans",
-  "/api/user-plans": "/userPlans"
-}

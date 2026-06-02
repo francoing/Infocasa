@@ -10,12 +10,12 @@ import { useProperties } from "../../../hooks/useProperties";
 export default function HomePage() {
   const { data: properties, loading, error } = useProperties();
   const [location, setLocation] = useState("");
-  const [operation, setOperation] = useState("Comprar Propiedad");
+  const [operation, setOperation] = useState("Venta");
   const [priceRange, setPriceRange] = useState("$500k - $1M");
   const [type, setType] = useState("Todos");
   const navigate = useNavigate();
 
-  const featured = properties.filter(p => p.featured);
+  const featured = properties.slice(0, 6);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -78,8 +78,8 @@ export default function HomePage() {
                     value={operation}
                     onChange={(e) => setOperation(e.target.value)}
                   >
-                    <option>Comprar Propiedad</option>
-                    <option>Alquilar Propiedad</option>
+                    <option>Venta</option>
+                    <option>Alquiler</option>
                   </select>
                 </div>
               </div>

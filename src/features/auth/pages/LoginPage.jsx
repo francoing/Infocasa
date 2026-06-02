@@ -24,7 +24,12 @@ export default function LoginPage() {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.message || "Credenciales inválidas. Por favor, intenta de nuevo.");
+      if (err.errors) {
+        const errorMessages = Object.values(err.errors).flat();
+        setError(errorMessages.join(" "));
+      } else {
+        setError(err.message || "Credenciales inválidas. Por favor, intenta de nuevo.");
+      }
     } finally {
       setLoading(false);
     }

@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, X, Sparkles } from "lucide-react";
 import ImageUploader from "./ImageUploader";
 import MapLocationSelector from "./MapLocationSelector";
+import { api } from "../../../api/api";
 
 const INITIAL_STATE = {
   title: "",
   description: "",
   price: "",
-  location: "",
-  address: "",
-  type: "casa",
-  status: "venta",
+  price_currency: "USD",
+  location_id: "",
+  property_type_id: "",
+  status: "venta", // operation
   bedrooms: "",
   bathrooms: "",
   area: "",
@@ -24,14 +25,58 @@ const INITIAL_STATE = {
 };
 
 export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false }) {
-  const [formData, setFormData] = useState(initialData || INITIAL_STATE);
+  const [formData, setFormData] = useState(INITIAL_STATE);
+  const [locations, setLocations] = useState([]);
+  const [propertyTypes, setPropertyTypes] = useState([]);
+  const [loadingRefs, setLoadingRefs] = useState(true);
   const [newFeature, setNewFeature] = useState("");
+
+  useEffect(() => {
+    const fetchRefData = async () => {
+      try {
+        setLoadingRefs(true);
+        const [locRes, typeRes] = await Promise.all([
+          api.get("/locations"),
+          api.get("/property-types")
+        ]);
+        setLocations(locRes.data || []);
+        setPropertyTypes(typeRes.data || []);
+      } catch (err) {
+        console.error("Error loading reference data:", err);
+      } finally {
+        setLoadingRefs(false);
+      }
+    };
+    fetchRefData();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         ...INITIAL_STATE,
-        ...initialData
+        title: initialData.title || "",
+        description: initialData.description || "",
+        price: initialData.price || "",
+        price_currency: initialData.priceCurrency || "USD",
+        location_id: initialData.locationDetails?.id || initialData.location_id || "",
+        property_type_id: initialData.typeId || initialData.property_type_id || "",
+        status: initialData.operationRaw === "rent" ? "alquiler" : "venta",
+        bedrooms: initialData.bedrooms || "",
+        bathrooms: initialData.bathrooms || "",
+        area: initialData.areaTotal || initialData.area || "",
+        imageUrl: initialData.imageUrl || "",
+        gallery: initialData.images?.map(img => img.url) || [],
+        features: initialData.features || [],
+        featured: !!initialData.featured,
+        latitude: (() => {
+          const val = initialData.locationDetails?.latitude ?? initialData.latitude;
+          return val !== null && val !== undefined ? Number(val) : null;
+        })(),
+        longitude: (() => {
+          const val = initialData.locationDetails?.longitude ?? initialData.longitude;
+          return val !== null && val !== undefined ? Number(val) : null;
+        })(),
+        showExactAddress: initialData.showExactAddress !== undefined ? !!initialData.showExactAddress : true
       });
     }
   }, [initialData]);
@@ -47,8 +92,8 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
   const handleImagesChange = (images) => {
     setFormData(prev => ({
       ...prev,
-      imageUrl: images.length > 0 ? images[0] : "", // La primera imagen es la principal
-      gallery: images // Todas las imágenes forman la galería
+      imageUrl: images.length > 0 ? (images[0] instanceof File ? "" : images[0]) : "",
+      gallery: images
     }));
   };
 
@@ -72,18 +117,42 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const priceVal = Number(formData.price);
+    const currencyVal = formData.price_currency || "USD";
+    const priceUsdVal = currencyVal === "ARS" ? Math.round(priceVal / 1000) : priceVal;
+
     const finalData = {
-      ...formData,
-      price: Number(formData.price),
+      title: formData.title,
+      description: formData.description,
+      price_amount: priceVal,
+      price_currency: currencyVal,
+      price_usd: priceUsdVal,
+      location_id: Number(formData.location_id),
+      property_type_id: Number(formData.property_type_id),
+      operation: formData.status === "alquiler" ? "rent" : "sale",
       bedrooms: Number(formData.bedrooms),
       bathrooms: Number(formData.bathrooms),
-      area: Number(formData.area),
+      rooms: Number(formData.bedrooms) + 1,
+      area_total: Number(formData.area),
+      area_covered: Number(formData.area) * 0.9,
       latitude: formData.latitude ? Number(formData.latitude) : null,
       longitude: formData.longitude ? Number(formData.longitude) : null,
-      showExactAddress: formData.showExactAddress !== undefined ? !!formData.showExactAddress : true
+      show_exact_address: formData.showExactAddress !== undefined ? !!formData.showExactAddress : true,
+      status: "published",
+      gallery: formData.gallery
     };
     onSubmit(finalData);
   };
+
+  if (loadingRefs) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl border border-slate-200">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+        <p className="text-slate-500 font-bold text-sm">Cargando ubicaciones y categorías...</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
@@ -116,7 +185,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               value={formData.title}
               onChange={handleChange}
               className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 outline-none transition-all"
-              placeholder="Ej: Mansión Moderna en Nordelta"
+              placeholder="Ej: Mansión Moderna en Yerba Buena"
             />
           </div>
 
@@ -135,28 +204,43 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo</label>
-              <select name="type" value={formData.type} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none">
-                <option value="casa">Casa</option>
-                <option value="departamento">Departamento</option>
-                <option value="quinta">Quinta</option>
-                <option value="lote">Lote</option>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Propiedad</label>
+              <select 
+                required
+                name="property_type_id" 
+                value={formData.property_type_id} 
+                onChange={handleChange} 
+                className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
+              >
+                <option value="">Selecciona tipo...</option>
+                {propertyTypes.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Estado</label>
-              <select name="status" value={formData.status} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
+              <select name="status" value={formData.status} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold">
                 <option value="venta">Venta</option>
                 <option value="alquiler">Alquiler</option>
               </select>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Precio (USD)</label>
-            <div className="relative">
-              <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
-              <input required type="number" name="price" value={formData.price} onChange={handleChange} className="w-full pl-10 pr-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-black text-xl" placeholder="0" />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2 space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Precio</label>
+              <div className="relative">
+                <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
+                <input required type="number" name="price" value={formData.price} onChange={handleChange} className="w-full pl-10 pr-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-black text-xl" placeholder="0" />
+              </div>
+            </div>
+            <div className="col-span-1 space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Moneda</label>
+              <select name="price_currency" value={formData.price_currency} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold">
+                <option value="USD">USD</option>
+                <option value="ARS">ARS</option>
+              </select>
             </div>
           </div>
         </section>
@@ -169,16 +253,29 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           </div>
           
           <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ciudad / Zona</label>
-            <input required name="location" value={formData.location} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none" placeholder="Ej: Nordelta, Tigre" />
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación (Tucumán)</label>
+            <select 
+              required 
+              name="location_id" 
+              value={formData.location_id} 
+              onChange={handleChange} 
+              className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
+            >
+              <option value="">Selecciona una ubicación...</option>
+              {locations.map(loc => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.neighborhood}, {loc.city}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación en el mapa</label>
-              {formData.latitude && formData.longitude && (
+              {formData.latitude !== null && formData.latitude !== undefined && formData.longitude !== null && formData.longitude !== undefined && (
                 <span className="text-xs font-bold text-blue-600">
-                  {formData.latitude}, {formData.longitude}
+                  {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}
                 </span>
               )}
             </div>
@@ -206,13 +303,13 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
             />
             <label htmlFor="showExactAddress" className="text-sm font-bold text-slate-700 cursor-pointer selection:bg-transparent select-none">
-              Mostrar dirección exacta en la web (si está desmarcado, se mostrará un radio aproximado)
+              Mostrar dirección exacta en la web
             </label>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Maximize className="w-3 h-3" /> m²</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Maximize className="w-3 h-3" /> m² Totales</label>
               <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" />
             </div>
             <div className="space-y-2">

@@ -23,6 +23,7 @@ export default function DashboardPage() {
     reducingId,
     handleReducePrice,
     deleteProperty,
+    updateLeadStatus,
     handleAssignPlan
   } = useDashboardData();
 
@@ -54,13 +55,25 @@ export default function DashboardPage() {
         {/* Plan Status and Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
           <div className="lg:col-span-4">
-            {userPlan && (
+            {userPlan ? (
               <PlanStatusCard 
                 plan={userPlan} 
                 usage={properties.length} 
                 limit={userPlan.details.limit} 
                 onUpgrade={() => setShowCheckout(true)}
               />
+            ) : (
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tu Plan Actual</h4>
+                <div className="text-lg font-black text-red-500 uppercase">Sin Plan Activo</div>
+                <p className="text-slate-500 text-xs font-medium leading-relaxed">Necesitas un plan de publicación activo para poder cargar inmuebles y recibir consultas.</p>
+                <button 
+                  onClick={() => setShowCheckout(true)} 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md text-xs active:scale-95"
+                >
+                  Activar Plan ahora
+                </button>
+              </div>
             )}
           </div>
           <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -134,7 +147,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                           <Link 
-                            to={`/properties/${prop.id}`}
+                            to={`/property/${prop.id}`}
                             className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                             title="Ver publicación"
                             target="_blank"
@@ -231,23 +244,57 @@ export default function DashboardPage() {
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {leads.length > 0 ? (
                   leads.map(lead => (
-                    <div key={lead.id} className="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-all">
-                      <div className="flex justify-between items-start mb-4">
+                    <div key={lead.id} className="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-all space-y-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                          <h4 className="font-bold text-slate-900">{lead.name}</h4>
-                          <p className="text-sm text-blue-600">{lead.email}</p>
+                          <h4 className="font-bold text-slate-900 text-base">{lead.name}</h4>
+                          <p className="text-xs text-blue-600 font-semibold">{lead.email}</p>
+                          {lead.phone && <p className="text-xs text-slate-500 font-semibold mt-1">Celular: {lead.phone}</p>}
+                          {lead.property && (
+                            <p className="text-xs text-slate-400 font-bold mt-1.5 uppercase tracking-wider">
+                              Inmueble: <Link to={`/property/${lead.property.id}`} className="text-blue-600 hover:underline">{lead.property.title}</Link>
+                            </p>
+                          )}
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded-full uppercase tracking-wider">
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border ${
+                          lead.statusRaw === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                          lead.statusRaw === 'contacted' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                          lead.statusRaw === 'closed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                          'bg-slate-50 text-slate-500 border-slate-100'
+                        }`}>
                           {lead.status}
                         </span>
                       </div>
-                      <p className="text-slate-600 text-sm italic">"{lead.message}"</p>
-                      <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                        <span className="text-[10px] text-slate-400 font-medium">Recibido: {new Date(lead.createdAt).toLocaleDateString()}</span>
-                        <button className="text-xs font-bold text-blue-600 hover:underline">Responder</button>
+                      <p className="text-slate-600 text-sm italic bg-slate-50/50 p-4 rounded-xl border border-slate-100 leading-relaxed">
+                        "{lead.message}"
+                      </p>
+                      <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <span className="text-[10px] text-slate-400 font-semibold">
+                          Recibido: {new Date(lead.createdAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado:</span>
+                            <select 
+                              value={lead.statusRaw || 'pending'} 
+                              onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                              className="text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-blue-600 cursor-pointer"
+                            >
+                              <option value="pending">Pendiente</option>
+                              <option value="contacted">Contactado</option>
+                              <option value="closed">Cerrado</option>
+                            </select>
+                          </div>
+                          <a 
+                            href={`mailto:${lead.email}?subject=Consulta sobre: ${lead.property?.title || ''}`}
+                            className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-all shadow-md shadow-blue-600/10"
+                          >
+                            Responder
+                          </a>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -264,7 +311,7 @@ export default function DashboardPage() {
 
       {showCheckout && (
         <CheckoutModal 
-          plan={plansList.find(p => p.id === 'premium') || plansList[1]}
+          plan={plansList.find(p => p.name?.toLowerCase() === 'premium') || plansList[1] || plansList[0]}
           onConfirm={(planId) => handleAssignPlan(planId)}
           onCancel={() => setShowCheckout(false)}
         />

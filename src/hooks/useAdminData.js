@@ -1,124 +1,118 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { useAuth } from "./useAuth";
 import { usePlans } from "./usePlans";
 import { useToast } from "./useToast";
+import { mapProperty } from "./useProperties";
 
 export const useAdminData = () => {
   const { user: currentUser } = useAuth();
-  const { getPlans, assignPlan } = usePlans();
+  const { assignPlan, usePlansQuery } = usePlans();
   const toast = useToast();
+  const queryClient = useQueryClient();
 
-  const [users, setUsers] = useState([]);
-  const [properties, setProperties] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Search states
+  // Estados de búsqueda locales
   const [userSearch, setUserSearch] = useState("");
   const [propertySearch, setPropertySearch] = useState("");
   const [leadSearch, setLeadSearch] = useState("");
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [allUsers, allProps, allLeads, allPlans] = await Promise.all([
-        api.get("/users"),
-        api.get("/properties"),
-        api.get("/leads"),
-        getPlans()
-      ]);
+  // Queries con React Query
+  const plansQuery = usePlansQuery();
 
-      // Enriquecer usuarios con sus planes activos
-      const usersWithPlans = await Promise.all(allUsers.map(async (u) => {
-        const userPlans = await api.get(`/userPlans?userId=${u.id}`);
-        if (userPlans.length > 0) {
-          const planDetails = allPlans.find(p => p.id === userPlans[userPlans.length - 1].planId);
-          return { ...u, currentPlan: planDetails?.name || 'Ninguno' };
-        }
-        return { ...u, currentPlan: 'Ninguno' };
+  const propertiesQuery = useQuery({
+    queryKey: ["admin_properties"],
+    queryFn: async () => {
+      const propsRes = await api.get("/properties?per_page=50");
+      return (propsRes.data || []).map(p => mapProperty(p));
+    }
+  });
+
+  const leadsQuery = useQuery({
+    queryKey: ["admin_leads"],
+    queryFn: async () => {
+      const leadsRes = await api.get("/leads");
+      return (leadsRes.data || []).map(l => ({
+        id: l.id,
+        name: l.name,
+        email: l.email,
+        phone: l.phone,
+        message: l.message,
+        status: l.status,
+        createdAt: l.created_at,
+        property: l.property ? mapProperty(l.property) : null
       }));
-
-      setUsers(usersWithPlans);
-      setProperties(allProps);
-      setLeads(allLeads);
-      setPlans(allPlans);
-    } catch (err) {
-      console.error("Error fetching admin data:", err);
-      toast.error("Error al cargar los datos de administración.");
-    } finally {
-      setLoading(false);
     }
-  }, [getPlans, toast]);
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      await api.patch(`/users/${userId}`, { active: !currentStatus });
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, active: !currentStatus } : u));
-      toast.success(`Usuario ${!currentStatus ? 'activado' : 'desactivado'} con éxito.`);
-    } catch (err) {
-      toast.error("Error al actualizar el estado del usuario.");
-    }
-  };
-
-  const handleAssignPlan = async (userId, planId) => {
-    try {
-      await assignPlan(userId, planId);
-      const planName = plans.find(p => p.id === planId).name;
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, currentPlan: planName } : u));
+  // Mutación para asignar plan
+  const assignPlanMutation = useMutation({
+    mutationFn: async ({ userId, planId }) => {
+      return assignPlan(userId, planId);
+    },
+    onSuccess: (data, variables) => {
+      const planName = plansQuery.data?.find(p => Number(p.id) === Number(variables.planId))?.name;
       setSelectedUser(null);
-      toast.success("Plan asignado correctamente.");
-    } catch (err) {
+      toast.success(`Plan "${planName || 'asignado'}" asignado correctamente.`);
+      queryClient.invalidateQueries({ queryKey: ["admin_properties"] });
+      queryClient.invalidateQueries({ queryKey: ["admin_leads"] });
+    },
+    onError: () => {
       toast.error("Error al asignar el plan.");
     }
+  });
+
+  const handleAssignPlan = async (userId, planId) => {
+    assignPlanMutation.mutate({ userId, planId });
   };
 
-  const deleteProperty = async (id) => {
-    try {
-      await api.delete(`/properties/${id}`);
-      setProperties(prev => prev.filter(p => p.id !== id));
+  // Mutación para eliminar propiedad
+  const deletePropertyMutation = useMutation({
+    mutationFn: async (id) => {
+      return api.delete(`/properties/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("Propiedad eliminada correctamente.");
-    } catch (err) {
+    },
+    onError: () => {
       toast.error("Error al eliminar la propiedad.");
     }
+  });
+
+  const deleteProperty = async (id) => {
+    deletePropertyMutation.mutate(id);
   };
 
-  const toggleFeatured = async (id, currentFeatured) => {
-    try {
-      await api.patch(`/properties/${id}`, { featured: !currentFeatured });
-      setProperties(prev => prev.map(p => p.id === id ? { ...p, featured: !currentFeatured } : p));
-      toast.success(`Propiedad ${!currentFeatured ? 'destacada' : 'desmarcada'} con éxito.`);
-    } catch (err) {
-      toast.error("Error al actualizar la propiedad destacada.");
-    }
-  };
-
-  // Filtered data helpers
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
-    u.email.toLowerCase().includes(userSearch.toLowerCase())
+  // Filtrado local
+  const users = []; // Placeholder para usuarios, ya que no hay endpoint /users en el backend aún
+  const filteredUsers = users.filter(u =>
+    (u.name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(userSearch.toLowerCase())
   );
 
-  const filteredProperties = properties.filter(p => 
-    p.title.toLowerCase().includes(propertySearch.toLowerCase()) || 
-    p.location.toLowerCase().includes(propertySearch.toLowerCase())
+  const filteredProperties = (propertiesQuery.data || []).filter(p =>
+    (p.title || '').toLowerCase().includes(propertySearch.toLowerCase()) ||
+    (p.location || '').toLowerCase().includes(propertySearch.toLowerCase())
   );
 
-  const filteredLeads = leads.filter(l => 
-    l.name.toLowerCase().includes(leadSearch.toLowerCase()) || 
-    l.email.toLowerCase().includes(leadSearch.toLowerCase()) ||
-    l.message.toLowerCase().includes(leadSearch.toLowerCase())
+  const filteredLeads = (leadsQuery.data || []).filter(l =>
+    (l.name || '').toLowerCase().includes(leadSearch.toLowerCase()) ||
+    (l.email || '').toLowerCase().includes(leadSearch.toLowerCase()) ||
+    (l.message || '').toLowerCase().includes(leadSearch.toLowerCase())
   );
+
+  const loading = 
+    plansQuery.isLoading || 
+    propertiesQuery.isLoading || 
+    leadsQuery.isLoading;
 
   return {
     currentUser,
-    plans,
+    plans: plansQuery.data || [],
     loading,
     selectedUser,
     setSelectedUser,
@@ -131,13 +125,11 @@ export const useAdminData = () => {
     filteredUsers,
     filteredProperties,
     filteredLeads,
-    toggleUserStatus,
     handleAssignPlan,
     deleteProperty,
-    toggleFeatured,
     usersCount: users.length,
-    propertiesCount: properties.length,
-    leadsCount: leads.length,
-    subscriptionsCount: users.filter(u => u.currentPlan !== 'Básico' && u.currentPlan !== 'Ninguno').length
+    propertiesCount: (propertiesQuery.data || []).length,
+    leadsCount: (leadsQuery.data || []).length,
+    subscriptionsCount: 0
   };
 };

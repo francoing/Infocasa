@@ -5,30 +5,17 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const processFiles = async (files) => {
-    setUploading(true);
+  const processFiles = (files) => {
     const newImages = [];
 
     for (const file of files) {
       if (images.length + newImages.length >= maxImages) break;
       if (!file.type.startsWith("image/")) continue;
 
-      // Convertir a Base64 para persistencia en el mock (db.json)
-      const base64 = await convertToBase64(file);
-      newImages.push(base64);
+      newImages.push(file);
     }
 
     onChange([...images, ...newImages]);
-    setUploading(false);
-  };
-
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
   };
 
   const handleDrop = (e) => {
@@ -83,7 +70,7 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {images.map((img, index) => (
             <div key={index} className="relative group aspect-square rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-              <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+              <img src={img instanceof File ? URL.createObjectURL(img) : img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button 
                   onClick={() => removeImage(index)}

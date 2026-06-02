@@ -21,10 +21,8 @@ export default function AdminPage() {
     filteredUsers,
     filteredProperties,
     filteredLeads,
-    toggleUserStatus,
     handleAssignPlan,
     deleteProperty,
-    toggleFeatured,
     usersCount,
     propertiesCount,
     leadsCount,
@@ -140,15 +138,7 @@ export default function AdminPage() {
                                 <CreditCard className="w-5 h-5" />
                               </button>
                             )}
-                            {u.id !== currentUser?.id && (
-                              <button 
-                                onClick={() => toggleUserStatus(u.id, u.active)}
-                                className={`p-3 rounded-xl transition-all ${u.active ? 'text-slate-400 hover:text-red-600 hover:bg-red-50' : 'text-slate-400 hover:text-green-600 hover:bg-green-50'}`}
-                                title="Cambiar Estado"
-                              >
-                                <Power className="w-5 h-5" />
-                              </button>
-                            )}
+                            {/* User status toggling is disabled as the backend endpoint is not yet implemented */}
                           </td>
                         </tr>
                       ))}
@@ -174,13 +164,7 @@ export default function AdminPage() {
                           <td className="px-8 py-5 text-sm font-bold text-slate-500">{p.location}</td>
                           <td className="px-8 py-5 text-sm font-black text-slate-900">USD {p.price.toLocaleString()}</td>
                           <td className="px-8 py-5 text-right flex justify-end gap-2">
-                             <button 
-                               onClick={() => toggleFeatured(p.id, p.featured)} 
-                               className={`p-3 rounded-xl transition-all ${p.featured ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'}`}
-                               title={p.featured ? "Quitar destacado" : "Destacar"}
-                             >
-                               <Star className="w-5 h-5" fill={p.featured ? "currentColor" : "none"} />
-                             </button>
+                             {/* Featured toggling is disabled as the property's featured status depends on the publication system */}
                              <Link 
                                to={`/dashboard/properties/edit/${p.id}`} 
                                className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"

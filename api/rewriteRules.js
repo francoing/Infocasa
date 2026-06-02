@@ -1,7 +1,0 @@
-export default {
-  "/users": "/users",
-  "/properties": "/properties",
-  "/leads": "/leads",
-  "/plans": "/plans",
-  "/user-plans": "/userPlans"
-};

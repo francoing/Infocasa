@@ -29,7 +29,9 @@ export default function PropertyDetailPage() {
     submitSuccess,
     setSubmitSuccess,
     submitError,
-    handleSubmitLead
+    handleSubmitLead,
+    toggleFavorite,
+    loadingFavorite
   } = usePropertyDetail(id);
 
   useEffect(() => {
@@ -68,8 +70,17 @@ export default function PropertyDetailPage() {
             <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">
               <Share2 className="w-4 h-4" /> Compartir
             </button>
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold rounded-xl transition-all text-sm">
-              <Heart className="w-4 h-4" /> Guardar
+            <button 
+              onClick={toggleFavorite}
+              disabled={loadingFavorite}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 font-bold rounded-xl transition-all text-sm ${
+                property.isFavorited 
+                  ? "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100" 
+                  : "bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700"
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${property.isFavorited ? "fill-rose-500 text-rose-600" : ""}`} /> 
+              {property.isFavorited ? "Guardado" : "Guardar"}
             </button>
           </div>
         </div>
@@ -206,7 +217,9 @@ export default function PropertyDetailPage() {
                   {property.showExactAddress ? "Dirección exacta" : "Zona aproximada"}
                 </span>
               </div>
-              <PropertyMap property={property} />
+              <div className="h-96 rounded-3xl overflow-hidden border border-slate-200 z-10 relative shadow-sm">
+                <PropertyMap {...property} />
+              </div>
             </div>
           </div>
 

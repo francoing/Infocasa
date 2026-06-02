@@ -44,11 +44,11 @@ const AppRouter = () => {
             } 
           />
 
-          {/* Rutas Protegidas - Publisher & Admin */}
+          {/* Rutas Protegidas - Owner, Agent & Admin */}
           <Route 
             path="/dashboard" 
             element={
-              <ProtectedRoute allowedRoles={['publisher', 'admin']}>
+              <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
                 <DashboardPage />
               </ProtectedRoute>
             } 
@@ -56,7 +56,7 @@ const AppRouter = () => {
           <Route 
             path="/dashboard/properties/create" 
             element={
-              <ProtectedRoute allowedRoles={['publisher', 'admin']}>
+              <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
                 <CreatePropertyPage />
               </ProtectedRoute>
             } 
@@ -64,7 +64,7 @@ const AppRouter = () => {
           <Route 
             path="/dashboard/properties/edit/:id" 
             element={
-              <ProtectedRoute allowedRoles={['publisher', 'admin']}>
+              <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
                 <EditPropertyPage />
               </ProtectedRoute>
             } 

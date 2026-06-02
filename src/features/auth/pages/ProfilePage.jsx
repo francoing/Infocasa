@@ -105,7 +105,7 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {plans.map(plan => {
-                const isCurrent = currentPlan?.planId === plan.id;
+                const isCurrent = Number(currentPlan?.planId) === Number(plan.id);
                 return (
                   <div 
                     key={plan.id}
@@ -119,7 +119,7 @@ export default function ProfilePage() {
                           <span className="text-slate-400 font-bold text-sm">/ año</span>
                         </div>
                       </div>
-                      {plan.id === 'premium' && (
+                      {(Number(plan.id) === 2 || plan.name?.toLowerCase() === 'premium') && (
                         <div className="p-2 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-600/20">
                           <Crown className="w-5 h-5" />
                         </div>

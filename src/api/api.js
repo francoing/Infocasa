@@ -1,39 +1,85 @@
-// src/api/api.js
+import { useAuthStore } from "../store/useAuthStore";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+
+const getHeaders = (isMultipart = false) => {
+  const headers = {
+    "Accept": "application/json"
+  };
+  if (!isMultipart) {
+    headers["Content-Type"] = "application/json";
+  }
+  const token = useAuthStore.getState().token;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
+const handleResponse = async (res) => {
+  if (!res.ok) {
+    let errorData = null;
+    try {
+      errorData = await res.json();
+    } catch (e) {
+      // Ignore if response body is not JSON
+    }
+    const error = new Error(errorData?.message || `API error: ${res.status}`);
+    error.status = res.status;
+    error.errors = errorData?.errors;
+    throw error;
+  }
+
+  if (res.status === 204) {
+    return null;
+  }
+
+  return res.json();
+};
 
 export const api = {
   get: async (endpoint) => {
-    const res = await fetch(`${API_URL}${endpoint}`);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
   },
 
   post: async (endpoint, data) => {
+    const isMultipart = data instanceof FormData;
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      headers: getHeaders(isMultipart),
+      body: isMultipart ? data : JSON.stringify(data)
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+    return handleResponse(res);
+  },
+
+  put: async (endpoint, data) => {
+    const isMultipart = data instanceof FormData;
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      method: "PUT",
+      headers: getHeaders(isMultipart),
+      body: isMultipart ? data : JSON.stringify(data)
+    });
+    return handleResponse(res);
   },
 
   patch: async (endpoint, data) => {
+    const isMultipart = data instanceof FormData;
     const res = await fetch(`${API_URL}${endpoint}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      headers: getHeaders(isMultipart),
+      body: isMultipart ? data : JSON.stringify(data)
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+    return handleResponse(res);
   },
 
   delete: async (endpoint) => {
     const res = await fetch(`${API_URL}${endpoint}`, {
-      method: "DELETE"
+      method: "DELETE",
+      headers: getHeaders()
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+    return handleResponse(res);
   }
 };

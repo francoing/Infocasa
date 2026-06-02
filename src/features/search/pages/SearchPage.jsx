@@ -20,12 +20,12 @@ export default function SearchPage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [agencies, setAgencies] = useState([]);
 
-  // Fetch publishers (inmobiliarias) on mount
+  // Fetch agencies on mount
   useEffect(() => {
     const fetchAgencies = async () => {
       try {
-        const users = await api.get("/users?role=publisher");
-        setAgencies(users);
+        const res = await api.get("/agencies");
+        setAgencies(res.data || []);
       } catch (err) {
         console.error("Error fetching agencies:", err);
       }
