@@ -49,6 +49,27 @@ export const useDashboardData = () => {
     enabled: !!user
   });
 
+  // Admin Queries
+  const isAdmin = user?.role === 'admin';
+
+  const adminUsersQuery = useQuery({
+    queryKey: ["admin_users"],
+    queryFn: async () => {
+      const res = await api.get("/users");
+      return res.data || [];
+    },
+    enabled: isAdmin
+  });
+
+  const adminPropertiesQuery = useQuery({
+    queryKey: ["admin_properties"],
+    queryFn: async () => {
+      const res = await api.get("/admin/properties");
+      return res.data?.map(p => mapProperty(p)) || [];
+    },
+    enabled: isAdmin
+  });
+
   // Mutación para reducir precio
   const reducePriceMutation = useMutation({
     mutationFn: async ({ id, newPrice }) => {
@@ -94,6 +115,7 @@ export const useDashboardData = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["me_properties"] });
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["admin_properties"] });
       toast.success("Propiedad eliminada con éxito.");
     },
     onError: () => {
@@ -104,6 +126,36 @@ export const useDashboardData = () => {
   const deleteProperty = async (id) => {
     deletePropertyMutation.mutate(id);
   };
+
+  // Mutaciones de Admin
+  const updateUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, active }) => {
+      return api.patch(`/users/${userId}/status`, { active });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_users"] });
+      toast.success("Estado del usuario actualizado.");
+    },
+    onError: () => {
+      toast.error("Error al actualizar usuario.");
+    }
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      return api.delete(`/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_users"] });
+      toast.success("Usuario eliminado.");
+    },
+    onError: () => {
+      toast.error("Error al eliminar usuario.");
+    }
+  });
+
+  const updateUserStatus = (userId, active) => updateUserStatusMutation.mutate({ userId, active });
+  const deleteUser = (userId) => deleteUserMutation.mutate(userId);
 
   // Mutación para cambiar el estado de un lead
   const updateLeadStatusMutation = useMutation({
@@ -139,14 +191,16 @@ export const useDashboardData = () => {
     leadsQuery.isLoading || 
     userPlanQuery.isLoading || 
     plansQuery.isLoading;
-
   return {
     user,
+    isAdmin,
     properties: propertiesQuery.data || [],
     leads: leadsQuery.data || [],
+    adminUsers: adminUsersQuery.data || [],
+    adminProperties: adminPropertiesQuery.data || [],
     userPlan: userPlanQuery.data || null,
     plansList: plansQuery.data || [],
-    loading,
+    loading: loading || adminUsersQuery.isLoading || adminPropertiesQuery.isLoading,
     showCheckout,
     setShowCheckout,
     reductionPercent,
@@ -157,6 +211,8 @@ export const useDashboardData = () => {
     handleReducePrice,
     deleteProperty,
     updateLeadStatus,
-    handleAssignPlan
+    handleAssignPlan,
+    updateUserStatus,
+    deleteUser
   };
 };

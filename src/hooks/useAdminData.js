@@ -25,7 +25,7 @@ export const useAdminData = () => {
   const propertiesQuery = useQuery({
     queryKey: ["admin_properties"],
     queryFn: async () => {
-      const propsRes = await api.get("/properties?per_page=50");
+      const propsRes = await api.get("/admin/properties");
       return (propsRes.data || []).map(p => mapProperty(p));
     }
   });
@@ -44,6 +44,14 @@ export const useAdminData = () => {
         createdAt: l.created_at,
         property: l.property ? mapProperty(l.property) : null
       }));
+    }
+  });
+
+  const usersQuery = useQuery({
+    queryKey: ["admin_users"],
+    queryFn: async () => {
+      const usersRes = await api.get("/users");
+      return usersRes.data || [];
     }
   });
 
@@ -88,7 +96,7 @@ export const useAdminData = () => {
   };
 
   // Filtrado local
-  const users = []; // Placeholder para usuarios, ya que no hay endpoint /users en el backend aún
+  const users = usersQuery.data || [];
   const filteredUsers = users.filter(u =>
     (u.name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(userSearch.toLowerCase())
@@ -108,7 +116,8 @@ export const useAdminData = () => {
   const loading = 
     plansQuery.isLoading || 
     propertiesQuery.isLoading || 
-    leadsQuery.isLoading;
+    leadsQuery.isLoading ||
+    usersQuery.isLoading;
 
   return {
     currentUser,
@@ -130,6 +139,6 @@ export const useAdminData = () => {
     usersCount: users.length,
     propertiesCount: (propertiesQuery.data || []).length,
     leadsCount: (leadsQuery.data || []).length,
-    subscriptionsCount: 0
+    subscriptionsCount: users.filter(u => u.subscription).length
   };
 };

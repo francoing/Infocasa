@@ -51,7 +51,7 @@ export default function AdminLayout({ children }) {
         <div className="px-6 pt-6 border-t border-slate-100 mt-auto">
            <div className="flex items-center gap-4 mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100">
             <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg overflow-hidden">
-              {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user?.name?.charAt(0)}
+              {user?.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" /> : user?.name?.charAt(0)}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-black text-slate-900 truncate">{user?.name || "Usuario Pro"}</p>

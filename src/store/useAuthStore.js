@@ -140,4 +140,36 @@ export const useAuthStore = create((set, get) => ({
       });
     }
   },
+
+  updateProfile: async (data) => {
+    try {
+      const res = await api.put("/me/profile", data);
+      const enriched = enrichUser(res.user);
+      localStorage.setItem("auth_user", JSON.stringify(enriched));
+      set({ user: enriched });
+      return enriched;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  updatePassword: async (data) => {
+    try {
+      await api.put("/me/password", data);
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  updateAvatar: async (formData) => {
+    try {
+      const res = await api.post("/me/avatar", formData);
+      const enriched = enrichUser(res.user);
+      localStorage.setItem("auth_user", JSON.stringify(enriched));
+      set({ user: enriched });
+      return enriched;
+    } catch (err) {
+      throw err;
+    }
+  },
 }));

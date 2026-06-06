@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp } from "lucide-react";
+import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp, Eye, Heart } from "lucide-react";
 import Layout from "@/common/components/Layout";
 import PlanStatusCard from "@/common/components/PlanStatusCard";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
@@ -9,8 +9,11 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 export default function DashboardPage() {
   const {
     user,
+    isAdmin,
     properties,
     leads,
+    adminUsers,
+    adminProperties,
     userPlan,
     plansList,
     loading,
@@ -24,7 +27,9 @@ export default function DashboardPage() {
     handleReducePrice,
     deleteProperty,
     updateLeadStatus,
-    handleAssignPlan
+    handleAssignPlan,
+    updateUserStatus,
+    deleteUser
   } = useDashboardData();
 
   const [activeTab, setActiveTab] = useState("properties");
@@ -99,7 +104,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-8 border-b border-slate-200 mb-8">
+        <div className="flex flex-wrap gap-8 border-b border-slate-200 mb-8">
           <button 
             onClick={() => setActiveTab("properties")}
             className={`pb-4 font-bold transition-all relative ${activeTab === "properties" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
@@ -114,6 +119,24 @@ export default function DashboardPage() {
             Consultas Recibidas
             {activeTab === "leads" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
           </button>
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => setActiveTab("admin_users")}
+                className={`pb-4 font-bold transition-all relative ${activeTab === "admin_users" ? "text-amber-600" : "text-slate-400 hover:text-amber-600"}`}
+              >
+                Gestión de Usuarios
+                {activeTab === "admin_users" && <span className="absolute bottom-0 left-0 w-full h-1 bg-amber-600 rounded-t-full"></span>}
+              </button>
+              <button 
+                onClick={() => setActiveTab("admin_properties")}
+                className={`pb-4 font-bold transition-all relative ${activeTab === "admin_properties" ? "text-amber-600" : "text-slate-400 hover:text-amber-600"}`}
+              >
+                Moderación Propiedades
+                {activeTab === "admin_properties" && <span className="absolute bottom-0 left-0 w-full h-1 bg-amber-600 rounded-t-full"></span>}
+              </button>
+            </>
+          )}
         </div>
 
         {loading ? (
@@ -143,7 +166,17 @@ export default function DashboardPage() {
                           <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
                             <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
                           </p>
-                          <p className="font-black text-slate-900 mt-2">USD {prop.price.toLocaleString()}</p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <p className="font-black text-slate-900">USD {prop.price.toLocaleString()}</p>
+                            <div className="flex items-center gap-3 ml-2 border-l border-slate-200 pl-4">
+                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Visitas">
+                                <Eye className="w-3.5 h-3.5 text-blue-500" /> {prop.viewsCount || 0}
+                              </span>
+                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Favoritos">
+                                <Heart className="w-3.5 h-3.5 text-red-500" /> {prop.favoritesCount || 0}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                           <Link 
@@ -242,6 +275,124 @@ export default function DashboardPage() {
                     <p className="text-slate-500">No tienes propiedades publicadas todavía.</p>
                   </div>
                 )}
+              </div>
+            ) : activeTab === "admin_users" && isAdmin ? (
+              <div className="space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                          <th className="p-4">Usuario</th>
+                          <th className="p-4">Email</th>
+                          <th className="p-4">Rol / Plan</th>
+                          <th className="p-4">Estado</th>
+                          <th className="p-4 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {adminUsers.length > 0 ? adminUsers.map(u => (
+                          <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs overflow-hidden">
+                                  {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" /> : u.name?.charAt(0)}
+                                </div>
+                                <span className="font-bold text-slate-900 text-sm">{u.name}</span>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm text-slate-600">{u.email}</td>
+                            <td className="p-4">
+                              <p className="text-xs font-black uppercase text-slate-700">{u.role || 'User'}</p>
+                              {u.subscription?.plan && (
+                                <p className="text-[10px] text-blue-600 font-bold uppercase">{u.subscription.plan.name}</p>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${u.active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                {u.active ? 'Activo' : 'Bloqueado'}
+                              </span>
+                            </td>
+                            <td className="p-4 text-right space-x-2">
+                              <button 
+                                onClick={() => updateUserStatus(u.id, !u.active)}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${u.active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
+                              >
+                                {u.active ? 'Bloquear' : 'Activar'}
+                              </button>
+                              {user.id !== u.id && (
+                                <button 
+                                  onClick={() => { if(window.confirm('¿Borrar este usuario permanentemente?')) deleteUser(u.id); }}
+                                  className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
+                                >
+                                  Eliminar
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr><td colSpan="5" className="p-8 text-center text-slate-500">No hay usuarios.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === "admin_properties" && isAdmin ? (
+              <div className="space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                          <th className="p-4">Propiedad</th>
+                          <th className="p-4">Publicador</th>
+                          <th className="p-4">Precio</th>
+                          <th className="p-4">Estado</th>
+                          <th className="p-4 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {adminProperties.length > 0 ? adminProperties.map(p => (
+                          <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <img src={p.imageUrl} className="w-12 h-10 rounded-lg object-cover" />
+                                <div>
+                                  <Link to={`/property/${p.id}`} className="font-bold text-slate-900 text-sm hover:text-blue-600 transition-colors line-clamp-1">{p.title}</Link>
+                                  <p className="text-[10px] text-slate-500 font-medium truncate w-32">{p.location}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-xs font-bold text-slate-700">{p.owner?.name || 'Desconocido'}</td>
+                            <td className="p-4 text-sm font-black text-slate-900">USD {p.price.toLocaleString()}</td>
+                            <td className="p-4">
+                              <span className="text-[10px] px-2 py-1 rounded-full font-bold uppercase bg-blue-100 text-blue-700">
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className="p-4 text-right space-x-2">
+                              <Link 
+                                to={`/property/${p.id}`}
+                                className="inline-block text-xs font-bold px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all"
+                              >
+                                Ver
+                              </Link>
+                              <button 
+                                onClick={() => { if(window.confirm('¿Dar de baja esta propiedad?')) deleteProperty(p.id); }}
+                                className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
+                              >
+                                Eliminar
+                              </button>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr><td colSpan="5" className="p-8 text-center text-slate-500">No hay propiedades publicadas.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">

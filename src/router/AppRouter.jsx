@@ -13,7 +13,7 @@ const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPa
 const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'));
 const CreatePropertyPage = lazy(() => import('../features/property/pages/CreatePropertyPage'));
 const EditPropertyPage = lazy(() => import('../features/property/pages/EditPropertyPage'));
-const ProfilePage = lazy(() => import('../features/auth/pages/ProfilePage'));
+const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
