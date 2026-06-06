@@ -51,7 +51,7 @@ export default function PropertyDetailPage() {
 
   if (!property) return null;
 
-  const images = property.gallery?.length > 0 ? property.gallery : [property.imageUrl];
+  const images = property.images?.length > 0 ? property.images.map(img => img.url || img) : [property.imageUrl];
 
   return (
     <Layout>
