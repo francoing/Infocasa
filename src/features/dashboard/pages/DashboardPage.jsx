@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp, Eye, Heart } from "lucide-react";
+import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp, Eye, Heart, Crown, Check } from "lucide-react";
 import Layout from "@/common/components/Layout";
 import PlanStatusCard from "@/common/components/PlanStatusCard";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
@@ -34,6 +34,14 @@ export default function DashboardPage() {
 
   const [activeTab, setActiveTab] = useState("properties");
   const [expandedId, setExpandedId] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showPlanPicker, setShowPlanPicker] = useState(false);
+
+  const openCheckout = (plan) => {
+    setSelectedPlan(plan);
+    setShowPlanPicker(false);
+    setShowCheckout(true);
+  };
 
   const handleDeletePropertyConfirm = (id) => {
     if (window.confirm("¿Estás seguro de eliminar esta propiedad?")) {
@@ -65,7 +73,7 @@ export default function DashboardPage() {
                 plan={userPlan} 
                 usage={properties.length} 
                 limit={userPlan.details.limit} 
-                onUpgrade={() => setShowCheckout(true)}
+                onUpgrade={() => setShowPlanPicker(true)}
               />
             ) : (
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
@@ -73,7 +81,7 @@ export default function DashboardPage() {
                 <div className="text-lg font-black text-red-500 uppercase">Sin Plan Activo</div>
                 <p className="text-slate-500 text-xs font-medium leading-relaxed">Necesitas un plan de publicación activo para poder cargar inmuebles y recibir consultas.</p>
                 <button 
-                  onClick={() => setShowCheckout(true)} 
+                  onClick={() => setShowPlanPicker(true)} 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md text-xs active:scale-95"
                 >
                   Activar Plan ahora
@@ -460,9 +468,56 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {showCheckout && (
+      {showPlanPicker && plansList.length > 0 && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowPlanPicker(false); }}>
+          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-8">
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Elegí tu Plan</h3>
+            <p className="text-slate-500 font-medium mb-8">Seleccioná el plan que mejor se adapte a tus necesidades.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {plansList.map(plan => {
+                const isCurrent = userPlan?.planId === plan.id;
+                return (
+                  <div key={plan.id} className={`p-6 rounded-2xl border-2 transition-all flex flex-col ${isCurrent ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-blue-200 bg-white'}`}>
+                    <h4 className="text-lg font-black text-slate-900 uppercase mb-1">{plan.name}</h4>
+                    <div className="flex items-baseline gap-1 mb-4">
+                      <span className="text-2xl font-black text-slate-900">${plan.price}</span>
+                      <span className="text-xs text-slate-400 font-bold">/ año</span>
+                    </div>
+                    <ul className="space-y-2 mb-6 flex-1">
+                      {plan.features?.map((f, i) => (
+                        <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                          <Check className="w-3 h-3 text-green-500 flex-shrink-0" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      disabled={isCurrent}
+                      onClick={() => openCheckout(plan)}
+                      className={`w-full py-3 rounded-xl font-bold text-xs transition-all ${
+                        isCurrent
+                          ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                          : 'bg-slate-900 text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      {isCurrent ? 'Plan Actual' : 'Seleccionar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setShowPlanPicker(false)}
+              className="mt-6 w-full py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showCheckout && selectedPlan && (
         <CheckoutModal 
-          plan={plansList.find(p => p.name?.toLowerCase() === 'premium') || plansList[1] || plansList[0]}
+          plan={selectedPlan}
           onConfirm={(planId) => handleAssignPlan(planId)}
           onCancel={() => setShowCheckout(false)}
         />
