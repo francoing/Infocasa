@@ -223,11 +223,12 @@ export const useDashboardData = () => {
 
   const handleAssignPlan = async (planId) => {
     try {
-      await assignPlan(user.id, planId);
+      await assignPlan(planId);
       setShowCheckout(false);
       toast.success("Plan actualizado con éxito.");
     } catch (err) {
-      toast.error("Error al procesar el pago del plan.");
+      toast.error(err.message || "Error al procesar el pago del plan.");
+      throw err;
     }
   };
 
