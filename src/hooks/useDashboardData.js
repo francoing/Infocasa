@@ -18,21 +18,45 @@ export const useDashboardData = () => {
   const [reductionCustom, setReductionCustom] = useState({});
   const [reducingId, setReducingId] = useState(null);
 
+  // Estados de filtros para Leads
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
+  // Estados de filtros para Propiedades (dueño/inmobiliaria)
+  const [propSearch, setPropSearch] = useState("");
+  const [propStatus, setPropStatus] = useState("");
+  const [propOperation, setPropOperation] = useState("");
+
   // Queries con React Query
   const plansQuery = usePlansQuery();
   const userPlanQuery = useUserPlanQuery({ enabled: !!user });
 
   const propertiesQuery = useQuery({
-    queryKey: ["me_properties"],
-    queryFn: () => getPropertiesByUser(user?.id),
-    select: (data) => data.map(p => mapProperty(p)),
+    queryKey: ["me_properties", propSearch, propStatus, propOperation],
+    queryFn: () => getPropertiesByUser(user?.id, {
+      search: propSearch,
+      status: propStatus,
+      operation: propOperation
+    }),
     enabled: !!user
   });
 
   const leadsQuery = useQuery({
-    queryKey: ["leads"],
+    queryKey: ["leads", filterStatus, filterDateFrom, filterDateTo],
     queryFn: async () => {
-      const res = await api.get("/leads");
+      const params = {};
+      if (filterStatus) {
+        params.status = filterStatus;
+      }
+      if (filterDateFrom) {
+        params.date_from = filterDateFrom;
+      }
+      if (filterDateTo) {
+        params.date_to = filterDateTo;
+      }
+
+      const res = await api.get("/leads", { params });
       return res.data || [];
     },
     select: (data) => data.map(l => ({
@@ -44,7 +68,8 @@ export const useDashboardData = () => {
       status: l.status === "pending" ? "Pendiente" : l.status === "contacted" ? "Contactado" : "Cerrado",
       statusRaw: l.status,
       createdAt: l.created_at,
-      property: mapProperty(l.property)
+      property: mapProperty(l.property),
+      replies: l.replies || []
     })),
     enabled: !!user
   });
@@ -176,6 +201,26 @@ export const useDashboardData = () => {
     updateLeadStatusMutation.mutate({ leadId, newStatus });
   };
 
+  // Mutación para responder a un lead
+  const replyToLeadMutation = useMutation({
+    mutationFn: async ({ leadId, body }) => {
+      const res = await api.post(`/leads/${leadId}/reply`, { body });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast.success("Respuesta enviada con éxito.");
+    },
+    onError: (err) => {
+      console.error("Error replying to lead:", err);
+      toast.error("Error al enviar la respuesta.");
+    }
+  });
+
+  const replyToLead = async (leadId, body) => {
+    return replyToLeadMutation.mutateAsync({ leadId, body });
+  };
+
   const handleAssignPlan = async (planId) => {
     try {
       await assignPlan(user.id, planId);
@@ -211,6 +256,20 @@ export const useDashboardData = () => {
     handleReducePrice,
     deleteProperty,
     updateLeadStatus,
+    replyToLead,
+    isReplying: replyToLeadMutation.isPending,
+    filterStatus,
+    setFilterStatus,
+    filterDateFrom,
+    setFilterDateFrom,
+    filterDateTo,
+    setFilterDateTo,
+    propSearch,
+    setPropSearch,
+    propStatus,
+    setPropStatus,
+    propOperation,
+    setPropOperation,
     handleAssignPlan,
     updateUserStatus,
     deleteUser
