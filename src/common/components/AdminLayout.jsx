@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import Logo from "./Logo";
 
 export default function AdminLayout({ children }) {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isPublisher } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -34,15 +34,13 @@ export default function AdminLayout({ children }) {
             active={location.pathname === '/admin' || location.pathname === '/dashboard'} 
           />
           
-          {!isAdmin && (
-            <>
-              <SidebarLink 
-                to="/dashboard/properties/create" 
-                icon={<PlusCircle />} 
-                label="Publicar" 
-                active={location.pathname === '/dashboard/properties/create'} 
-              />
-            </>
+          {(isAdmin || isPublisher) && (
+            <SidebarLink 
+              to="/dashboard/properties/create" 
+              icon={<PlusCircle />} 
+              label="Publicar" 
+              active={location.pathname === '/dashboard/properties/create'} 
+            />
           )}
 
           <SidebarLink to="/search" icon={<Search />} label="Marketplace" />
