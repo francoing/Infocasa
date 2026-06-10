@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp, Eye, Heart, Crown, Check } from "lucide-react";
+import { Home, MessageSquare, Plus, Edit, Trash2, ExternalLink, Loader2, MapPin, Calendar, TrendingDown, Percent, ChevronDown, ChevronUp, Eye, Heart, Send, Search, Check } from "lucide-react";
 import Layout from "@/common/components/Layout";
 import PlanStatusCard from "@/common/components/PlanStatusCard";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
@@ -10,6 +10,10 @@ export default function DashboardPage() {
   const {
     user,
     isAdmin,
+    isBuyer,
+    favorites,
+    sentLeads,
+    removeFavorite,
     properties,
     leads,
     adminUsers,
@@ -27,13 +31,69 @@ export default function DashboardPage() {
     handleReducePrice,
     deleteProperty,
     updateLeadStatus,
+    replyToLead,
+    isReplying,
+    filterStatus,
+    setFilterStatus,
+    filterDateFrom,
+    setFilterDateFrom,
+    filterDateTo,
+    setFilterDateTo,
+    propSearch,
+    setPropSearch,
+    propStatus,
+    setPropStatus,
+    propOperation,
+    setPropOperation,
     handleAssignPlan,
     updateUserStatus,
     deleteUser
   } = useDashboardData();
 
   const [activeTab, setActiveTab] = useState("properties");
+
+  React.useEffect(() => {
+    if (isBuyer) {
+      setActiveTab("favorites");
+    } else {
+      setActiveTab("properties");
+    }
+  }, [isBuyer]);
+
   const [expandedId, setExpandedId] = useState(null);
+  const [replyingLeadId, setReplyingLeadId] = useState(null);
+  const [replyBody, setReplyBody] = useState("");
+
+  const [localSearch, setLocalSearch] = useState("");
+  const [localStatus, setLocalStatus] = useState("");
+  const [localOperation, setLocalOperation] = useState("");
+
+  const handleApplyPropertyFilters = () => {
+    setPropSearch(localSearch);
+    setPropStatus(localStatus);
+    setPropOperation(localOperation);
+  };
+
+  const handleClearPropertyFilters = () => {
+    setLocalSearch("");
+    setLocalStatus("");
+    setLocalOperation("");
+    setPropSearch("");
+    setPropStatus("");
+    setPropOperation("");
+  };
+
+  const handleSendReply = async (leadId) => {
+    if (!replyBody.trim()) return;
+    try {
+      await replyToLead(leadId, replyBody);
+      setReplyBody("");
+      setReplyingLeadId(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showPlanPicker, setShowPlanPicker] = useState(false);
 
@@ -55,94 +115,144 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Panel de Control</h1>
-            <p className="text-slate-500">Bienvenido, {user?.name}. Gestiona tus publicaciones y contactos.</p>
+            <p className="text-slate-500">
+              {isBuyer
+                ? `Bienvenido, ${user?.name}. Consulta tus favoritos y consultas.`
+                : `Bienvenido, ${user?.name}. Gestiona tus publicaciones y contactos.`}
+            </p>
           </div>
-          <Link 
-            to="/dashboard/properties/create" 
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
-          >
-            <Plus className="w-5 h-5" /> Nueva Propiedad
-          </Link>
+          {!isBuyer && (
+            <Link
+              to="/dashboard/properties/create"
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
+            >
+              <Plus className="w-5 h-5" /> Nueva Propiedad
+            </Link>
+          )}
         </div>
 
         {/* Plan Status and Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
-          <div className="lg:col-span-4">
-            {userPlan ? (
-              <PlanStatusCard 
-                plan={userPlan} 
-                usage={properties.length} 
-                limit={userPlan.details.limit} 
-                onUpgrade={() => setShowPlanPicker(true)}
-              />
-            ) : (
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tu Plan Actual</h4>
-                <div className="text-lg font-black text-red-500 uppercase">Sin Plan Activo</div>
-                <p className="text-slate-500 text-xs font-medium leading-relaxed">Necesitas un plan de publicación activo para poder cargar inmuebles y recibir consultas.</p>
-                <button 
-                  onClick={() => setShowPlanPicker(true)} 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md text-xs active:scale-95"
-                >
-                  Activar Plan ahora
-                </button>
+        {isBuyer ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl">
+                <Heart className="w-8 h-8 fill-rose-500 text-rose-600" />
               </div>
-            )}
-          </div>
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                  <Home className="w-6 h-6" />
-                </div>
-                <span className="text-slate-500 font-medium">Propiedades Totales</span>
+              <div>
+                <span className="text-slate-500 font-medium block">Favoritos Guardados</span>
+                <div className="text-3xl font-black text-slate-900 mt-1">{favorites.length}</div>
               </div>
-              <div className="text-3xl font-bold text-slate-900">{properties.length}</div>
             </div>
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-green-50 text-green-600 rounded-xl">
-                  <MessageSquare className="w-6 h-6" />
-                </div>
-                <span className="text-slate-500 font-medium">Consultas Recibidas</span>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl">
+                <MessageSquare className="w-8 h-8" />
               </div>
-              <div className="text-3xl font-bold text-slate-900">{leads.length}</div>
+              <div>
+                <span className="text-slate-500 font-medium block">Consultas Realizadas</span>
+                <div className="text-3xl font-black text-slate-900 mt-1">{sentLeads.length}</div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+            <div className="lg:col-span-4">
+              {userPlan ? (
+                <PlanStatusCard
+                  plan={userPlan}
+                  usage={properties.length}
+                  limit={userPlan.details.limit}
+                  onUpgrade={() => setShowPlanPicker(true)}
+                />
+              ) : (
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                  <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tu Plan Actual</h4>
+                  <div className="text-lg font-black text-red-500 uppercase">Sin Plan Activo</div>
+                  <p className="text-slate-500 text-xs font-medium leading-relaxed">Necesitas un plan de publicación activo para poder cargar inmuebles y recibir consultas.</p>
+                  <button
+                    onClick={() => setShowPlanPicker(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md text-xs active:scale-95"
+                  >
+                    Activar Plan ahora
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                    <Home className="w-6 h-6" />
+                  </div>
+                  <span className="text-slate-500 font-medium">Propiedades Totales</span>
+                </div>
+                <div className="text-3xl font-bold text-slate-900">{properties.length}</div>
+              </div>
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-green-50 text-green-600 rounded-xl">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <span className="text-slate-500 font-medium">Consultas Recibidas</span>
+                </div>
+                <div className="text-3xl font-bold text-slate-900">{leads.length}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-8 border-b border-slate-200 mb-8">
-          <button 
-            onClick={() => setActiveTab("properties")}
-            className={`pb-4 font-bold transition-all relative ${activeTab === "properties" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
-          >
-            Mis Propiedades
-            {activeTab === "properties" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
-          </button>
-          <button 
-            onClick={() => setActiveTab("leads")}
-            className={`pb-4 font-bold transition-all relative ${activeTab === "leads" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
-          >
-            Consultas Recibidas
-            {activeTab === "leads" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
-          </button>
-          {isAdmin && (
+          {isBuyer ? (
             <>
-              <button 
-                onClick={() => setActiveTab("admin_users")}
-                className={`pb-4 font-bold transition-all relative ${activeTab === "admin_users" ? "text-amber-600" : "text-slate-400 hover:text-amber-600"}`}
+              <button
+                onClick={() => setActiveTab("favorites")}
+                className={`pb-4 font-bold transition-all relative ${activeTab === "favorites" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
               >
-                Gestión de Usuarios
-                {activeTab === "admin_users" && <span className="absolute bottom-0 left-0 w-full h-1 bg-amber-600 rounded-t-full"></span>}
+                Mis Favoritos
+                {activeTab === "favorites" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
               </button>
-              <button 
-                onClick={() => setActiveTab("admin_properties")}
-                className={`pb-4 font-bold transition-all relative ${activeTab === "admin_properties" ? "text-amber-600" : "text-slate-400 hover:text-amber-600"}`}
+              <button
+                onClick={() => setActiveTab("sent_leads")}
+                className={`pb-4 font-bold transition-all relative ${activeTab === "sent_leads" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
               >
-                Moderación Propiedades
-                {activeTab === "admin_properties" && <span className="absolute bottom-0 left-0 w-full h-1 bg-amber-600 rounded-t-full"></span>}
+                Mis Consultas
+                {activeTab === "sent_leads" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
               </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setActiveTab("properties")}
+                className={`pb-4 font-bold transition-all relative ${activeTab === "properties" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+              >
+                Mis Propiedades
+                {activeTab === "properties" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
+              </button>
+              <button
+                onClick={() => setActiveTab("leads")}
+                className={`pb-4 font-bold transition-all relative ${activeTab === "leads" ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+              >
+                Consultas Recibidas
+                {activeTab === "leads" && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full"></span>}
+              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => setActiveTab("admin_users")}
+                    className={`pb-4 font-bold transition-all relative ${activeTab === "admin_users" ? "text-amber-600" : "text-slate-400 hover:text-amber-600"}`}
+                  >
+                    Gestión de Usuarios
+                    {activeTab === "admin_users" && <span className="absolute bottom-0 left-0 w-full h-1 bg-amber-600 rounded-t-full"></span>}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("admin_properties")}
+                    className={`pb-4 font-bold transition-all relative ${activeTab === "admin_properties" ? "text-amber-600" : "text-slate-400 hover:text-amber-600"}`}
+                  >
+                    Moderación Propiedades
+                    {activeTab === "admin_properties" && <span className="absolute bottom-0 left-0 w-full h-1 bg-amber-600 rounded-t-full"></span>}
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -153,136 +263,366 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div>
-            {activeTab === "properties" ? (
-              <div className="grid grid-cols-1 gap-4">
-                {properties.length > 0 ? (
-                  properties.map(prop => (
-                    <div key={prop.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                      <div className="p-4 flex flex-col md:flex-row items-center gap-6">
-                        <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden flex-shrink-0">
-                          <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-slate-900 text-lg truncate">{prop.title}</h3>
-                            {prop.priceHistory?.length > 0 && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 bg-green-50 text-green-600 rounded-full uppercase whitespace-nowrap">
-                                Precio reducido
-                              </span>
-                            )}
+            {activeTab === "favorites" ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4">
+                  {favorites && favorites.length > 0 ? (
+                    favorites.map(prop => (
+                      <div key={prop.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-4 flex flex-col md:flex-row items-center gap-6">
+                          <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
                           </div>
-                          <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
-                            <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2">
-                            <p className="font-black text-slate-900">USD {prop.price.toLocaleString()}</p>
-                            <div className="flex items-center gap-3 ml-2 border-l border-slate-200 pl-4">
-                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Visitas">
-                                <Eye className="w-3.5 h-3.5 text-blue-500" /> {prop.viewsCount || 0}
-                              </span>
-                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Favoritos">
-                                <Heart className="w-3.5 h-3.5 text-red-500" /> {prop.favoritesCount || 0}
-                              </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-slate-900 text-lg truncate">{prop.title}</h3>
+                            </div>
+                            <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
+                              <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <p className="font-black text-slate-900">USD {prop.price.toLocaleString()}</p>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                          <Link 
-                            to={`/property/${prop.id}`}
-                            className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                            title="Ver publicación"
-                            target="_blank"
-                          >
-                            <ExternalLink className="w-5 h-5" />
-                          </Link>
-                          <Link 
-                            to={`/dashboard/properties/edit/${prop.id}`}
-                            className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                            title="Editar"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </Link>
-                          <button 
-                            onClick={() => handleDeletePropertyConfirm(prop.id)}
-                            className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                          <button 
-                            onClick={() => setExpandedId(expandedId === prop.id ? null : prop.id)}
-                            className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
-                            title="Ajustar Precio"
-                          >
-                            {expandedId === prop.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </button>
+                          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                            <Link
+                              to={`/property/${prop.id}`}
+                              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
+                              target="_blank"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              Ver Propiedad
+                            </Link>
+                            <button
+                              onClick={() => removeFavorite(prop.id)}
+                              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
+                              title="Quitar de Favoritos"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                      <p className="text-slate-500">No tienes propiedades favoritas guardadas todavía.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : activeTab === "sent_leads" ? (
+              <div className="space-y-6">
+                {/* Filtros de Leads */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+                  <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</label>
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white cursor-pointer"
+                      >
+                        <option value="">Todos los estados</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="contacted">Contactado</option>
+                        <option value="closed">Cerrado</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Desde</label>
+                      <input
+                        type="date"
+                        value={filterDateFrom}
+                        onChange={(e) => setFilterDateFrom(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Hasta</label>
+                      <input
+                        type="date"
+                        value={filterDateTo}
+                        onChange={(e) => setFilterDateTo(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white"
+                      />
+                    </div>
+                  </div>
+                  {(filterStatus || filterDateFrom || filterDateTo) && (
+                    <button
+                      onClick={() => {
+                        setFilterStatus("");
+                        setFilterDateFrom("");
+                        setFilterDateTo("");
+                      }}
+                      className="w-full md:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-all active:scale-95"
+                    >
+                      Limpiar Filtros
+                    </button>
+                  )}
+                </div>
 
-                      {expandedId === prop.id && (
-                        <div className="bg-slate-50/50 p-6 border-t border-slate-100 flex flex-col md:flex-row justify-between gap-6">
-                          <div className="flex-1">
-                            <h4 className="font-bold text-slate-900 text-sm mb-1">Ajustar Precio (Reducción Directa)</h4>
-                            <p className="text-slate-500 text-xs">Aplica una reducción porcentual al valor de venta y registra un badge visual de descuento en la publicación.</p>
-                            {prop.priceHistory?.length > 0 && (
-                              <div className="mt-3 space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Historial de rebajas:</p>
-                                {prop.priceHistory.map((h, i) => (
-                                  <p key={i} className="text-xs font-semibold text-green-600">
-                                    Rebaja del {h.percentage}% (USD {h.oldPrice.toLocaleString()} → USD {h.newPrice.toLocaleString()}) el {new Date(h.date).toLocaleDateString()}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 flex-shrink-0">
-                            <div className="flex flex-col gap-1.5">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descuento</span>
-                              <div className="flex gap-2">
-                                {[5, 10, 15].map(pct => (
-                                  <button
-                                    key={pct}
-                                    onClick={() => setReductionPercent(pct)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${reductionPercent === pct && !reductionCustom[prop.id] ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'}`}
-                                  >
-                                    {pct}%
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Otro % / Aplicar</span>
-                              <div className="flex items-center gap-2">
-                                <div className="relative w-28">
-                                  <input 
-                                    type="number"
-                                    placeholder="% personalizado"
-                                    value={reductionCustom[prop.id] || ""}
-                                    onChange={(e) => setReductionCustom(prev => ({ ...prev, [prop.id]: e.target.value }))}
-                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-amber-600 outline-none text-xs font-bold"
-                                  />
-                                  <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                {sentLeads && sentLeads.length > 0 ? (
+                  sentLeads.map(lead => (
+                    <div key={lead.id} className="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-all space-y-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-base">
+                            Consulta enviada a: <span className="text-blue-600">{lead.publisher?.name || 'Vendedor/Inmobiliaria'}</span>
+                          </h4>
+                          {lead.property && (
+                            <p className="text-xs text-slate-400 font-bold mt-1.5 uppercase tracking-wider">
+                              Inmueble: <Link to={`/property/${lead.property.id}`} className="text-blue-600 hover:underline">{lead.property.title}</Link>
+                            </p>
+                          )}
+                        </div>
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border ${lead.statusRaw === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                          lead.statusRaw === 'contacted' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                            lead.statusRaw === 'closed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              'bg-slate-50 text-slate-500 border-slate-100'
+                          }`}>
+                          {lead.status}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Tu Mensaje</span>
+                        <p className="text-slate-600 text-sm italic bg-slate-50/50 p-4 rounded-xl border border-slate-100 leading-relaxed">
+                          "{lead.message}"
+                        </p>
+                      </div>
+
+                      {/* Reply History */}
+                      {lead.replies && lead.replies.length > 0 ? (
+                        <div className="space-y-3 pt-3 border-t border-slate-100">
+                          <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Respuestas recibidas</h5>
+                          <div className="space-y-2.5">
+                            {lead.replies.map(reply => (
+                              <div key={reply.id} className="bg-blue-50/30 p-3.5 rounded-xl border border-blue-100/50 text-xs">
+                                <div className="flex justify-between items-center mb-1.5">
+                                  <span className="font-bold text-blue-800">{reply.user?.name || 'Vendedor/Inmobiliaria'}</span>
+                                  <span className="text-slate-400 text-[10px] font-medium">
+                                    {new Date(reply.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+                                  </span>
                                 </div>
-                                <button
-                                  onClick={() => handleReducePrice(prop)}
-                                  disabled={reducingId === prop.id || (!reductionCustom[prop.id] && !reductionPercent)}
-                                  className="px-5 py-2 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-1"
-                                >
-                                  {reducingId === prop.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingDown className="w-3 h-3" />}
-                                  Aplicar
-                                </button>
+                                <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{reply.body}</p>
                               </div>
-                            </div>
+                            ))}
                           </div>
                         </div>
+                      ) : (
+                        <div className="pt-3 border-t border-slate-100 text-xs text-slate-400 font-semibold italic">
+                          Aún no hay respuestas de la inmobiliaria o vendedor para esta consulta.
+                        </div>
                       )}
+
+                      <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          Enviado el: {new Date(lead.createdAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    <p className="text-slate-500">No tienes propiedades publicadas todavía.</p>
+                    <p className="text-slate-500">No has enviado ninguna consulta con los filtros seleccionados.</p>
                   </div>
                 )}
+              </div>
+            ) : activeTab === "properties" ? (
+              <div className="space-y-6">
+                {/* Filtros de Propiedades */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+                  <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Buscar</label>
+                      <input
+                        type="text"
+                        placeholder="Buscar por título, ubicación..."
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Operación</label>
+                      <select
+                        value={localOperation}
+                        onChange={(e) => setLocalOperation(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white cursor-pointer"
+                      >
+                        <option value="">Todas</option>
+                        <option value="sale">Venta</option>
+                        <option value="rent">Alquiler</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</label>
+                      <select
+                        value={localStatus}
+                        onChange={(e) => setLocalStatus(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white cursor-pointer"
+                      >
+                        <option value="">Todos</option>
+                        <option value="published">Publicado</option>
+                        <option value="draft">Borrador</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 w-full md:w-auto">
+                    <button
+                      onClick={handleApplyPropertyFilters}
+                      className="flex-1 md:flex-initial px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/10"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      Buscar
+                    </button>
+                    {(propSearch || propOperation || propStatus) && (
+                      <button
+                        onClick={handleClearPropertyFilters}
+                        className="flex-1 md:flex-initial px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-all active:scale-95"
+                      >
+                        Limpiar Filtros
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {properties.length > 0 ? (
+                    properties.map(prop => (
+                      <div key={prop.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-4 flex flex-col md:flex-row items-center gap-6">
+                          <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-slate-900 text-lg truncate">{prop.title}</h3>
+                              {prop.priceHistory?.length > 0 && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 bg-green-50 text-green-600 rounded-full uppercase whitespace-nowrap">
+                                  Precio reducido
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
+                              <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <p className="font-black text-slate-900">USD {prop.price.toLocaleString()}</p>
+                              <div className="flex items-center gap-3 ml-2 border-l border-slate-200 pl-4">
+                                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Visitas">
+                                  <Eye className="w-3.5 h-3.5 text-blue-500" /> {prop.viewsCount || 0}
+                                </span>
+                                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Favoritos">
+                                  <Heart className="w-3.5 h-3.5 text-red-500" /> {prop.favoritesCount || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                            <Link
+                              to={`/property/${prop.id}`}
+                              className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                              title="Ver publicación"
+                              target="_blank"
+                            >
+                              <ExternalLink className="w-5 h-5" />
+                            </Link>
+                            <Link
+                              to={`/dashboard/properties/edit/${prop.id}`}
+                              className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                              title="Editar"
+                            >
+                              <Edit className="w-5 h-5" />
+                            </Link>
+                            <button
+                              onClick={() => handleDeletePropertyConfirm(prop.id)}
+                              className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => setExpandedId(expandedId === prop.id ? null : prop.id)}
+                              className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                              title="Ajustar Precio"
+                            >
+                              {expandedId === prop.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {expandedId === prop.id && (
+                          <div className="bg-slate-50/50 p-6 border-t border-slate-100 flex flex-col md:flex-row justify-between gap-6">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-slate-900 text-sm mb-1">Ajustar Precio (Reducción Directa)</h4>
+                              <p className="text-slate-500 text-xs">Aplica una reducción porcentual al valor de venta y registra un badge visual de descuento en la publicación.</p>
+                              {prop.priceHistory?.length > 0 && (
+                                <div className="mt-3 space-y-1">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Historial de rebajas:</p>
+                                  {prop.priceHistory.map((h, i) => (
+                                    <p key={i} className="text-xs font-semibold text-green-600">
+                                      Rebaja del {h.percentage}% (USD {h.oldPrice.toLocaleString()} → USD {h.newPrice.toLocaleString()}) el {new Date(h.date).toLocaleDateString()}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 flex-shrink-0">
+                              <div className="flex flex-col gap-1.5">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Descuento</span>
+                                <div className="flex gap-2">
+                                  {[5, 10, 15].map(pct => (
+                                    <button
+                                      key={pct}
+                                      onClick={() => setReductionPercent(pct)}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${reductionPercent === pct && !reductionCustom[prop.id] ? 'bg-amber-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                                    >
+                                      {pct}%
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Otro % / Aplicar</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-28">
+                                    <input
+                                      type="number"
+                                      placeholder="% personalizado"
+                                      value={reductionCustom[prop.id] || ""}
+                                      onChange={(e) => setReductionCustom(prev => ({ ...prev, [prop.id]: e.target.value }))}
+                                      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-amber-600 outline-none text-xs font-bold"
+                                    />
+                                    <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                                  </div>
+                                  <button
+                                    onClick={() => handleReducePrice(prop)}
+                                    disabled={reducingId === prop.id || (!reductionCustom[prop.id] && !reductionPercent)}
+                                    className="px-5 py-2 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-1"
+                                  >
+                                    {reducingId === prop.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingDown className="w-3 h-3" />}
+                                    Aplicar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                      <p className="text-slate-500">
+                        {propSearch || propOperation || propStatus
+                          ? "No se encontraron propiedades con los filtros seleccionados."
+                          : "No tienes propiedades publicadas todavía."}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : activeTab === "admin_users" && isAdmin ? (
               <div className="space-y-4">
@@ -322,15 +662,15 @@ export default function DashboardPage() {
                               </span>
                             </td>
                             <td className="p-4 text-right space-x-2">
-                              <button 
+                              <button
                                 onClick={() => updateUserStatus(u.id, !u.active)}
                                 className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${u.active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
                               >
                                 {u.active ? 'Bloquear' : 'Activar'}
                               </button>
                               {user.id !== u.id && (
-                                <button 
-                                  onClick={() => { if(window.confirm('¿Borrar este usuario permanentemente?')) deleteUser(u.id); }}
+                                <button
+                                  onClick={() => { if (window.confirm('¿Borrar este usuario permanentemente?')) deleteUser(u.id); }}
                                   className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
                                 >
                                   Eliminar
@@ -380,14 +720,14 @@ export default function DashboardPage() {
                               </span>
                             </td>
                             <td className="p-4 text-right space-x-2">
-                              <Link 
+                              <Link
                                 to={`/property/${p.id}`}
                                 className="inline-block text-xs font-bold px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all"
                               >
                                 Ver
                               </Link>
-                              <button 
-                                onClick={() => { if(window.confirm('¿Dar de baja esta propiedad?')) deleteProperty(p.id); }}
+                              <button
+                                onClick={() => { if (window.confirm('¿Dar de baja esta propiedad?')) deleteProperty(p.id); }}
                                 className="text-xs font-bold px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
                               >
                                 Eliminar
@@ -402,8 +742,57 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : activeTab === "leads" ? (
               <div className="space-y-6">
+                {/* Leads Filtering Bar */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+                  <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</label>
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white cursor-pointer"
+                      >
+                        <option value="">Todos los estados</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="contacted">Contactado</option>
+                        <option value="closed">Cerrado</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Desde</label>
+                      <input
+                        type="date"
+                        value={filterDateFrom}
+                        onChange={(e) => setFilterDateFrom(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Hasta</label>
+                      <input
+                        type="date"
+                        value={filterDateTo}
+                        onChange={(e) => setFilterDateTo(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none text-xs font-bold text-slate-700 bg-white"
+                      />
+                    </div>
+                  </div>
+                  {(filterStatus || filterDateFrom || filterDateTo) && (
+                    <button
+                      onClick={() => {
+                        setFilterStatus("");
+                        setFilterDateFrom("");
+                        setFilterDateTo("");
+                      }}
+                      className="w-full md:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-all active:scale-95"
+                    >
+                      Limpiar Filtros
+                    </button>
+                  )}
+                </div>
+
                 {leads.length > 0 ? (
                   leads.map(lead => (
                     <div key={lead.id} className="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-all space-y-4">
@@ -418,27 +807,83 @@ export default function DashboardPage() {
                             </p>
                           )}
                         </div>
-                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border ${
-                          lead.statusRaw === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border ${lead.statusRaw === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                           lead.statusRaw === 'contacted' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                          lead.statusRaw === 'closed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                          'bg-slate-50 text-slate-500 border-slate-100'
-                        }`}>
+                            lead.statusRaw === 'closed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              'bg-slate-50 text-slate-500 border-slate-100'
+                          }`}>
                           {lead.status}
                         </span>
                       </div>
                       <p className="text-slate-600 text-sm italic bg-slate-50/50 p-4 rounded-xl border border-slate-100 leading-relaxed">
                         "{lead.message}"
                       </p>
+
+                      {/* Reply History */}
+                      {lead.replies && lead.replies.length > 0 && (
+                        <div className="space-y-3 pt-3 border-t border-slate-100">
+                          <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Historial de respuestas</h5>
+                          <div className="space-y-2.5">
+                            {lead.replies.map(reply => (
+                              <div key={reply.id} className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100 text-xs">
+                                <div className="flex justify-between items-center mb-1.5">
+                                  <span className="font-bold text-slate-700">{reply.user?.name || 'Propietario'}</span>
+                                  <span className="text-slate-400 text-[10px] font-medium">
+                                    {new Date(reply.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+                                  </span>
+                                </div>
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{reply.body}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inline Reply Form */}
+                      {replyingLeadId === lead.id && (
+                        <div className="space-y-3 pt-3 border-t border-slate-100">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Responder a {lead.name}</label>
+                            <textarea
+                              rows={3}
+                              value={replyBody}
+                              onChange={(e) => setReplyBody(e.target.value)}
+                              placeholder="Escribe tu respuesta aquí. Se le enviará automáticamente un correo electrónico con tu mensaje."
+                              className="w-full p-3.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-sm resize-none font-medium text-slate-700 bg-white"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setReplyingLeadId(null);
+                                setReplyBody("");
+                              }}
+                              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl font-bold text-xs transition-all active:scale-95"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={() => handleSendReply(lead.id)}
+                              disabled={!replyBody.trim() || isReplying}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all disabled:opacity-50 flex items-center gap-1.5 active:scale-95"
+                            >
+                              {isReplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                              Enviar por Correo
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <span className="text-[10px] text-slate-400 font-semibold">
+                        <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
                           Recibido: {new Date(lead.createdAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </span>
                         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado:</span>
-                            <select 
-                              value={lead.statusRaw || 'pending'} 
+                            <select
+                              value={lead.statusRaw || 'pending'}
                               onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
                               className="text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-blue-600 cursor-pointer"
                             >
@@ -447,23 +892,28 @@ export default function DashboardPage() {
                               <option value="closed">Cerrado</option>
                             </select>
                           </div>
-                          <a 
-                            href={`mailto:${lead.email}?subject=Consulta sobre: ${lead.property?.title || ''}`}
-                            className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-all shadow-md shadow-blue-600/10"
-                          >
-                            Responder
-                          </a>
+                          {replyingLeadId !== lead.id && (
+                            <button
+                              onClick={() => {
+                                setReplyingLeadId(lead.id);
+                                setReplyBody("");
+                              }}
+                              className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-all shadow-md shadow-blue-600/10 active:scale-95"
+                            >
+                              Responder
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    <p className="text-slate-500">No has recibido consultas todavía.</p>
+                    <p className="text-slate-500">No se encontraron consultas con los filtros seleccionados.</p>
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>
@@ -493,11 +943,10 @@ export default function DashboardPage() {
                     <button
                       disabled={isCurrent}
                       onClick={() => openCheckout(plan)}
-                      className={`w-full py-3 rounded-xl font-bold text-xs transition-all ${
-                        isCurrent
-                          ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                          : 'bg-slate-900 text-white hover:bg-slate-800'
-                      }`}
+                      className={`w-full py-3 rounded-xl font-bold text-xs transition-all ${isCurrent
+                        ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                        : 'bg-slate-900 text-white hover:bg-slate-800'
+                        }`}
                     >
                       {isCurrent ? 'Plan Actual' : 'Seleccionar'}
                     </button>
@@ -516,7 +965,7 @@ export default function DashboardPage() {
       )}
 
       {showCheckout && selectedPlan && (
-        <CheckoutModal 
+        <CheckoutModal
           plan={selectedPlan}
           onConfirm={(planId) => handleAssignPlan(planId)}
           onCancel={() => setShowCheckout(false)}

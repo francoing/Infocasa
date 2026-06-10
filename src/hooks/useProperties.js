@@ -171,14 +171,18 @@ export const deleteProperty = async (id) => {
   return res;
 };
 
-export const getPropertiesByUser = async (userId) => {
-  const queryClient = getQueryClient();
-  return queryClient.fetchQuery({
-    queryKey: ["me_properties"],
-    queryFn: async () => {
-      const res = await api.get("/me/properties");
-      return (res.data || []).map(p => mapProperty(p));
-    },
-    staleTime: 60 * 1000
-  });
+export const getPropertiesByUser = async (userId, filters = {}) => {
+  let queryParams = [];
+  if (filters.search) {
+    queryParams.push(`search=${encodeURIComponent(filters.search)}`);
+  }
+  if (filters.status) {
+    queryParams.push(`status=${encodeURIComponent(filters.status)}`);
+  }
+  if (filters.operation) {
+    queryParams.push(`operation=${encodeURIComponent(filters.operation)}`);
+  }
+  const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
+  const res = await api.get(`/me/properties${queryString}`);
+  return (res.data || []).map(p => mapProperty(p));
 };

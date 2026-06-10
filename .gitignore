@@ -30,3 +30,5 @@ db.json
 .env.testing
 .env.production
 .env.development
+
+.vercel
