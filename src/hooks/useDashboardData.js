@@ -12,6 +12,10 @@ export const useDashboardData = () => {
   const toast = useToast();
   const queryClient = useQueryClient();
 
+  const isAdmin = user?.roles?.some(r => r.name === 'admin') || user?.role === 'admin' || false;
+  const isPublisher = user?.roles?.some(r => r.name === 'owner' || r.name === 'agent') || user?.role === 'owner' || user?.role === 'agent' || false;
+  const isBuyer = !isAdmin && !isPublisher;
+
   // Estados locales para control de la interfaz (UI)
   const [showCheckout, setShowCheckout] = useState(false);
   const [reductionPercent, setReductionPercent] = useState(5);
@@ -29,8 +33,8 @@ export const useDashboardData = () => {
   const [propOperation, setPropOperation] = useState("");
 
   // Queries con React Query
-  const plansQuery = usePlansQuery();
-  const userPlanQuery = useUserPlanQuery({ enabled: !!user });
+  const plansQuery = usePlansQuery({ enabled: !!user && !isBuyer });
+  const userPlanQuery = useUserPlanQuery({ enabled: !!user && !isBuyer });
 
   const propertiesQuery = useQuery({
     queryKey: ["me_properties", propSearch, propStatus, propOperation],
@@ -39,7 +43,7 @@ export const useDashboardData = () => {
       status: propStatus,
       operation: propOperation
     }),
-    enabled: !!user
+    enabled: !!user && !isBuyer
   });
 
   const leadsQuery = useQuery({
@@ -71,11 +75,51 @@ export const useDashboardData = () => {
       property: mapProperty(l.property),
       replies: l.replies || []
     })),
-    enabled: !!user
+    enabled: !!user && !isBuyer
+  });
+
+  const favoritesQuery = useQuery({
+    queryKey: ["me_favorites"],
+    queryFn: async () => {
+      const res = await api.get("/me/favorites");
+      return res.data?.map(p => mapProperty(p)) || [];
+    },
+    enabled: !!user && isBuyer
+  });
+
+  const sentLeadsQuery = useQuery({
+    queryKey: ["sent_leads", filterStatus, filterDateFrom, filterDateTo],
+    queryFn: async () => {
+      const params = {};
+      if (filterStatus) {
+        params.status = filterStatus;
+      }
+      if (filterDateFrom) {
+        params.date_from = filterDateFrom;
+      }
+      if (filterDateTo) {
+        params.date_to = filterDateTo;
+      }
+
+      const res = await api.get("/leads/sent", { params });
+      return res.data || [];
+    },
+    select: (data) => data.map(l => ({
+      id: l.id,
+      name: l.name,
+      email: l.email,
+      phone: l.phone,
+      message: l.message,
+      status: l.status === "pending" ? "Pendiente" : l.status === "contacted" ? "Contactado" : "Cerrado",
+      statusRaw: l.status,
+      createdAt: l.created_at,
+      property: mapProperty(l.property),
+      replies: l.replies || []
+    })),
+    enabled: !!user && isBuyer
   });
 
   // Admin Queries
-  const isAdmin = user?.role === 'admin';
 
   const adminUsersQuery = useQuery({
     queryKey: ["admin_users"],
@@ -150,6 +194,25 @@ export const useDashboardData = () => {
 
   const deleteProperty = async (id) => {
     deletePropertyMutation.mutate(id);
+  };
+
+  // Mutación para eliminar de favoritos
+  const removeFavoriteMutation = useMutation({
+    mutationFn: async (id) => {
+      return api.delete(`/properties/${id}/favorite`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me_favorites"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success("Propiedad eliminada de favoritos con éxito.");
+    },
+    onError: () => {
+      toast.error("Error al eliminar de favoritos.");
+    }
+  });
+
+  const removeFavorite = async (id) => {
+    removeFavoriteMutation.mutate(id);
   };
 
   // Mutaciones de Admin
@@ -233,13 +296,15 @@ export const useDashboardData = () => {
   };
 
   const loading = 
-    propertiesQuery.isLoading || 
-    leadsQuery.isLoading || 
-    userPlanQuery.isLoading || 
-    plansQuery.isLoading;
+    (isBuyer && (favoritesQuery.isLoading || sentLeadsQuery.isLoading)) ||
+    (!isBuyer && (propertiesQuery.isLoading || leadsQuery.isLoading || userPlanQuery.isLoading || plansQuery.isLoading));
+
   return {
     user,
     isAdmin,
+    isBuyer,
+    favorites: favoritesQuery.data || [],
+    sentLeads: sentLeadsQuery.data || [],
     properties: propertiesQuery.data || [],
     leads: leadsQuery.data || [],
     adminUsers: adminUsersQuery.data || [],
@@ -256,6 +321,7 @@ export const useDashboardData = () => {
     reducingId,
     handleReducePrice,
     deleteProperty,
+    removeFavorite,
     updateLeadStatus,
     replyToLead,
     isReplying: replyToLeadMutation.isPending,
