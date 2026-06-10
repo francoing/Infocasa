@@ -14,6 +14,7 @@ const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'));
 const CreatePropertyPage = lazy(() => import('../features/property/pages/CreatePropertyPage'));
 const EditPropertyPage = lazy(() => import('../features/property/pages/EditPropertyPage'));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));
+const SharePage = lazy(() => import('../features/share/pages/SharePage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
@@ -33,6 +34,9 @@ const AppRouter = () => {
           <Route path="/property/:id" element={<PropertyDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          {/* Ruta de Compartir - Pública */}
+          <Route path="/share/:propertyId?" element={<SharePage />} />
 
           {/* Rutas Protegidas - General (Cualquier usuario logueado) */}
           <Route 
