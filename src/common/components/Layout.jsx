@@ -5,6 +5,7 @@ import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
 import Logo from "./Logo";
 import AdminLayout from "./AdminLayout";
+import WhatsAppButton from "./WhatsAppButton";
 
 export default function Layout({ children }) {
   const location = useLocation();
@@ -19,6 +20,7 @@ export default function Layout({ children }) {
       <Header />
       <main className="flex-grow pt-20">{children}</main>
       <Footer />
+      <WhatsAppButton />
     </div>
   );
 }
@@ -27,7 +29,7 @@ function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isAdmin, isPublisher } = useAuth();
-  
+
   const navItems = [
     { name: 'Inicio', path: '/' },
     { name: 'Buscar', path: '/search' },
@@ -54,8 +56,8 @@ function Header() {
               to={item.path}
               className={cn(
                 "font-bold text-sm tracking-wide transition-all pb-1 border-b-4 hover:text-blue-600",
-                location.pathname === item.path 
-                  ? "text-blue-600 border-blue-600" 
+                location.pathname === item.path
+                  ? "text-blue-600 border-blue-600"
                   : "text-slate-600 border-transparent"
               )}
             >
@@ -69,7 +71,7 @@ function Header() {
               <Link to={dashboardPath} className="text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-2 font-bold text-sm">
                 <LayoutDashboard className="w-5 h-5" /> Tablero
               </Link>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="text-slate-400 hover:text-red-500 transition-colors p-2"
                 title="Cerrar sesión"
@@ -82,8 +84,8 @@ function Header() {
               <Link to="/login" className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-all">
                 Iniciar Sesión
               </Link>
-              <Link 
-                to="/register" 
+              <Link
+                to="/register"
                 className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-600/20"
               >
                 Registrarse
@@ -124,7 +126,7 @@ function Footer() {
 function SocialIcon({ icon }) {
   return (
     <div className="p-3 bg-white rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-600 hover:text-white transition-all hover:-translate-y-1 shadow-sm">
-       {cloneElement(icon, { className: "w-5 h-5" })}
+      {cloneElement(icon, { className: "w-5 h-5" })}
     </div>
   );
 }
