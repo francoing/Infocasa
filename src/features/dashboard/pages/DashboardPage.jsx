@@ -122,12 +122,18 @@ export default function DashboardPage() {
             </p>
           </div>
           {!isBuyer && (
-            <Link
-              to="/dashboard/properties/create"
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
-            >
-              <Plus className="w-5 h-5" /> Nueva Propiedad
-            </Link>
+            userPlan ? (
+              <Link
+                to="/dashboard/properties/create"
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
+              >
+                <Plus className="w-5 h-5" /> Nueva Propiedad
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm">
+                <Plus className="w-5 h-5" /> Nueva Propiedad
+              </span>
+            )
           )}
         </div>
 
