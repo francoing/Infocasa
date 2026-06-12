@@ -3,11 +3,16 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, PlusCircle, Search, User, LogOut, Menu, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
+import { usePlans } from "../../hooks/usePlans";
 import Logo from "./Logo";
 import WhatsAppButton from "./WhatsAppButton";
 
 export default function AdminLayout({ children }) {
   const { user, logout, isAdmin, isPublisher } = useAuth();
+  const { useUserPlanQuery } = usePlans();
+  const { data: userPlan } = useUserPlanQuery({
+    enabled: isAdmin || isPublisher,
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,13 +60,17 @@ export default function AdminLayout({ children }) {
           onClick={() => setSidebarOpen(false)}
         />
         {(isAdmin || isPublisher) && (
-          <SidebarLink 
-            to="/dashboard/properties/create" 
-            icon={<PlusCircle />} 
-            label="Publicar" 
-            active={location.pathname === '/dashboard/properties/create'} 
-            onClick={() => setSidebarOpen(false)}
-          />
+          userPlan ? (
+            <SidebarLink 
+              to="/dashboard/properties/create" 
+              icon={<PlusCircle />} 
+              label="Publicar" 
+              active={location.pathname === '/dashboard/properties/create'} 
+              onClick={() => setSidebarOpen(false)}
+            />
+          ) : (
+            <SidebarLinkDisabled icon={<PlusCircle />} label="Publicar" />
+          )
         )}
 
         <SidebarLink to="/search" icon={<Search />} label="Marketplace" onClick={() => setSidebarOpen(false)} />
@@ -122,6 +131,15 @@ export default function AdminLayout({ children }) {
 
       <main className="flex-1 min-w-0 pt-16 lg:pt-0">{children}</main>
       <WhatsAppButton />
+    </div>
+  );
+}
+
+function SidebarLinkDisabled({ icon, label }) {
+  return (
+    <div className="flex items-center gap-4 px-6 py-4 font-bold rounded-2xl text-sm text-slate-300 cursor-not-allowed select-none">
+      {cloneElement(icon, { className: "w-5 h-5" })}
+      {label}
     </div>
   );
 }
