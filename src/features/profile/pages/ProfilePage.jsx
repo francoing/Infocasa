@@ -1,17 +1,44 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlans } from '@/hooks/usePlans';
 import { useToast } from '@/hooks/useToast';
+import { useAuthStore } from '@/store/useAuthStore';
 import Layout from '@/common/components/Layout';
 import CheckoutModal from '@/features/dashboard/components/CheckoutModal';
-import { Camera, Save, Lock, User as UserIcon, Phone, Loader2, Crown, Zap, Star, CheckCircle } from 'lucide-react';
+import { Camera, Save, Lock, User as UserIcon, Phone, Loader2, Crown, CheckCircle } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, updateProfile, updatePassword, updateAvatar } = useAuth();
-  const { usePlansQuery, assignPlan } = usePlans();
+  const { usePlansQuery, assignPlan, payWithMercadoPago } = usePlans();
   const { data: plansList = [] } = usePlansQuery();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Al volver del sandbox de MP, refrescar el usuario y limpiar caché
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus) {
+      // Forzar refresh del usuario y del plan para mostrar datos actualizados
+      useAuthStore.getState().checkAuth();
+      queryClient.invalidateQueries({ queryKey: ['userPlan'] });
+      queryClient.invalidateQueries({ queryKey: ['auth_me'] });
+
+      if (paymentStatus === 'success') {
+        toast.success('¡Tu suscripción ha sido procesada con éxito!');
+      } else if (paymentStatus === 'failure') {
+        toast.error('El pago no pudo completarse. Por favor, intenta de nuevo.');
+      } else if (paymentStatus === 'pending') {
+        toast.info('Tu pago está pendiente de aprobación.');
+      }
+      searchParams.delete('payment');
+      setSearchParams(searchParams, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedPlanToBuy, setSelectedPlanToBuy] = useState(null);
@@ -108,14 +135,22 @@ export default function ProfilePage() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleAssignPlan = async (planId) => {
+  const handleAssignPlan = async (plan) => {
     try {
-      await assignPlan(planId);
-      toast.success("¡Plan activado con éxito!");
-      setShowCheckout(false);
-      // Actualizamos al usuario — ya no hace falta reload porque refreshUser corre en assignPlan
+      if (Number(plan.price) > 0) {
+        const preference = await payWithMercadoPago(plan.id);
+        if (preference?.redirect_url) {
+          window.location.href = preference.redirect_url;
+        } else {
+          toast.error('No se pudo obtener la URL de pago.');
+        }
+      } else {
+        await assignPlan(plan.id);
+        toast.success('¡Plan activado con éxito!');
+        setShowCheckout(false);
+      }
     } catch (err) {
-      toast.error(err.message || "Error al activar el plan");
+      toast.error(err.message || 'Error al activar el plan');
       throw err;
     }
   };
@@ -369,9 +404,9 @@ export default function ProfilePage() {
       </div>
 
       {showCheckout && selectedPlanToBuy && (
-        <CheckoutModal 
+        <CheckoutModal
           plan={selectedPlanToBuy}
-          onConfirm={(planId) => handleAssignPlan(planId)}
+          onConfirm={() => handleAssignPlan(selectedPlanToBuy)}
           onCancel={() => setShowCheckout(false)}
         />
       )}

@@ -9,7 +9,7 @@ import CheckoutModal from "../../dashboard/components/CheckoutModal";
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { getPlans, getUserPlan, assignPlan } = usePlans();
+  const { getPlans, getUserPlan, assignPlan, payWithMercadoPago } = usePlans();
   const toast = useToast();
   const [plans, setPlans] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
@@ -35,13 +35,22 @@ export default function ProfilePage() {
     if (user) fetchData();
   }, [user, getPlans, getUserPlan]);
 
-  const handleUpgrade = async (planId) => {
+  const handleUpgrade = async (plan) => {
     try {
-      await assignPlan(planId);
-      const updatedPlan = await getUserPlan(user.id);
-      setCurrentPlan(updatedPlan);
-      setShowCheckout(null);
-      toast.success("Plan actualizado con éxito.");
+      if (Number(plan.price) > 0) {
+        const preference = await payWithMercadoPago(plan.id);
+        if (preference?.redirect_url) {
+          window.location.href = preference.redirect_url;
+        } else {
+          toast.error("No se pudo obtener la URL de pago.");
+        }
+      } else {
+        await assignPlan(plan.id);
+        const updatedPlan = await getUserPlan(user.id);
+        setCurrentPlan(updatedPlan);
+        setShowCheckout(null);
+        toast.success("¡Plan activado con éxito!");
+      }
     } catch (err) {
       toast.error(err.message || "Error al actualizar el plan.");
       throw err;
@@ -157,7 +166,7 @@ export default function ProfilePage() {
       {showCheckout && (
         <CheckoutModal 
           plan={showCheckout}
-          onConfirm={handleUpgrade}
+          onConfirm={() => handleUpgrade(showCheckout)}
           onCancel={() => setShowCheckout(null)}
         />
       )}
