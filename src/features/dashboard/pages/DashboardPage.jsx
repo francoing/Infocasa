@@ -973,7 +973,7 @@ export default function DashboardPage() {
       {showCheckout && selectedPlan && (
         <CheckoutModal
           plan={selectedPlan}
-          onConfirm={(planId) => handleAssignPlan(planId)}
+          onConfirm={() => handleAssignPlan(selectedPlan)}
           onCancel={() => setShowCheckout(false)}
         />
       )}

@@ -127,6 +127,13 @@ export const usePlans = () => {
     return assignMutation.mutateAsync(planId);
   }, [assignMutation]);
 
+  const payWithMercadoPago = useCallback(async (planId) => {
+    const res = await api.post("/subscriptions/mercadopago/preference", {
+      plan_id: planId
+    });
+    return res;
+  }, []);
+
   return {
     loading: assignMutation.isPending,
     error: assignMutation.error?.message || null,
@@ -134,6 +141,7 @@ export const usePlans = () => {
     getUserPlan,
     validateLimit,
     assignPlan,
+    payWithMercadoPago,
     
     // Hooks de React Query que reciben opciones
     usePlansQuery: (options = {}) => useQuery({

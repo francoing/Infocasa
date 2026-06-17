@@ -8,7 +8,7 @@ import { mapProperty, getPropertiesByUser } from "./useProperties";
 
 export const useDashboardData = () => {
   const { user } = useAuth();
-  const { getUserPlan, getPlans, assignPlan, usePlansQuery, useUserPlanQuery } = usePlans();
+  const { getUserPlan, getPlans, assignPlan, payWithMercadoPago, usePlansQuery, useUserPlanQuery } = usePlans();
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -284,11 +284,20 @@ export const useDashboardData = () => {
     return replyToLeadMutation.mutateAsync({ leadId, body });
   };
 
-  const handleAssignPlan = async (planId) => {
+  const handleAssignPlan = async (plan) => {
     try {
-      await assignPlan(planId);
-      setShowCheckout(false);
-      toast.success("Plan actualizado con éxito.");
+      if (Number(plan.price) > 0) {
+        const preference = await payWithMercadoPago(plan.id);
+        if (preference?.redirect_url) {
+          window.location.href = preference.redirect_url;
+        } else {
+          toast.error("No se pudo obtener la URL de pago.");
+        }
+      } else {
+        await assignPlan(plan.id);
+        setShowCheckout(false);
+        toast.success("¡Plan activado con éxito!");
+      }
     } catch (err) {
       toast.error(err.message || "Error al procesar el pago del plan.");
       throw err;
