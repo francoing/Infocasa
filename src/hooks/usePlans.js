@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
+import { useAuthStore } from "../store/useAuthStore";
 
 export const fetchPlans = async () => {
   const res = await api.get("/plans");
@@ -115,13 +116,14 @@ export const usePlans = () => {
         plan_id: planId
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["userPlan"] });
       queryClient.invalidateQueries({ queryKey: ["auth_me"] });
+      await useAuthStore.getState().refreshUser();
     }
   });
 
-  const assignPlan = useCallback(async (userId, planId) => {
+  const assignPlan = useCallback(async (planId) => {
     return assignMutation.mutateAsync(planId);
   }, [assignMutation]);
 

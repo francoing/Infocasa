@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   MapPin, Bed, Bath, Maximize, Home, Share2, Heart, 
   ChevronLeft, ChevronRight, X, Image as ImageIcon,
@@ -14,6 +14,7 @@ import { usePropertyDetail } from "@/hooks/usePropertyDetail";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const {
     property,
     publisher,
@@ -67,7 +68,10 @@ export default function PropertyDetailPage() {
             <span className="text-slate-600 truncate max-w-xs">{property.title}</span>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">
+            <button
+              onClick={() => navigate(`/share/${property.id}`, { state: { propertyTitle: property.title } })}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm"
+            >
               <Share2 className="w-4 h-4" /> Compartir
             </button>
             <button 

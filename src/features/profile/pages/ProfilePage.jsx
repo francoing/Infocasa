@@ -113,10 +113,10 @@ export default function ProfilePage() {
       await assignPlan(planId);
       toast.success("¡Plan activado con éxito!");
       setShowCheckout(false);
-      // Actualizamos al usuario
-      window.location.reload(); 
+      // Actualizamos al usuario — ya no hace falta reload porque refreshUser corre en assignPlan
     } catch (err) {
       toast.error(err.message || "Error al activar el plan");
+      throw err;
     }
   };
 

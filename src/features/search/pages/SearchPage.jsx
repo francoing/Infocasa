@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Search as SearchIcon, MapPin, SlidersHorizontal, ChevronLeft, ChevronRight, Loader2, X, Filter } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
 import { api } from "../../../api/api";
+import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +20,43 @@ export default function SearchPage() {
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [agencies, setAgencies] = useState([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [focusedIdx, setFocusedIdx] = useState(-1);
+  const inputRef = useRef(null);
+
+  const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
+
+  const selectSuggestion = (suggestion) => {
+    setLocation(suggestion.city || suggestion.state || suggestion.value);
+    setShowLocationSuggestions(false);
+    setFocusedIdx(-1);
+    clearSuggestions();
+  };
+
+  const handleLocationKeyDown = (e) => {
+    if (showLocationSuggestions && suggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedIdx((prev) => Math.min(prev + 1, suggestions.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedIdx((prev) => Math.max(prev - 1, 0));
+        return;
+      }
+      if (e.key === "Enter" && focusedIdx >= 0) {
+        e.preventDefault();
+        selectSuggestion(suggestions[focusedIdx]);
+        return;
+      }
+      if (e.key === "Escape") {
+        setShowLocationSuggestions(false);
+        setFocusedIdx(-1);
+        return;
+      }
+    }
+  };
 
   // Fetch agencies on mount
   useEffect(() => {
@@ -116,14 +154,53 @@ export default function SearchPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-500 block">Ciudad / Ubicación</label>
                   <div className="relative">
-                    <input 
-                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none" 
-                      placeholder="Ej: Tigre" 
-                      type="text" 
+                    <input
+                      ref={inputRef}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
+                      placeholder="Ej: Tigre"
+                      type="text"
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
+                      onChange={(e) => {
+                        setLocation(e.target.value);
+                        setQuery(e.target.value);
+                        setShowLocationSuggestions(e.target.value.trim().length >= 2);
+                      }}
+                      onFocus={() => setShowLocationSuggestions(suggestions.length > 0)}
+                      onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
+                      onKeyDown={handleLocationKeyDown}
+                      autoComplete="off"
                     />
-                    <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                    {/* Dropdown Geoapify */}
+                    {showLocationSuggestions && suggestions.length > 0 && (
+                      <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto">
+                        {suggestions.map((s, i) => (
+                          <li key={i}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                selectSuggestion(s);
+                              }}
+                              onMouseEnter={() => setFocusedIdx(i)}
+                              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
+                                i === focusedIdx
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                              <span className="font-medium">{s.value}</span>
+                            </button>
+                          </li>
+                        ))}
+                        {geoLoading && (
+                          <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
+                          </li>
+                        )}
+                      </ul>
+                    )}
                   </div>
                 </div>
                 

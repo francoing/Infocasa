@@ -37,13 +37,14 @@ export default function ProfilePage() {
 
   const handleUpgrade = async (planId) => {
     try {
-      await assignPlan(user.id, planId);
+      await assignPlan(planId);
       const updatedPlan = await getUserPlan(user.id);
       setCurrentPlan(updatedPlan);
       setShowCheckout(null);
       toast.success("Plan actualizado con éxito.");
     } catch (err) {
-      toast.error("Error al actualizar el plan.");
+      toast.error(err.message || "Error al actualizar el plan.");
+      throw err;
     }
   };
 

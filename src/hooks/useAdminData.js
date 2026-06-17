@@ -58,7 +58,7 @@ export const useAdminData = () => {
   // Mutación para asignar plan
   const assignPlanMutation = useMutation({
     mutationFn: async ({ userId, planId }) => {
-      return assignPlan(userId, planId);
+      return assignPlan(planId);
     },
     onSuccess: (data, variables) => {
       const planName = plansQuery.data?.find(p => Number(p.id) === Number(variables.planId))?.name;

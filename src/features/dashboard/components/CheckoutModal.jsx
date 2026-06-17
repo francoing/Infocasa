@@ -3,24 +3,42 @@ import { X, CreditCard, ShieldCheck, Loader2, CheckCircle, QrCode, Phone } from 
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CheckoutModal({ plan, onConfirm, onCancel }) {
-  const [step, setStep] = useState('form'); // 'form', 'processing', 'success'
+  const [step, setStep] = useState('form'); // 'form', 'processing', 'success', 'error'
   const [method, setMethod] = useState('card'); // 'card', 'qr'
-  
-  const handlePay = (e) => {
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handlePay = async (e) => {
     if (e) e.preventDefault();
+    if (!plan?.id) {
+      setErrorMsg('No se seleccionó un plan válido.');
+      setStep('error');
+      return;
+    }
     setStep('processing');
-    
-    // Simular procesamiento de pago
-    setTimeout(() => {
-      setStep('success');
-      setTimeout(() => {
-        onConfirm(plan.id);
-      }, 2000);
-    }, 2500);
+    setErrorMsg('');
+
+    try {
+      await onConfirm(plan.id);
+      // El caller cierra el modal (setShowCheckout(false)) y muestra toast en éxito
+      // Por seguridad, si el modal sigue montado lo cerramos igual
+      onCancel();
+    } catch (err) {
+      setErrorMsg(err.message || 'Error al procesar el pago. Intentalo de nuevo.');
+      setStep('error');
+    }
+  };
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -146,6 +164,7 @@ export default function CheckoutModal({ plan, onConfirm, onCancel }) {
               key="success"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
               className="p-20 flex flex-col items-center justify-center text-center"
             >
               <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
@@ -153,6 +172,42 @@ export default function CheckoutModal({ plan, onConfirm, onCancel }) {
               </div>
               <h3 className="text-2xl font-black text-slate-900">¡Plan Activado!</h3>
               <p className="text-slate-500 text-sm mt-2">Gracias por confiar en InfoCasa. Ya podés disfrutar de tus nuevos beneficios.</p>
+              <button
+                onClick={onCancel}
+                className="mt-8 bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all"
+              >
+                Cerrar
+              </button>
+            </motion.div>
+          )}
+
+          {step === 'error' && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="p-10 flex flex-col items-center justify-center text-center"
+            >
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                <X className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Error al procesar</h3>
+              <p className="text-slate-500 text-sm mt-2 max-w-xs">{errorMsg}</p>
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setStep('form')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all"
+                >
+                  Intentar de nuevo
+                </button>
+                <button
+                  onClick={onCancel}
+                  className="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

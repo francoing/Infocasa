@@ -172,4 +172,21 @@ export const useAuthStore = create((set, get) => ({
       throw err;
     }
   },
+
+  refreshUser: async () => {
+    const token = get().token;
+    if (!token) return;
+    try {
+      const currentUser = await api.get("/auth/me");
+      const enriched = enrichUser(currentUser);
+      localStorage.setItem("auth_user", JSON.stringify(enriched));
+      set({ 
+        user: enriched, 
+        ...getAuthDerivations(enriched, token)
+      });
+      return enriched;
+    } catch (err) {
+      console.error("Error refreshing user", err);
+    }
+  },
 }));

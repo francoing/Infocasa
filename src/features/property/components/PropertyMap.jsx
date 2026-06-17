@@ -1,7 +1,7 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Popup } from 'react-leaflet';
+import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Map, ExternalLink } from 'lucide-react';
+import { Map, ExternalLink, Plus, Minus } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // Configuración de ícono personalizado para Leaflet
@@ -15,31 +15,51 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+function ZoomControls() {
+  const map = useMap();
+
+  return (
+    <div className="absolute bottom-4 left-4 z-[1000] flex flex-col gap-1.5">
+      <button
+        onClick={(e) => { e.stopPropagation(); map.zoomIn(); }}
+        className="w-10 h-10 bg-white rounded-xl shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all active:scale-90"
+        title="Acercar"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); map.zoomOut(); }}
+        className="w-10 h-10 bg-white rounded-xl shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all active:scale-90"
+        title="Alejar"
+      >
+        <Minus className="w-5 h-5" />
+      </button>
+    </div>
+  );
+}
+
 export default function PropertyMap({ latitude, longitude, showExactAddress, title }) {
   if (!latitude || !longitude) return null;
   
   const position = [latitude, longitude];
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+  const [hovering, setHovering] = useState(false);
 
   return (
-    <a 
-      href={googleMapsUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="relative block w-full h-full group overflow-hidden cursor-pointer"
-      title="Abrir ubicación en Google Maps"
+    <div
+      className="relative block w-full h-full overflow-hidden rounded-3xl"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
     >
-      <MapContainer 
-        center={position} 
-        zoom={14} 
-        scrollWheelZoom={false}
-        dragging={false}
+      <MapContainer
+        center={position}
+        zoom={14}
+        scrollWheelZoom={true}
+        dragging={true}
         zoomControl={false}
-        doubleClickZoom={false}
-        touchZoom={false}
-        boxZoom={false}
-        keyboard={false}
-        className="w-full h-full z-0 transition-transform duration-[750ms] group-hover:scale-105"
+        doubleClickZoom={true}
+        touchZoom={true}
+        className="w-full h-full z-0"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -52,30 +72,35 @@ export default function PropertyMap({ latitude, longitude, showExactAddress, tit
             </Popup>
           </Marker>
         ) : (
-          <Circle 
-            center={position} 
-            radius={500} 
+          <Circle
+            center={position}
+            radius={500}
             pathOptions={{
-              color: '#2563eb', // blue-600
-              fillColor: '#3b82f6', // blue-500
+              color: '#2563eb',
+              fillColor: '#3b82f6',
               fillOpacity: 0.2,
               weight: 2
             }}
           />
         )}
+
+        <ZoomControls />
       </MapContainer>
-      
-      {/* Overlay premium */}
-      <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors duration-300 z-10 flex items-center justify-center pointer-events-none">
-        <div className="bg-white/90 backdrop-blur-md text-slate-900 px-5 py-3 rounded-2xl shadow-xl font-bold flex items-center gap-2.5 border border-slate-200/50 transform translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-[350ms] ease-out">
-          <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
-            <Map className="w-4 h-4" />
-          </div>
-          <span className="text-xs uppercase tracking-wider font-black">Ver en Google Maps</span>
-          <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-        </div>
-      </div>
-    </a>
+
+      {/* Google Maps link */}
+      <a
+        href={googleMapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`absolute top-4 right-4 z-[1000] bg-white/90 backdrop-blur-md text-slate-900 px-4 py-2.5 rounded-xl shadow-lg border border-slate-200/50 font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-white hover:shadow-xl transition-all ${
+          hovering ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+        }`}
+      >
+        <Map className="w-4 h-4 text-blue-600" />
+        Google Maps
+        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+      </a>
+    </div>
   );
 }
 
