@@ -11,31 +11,61 @@ import { Camera, Save, Lock, User as UserIcon, Phone, Loader2, Crown, CheckCircl
 
 export default function ProfilePage() {
   const { user, updateProfile, updatePassword, updateAvatar } = useAuth();
-  const { usePlansQuery, assignPlan, payWithMercadoPago } = usePlans();
+  const { usePlansQuery, assignPlan, payWithMercadoPago, verifyMercadoPagoPayment } = usePlans();
   const { data: plansList = [] } = usePlansQuery();
   const toast = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Al volver del sandbox de MP, refrescar el usuario y limpiar caché
+  // Al volver del checkout de MP, verificar el pago y activar la suscripción
   useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    if (paymentStatus) {
-      // Forzar refresh del usuario y del plan para mostrar datos actualizados
-      useAuthStore.getState().checkAuth();
-      queryClient.invalidateQueries({ queryKey: ['userPlan'] });
-      queryClient.invalidateQueries({ queryKey: ['auth_me'] });
+    const paymentStatus     = searchParams.get('payment');
+    const collectionStatus  = searchParams.get('collection_status') ?? searchParams.get('status');
+    const paymentId         = searchParams.get('payment_id');
+    const preferenceId      = searchParams.get('preference_id');
+    const externalReference = searchParams.get('external_reference');
 
-      if (paymentStatus === 'success') {
-        toast.success('¡Tu suscripción ha sido procesada con éxito!');
-      } else if (paymentStatus === 'failure') {
-        toast.error('El pago no pudo completarse. Por favor, intenta de nuevo.');
-      } else if (paymentStatus === 'pending') {
-        toast.info('Tu pago está pendiente de aprobación.');
-      }
-      searchParams.delete('payment');
-      setSearchParams(searchParams, { replace: true });
+    // Detectar si venimos de MP: tiene payment_id o preference_id en la URL
+    const isFromMercadoPago = !!(paymentId || preferenceId || externalReference);
+    if (!paymentStatus && !isFromMercadoPago) return;
+
+    // Limpiar todos los query params de MP de la URL inmediatamente
+    const cleaned = new URLSearchParams(searchParams);
+    ['payment','payment_id','collection_id','collection_status','status',
+     'external_reference','payment_type','merchant_order_id','preference_id',
+     'site_id','processing_mode','merchant_account_id'].forEach(k => cleaned.delete(k));
+    setSearchParams(cleaned, { replace: true });
+
+    const isApproved = paymentStatus === 'success' || collectionStatus === 'approved';
+    const isFailure  = paymentStatus === 'failure'  || collectionStatus === 'rejected';
+    const isPending  = paymentStatus === 'pending'  || collectionStatus === 'pending';
+
+    if (isApproved || (isFromMercadoPago && !isFailure && !isPending)) {
+      // Llamar al backend para verificar y activar la suscripción
+      verifyMercadoPagoPayment({ paymentId, preferenceId, externalReference })
+        .then((res) => {
+          // Actualizar el usuario en el store con los datos frescos del backend
+          if (res?.user) {
+            const enriched = { ...res.user, role: res.user.roles?.[0]?.name || 'buyer' };
+            localStorage.setItem('auth_user', JSON.stringify(enriched));
+            useAuthStore.setState({ user: enriched });
+          }
+          queryClient.invalidateQueries({ queryKey: ['userPlan'] });
+          queryClient.invalidateQueries({ queryKey: ['auth_me'] });
+          toast.success('¡Tu suscripción ha sido activada con éxito!');
+        })
+        .catch((err) => {
+          console.error('Error al verificar el pago con MP:', err);
+          // Fallback: al menos refrescar el usuario desde /auth/me
+          useAuthStore.getState().checkAuth();
+          queryClient.invalidateQueries({ queryKey: ['userPlan'] });
+          toast.success('¡Pago procesado! Tu plan se actualizará en breve.');
+        });
+    } else if (isFailure) {
+      toast.error('El pago no pudo completarse. Por favor, intenta de nuevo.');
+    } else if (isPending) {
+      toast.info('Tu pago está pendiente de aprobación.');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

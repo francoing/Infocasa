@@ -134,6 +134,21 @@ export const usePlans = () => {
     return res;
   }, []);
 
+  /**
+   * Called when the user returns from the Mercado Pago checkout.
+   * Verifies the payment server-side and activates the subscription if approved.
+   * Returns { user, subscription, message } from the API.
+   */
+  const verifyMercadoPagoPayment = useCallback(async ({ paymentId, preferenceId, externalReference }) => {
+    const params = new URLSearchParams();
+    if (paymentId)       params.append("payment_id", paymentId);
+    if (preferenceId)    params.append("preference_id", preferenceId);
+    if (externalReference) params.append("external_reference", externalReference);
+
+    const res = await api.get(`/subscriptions/mercadopago/verify?${params.toString()}`);
+    return res;
+  }, []);
+
   return {
     loading: assignMutation.isPending,
     error: assignMutation.error?.message || null,
@@ -142,6 +157,7 @@ export const usePlans = () => {
     validateLimit,
     assignPlan,
     payWithMercadoPago,
+    verifyMercadoPagoPayment,
     
     // Hooks de React Query que reciben opciones
     usePlansQuery: (options = {}) => useQuery({
