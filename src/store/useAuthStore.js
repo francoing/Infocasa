@@ -41,7 +41,8 @@ export const useAuthStore = create((set, get) => ({
     }
     set({ loading: true });
     try {
-      const currentUser = await api.get("/auth/me");
+      const res = await api.get("/auth/me");
+      const currentUser = res?.data || res;
       const enriched = enrichUser(currentUser);
       localStorage.setItem("auth_user", JSON.stringify(enriched));
       set({ 
@@ -177,7 +178,8 @@ export const useAuthStore = create((set, get) => ({
     const token = get().token;
     if (!token) return;
     try {
-      const currentUser = await api.get("/auth/me");
+      const res = await api.get("/auth/me");
+      const currentUser = res?.data || res;
       const enriched = enrichUser(currentUser);
       localStorage.setItem("auth_user", JSON.stringify(enriched));
       set({ 

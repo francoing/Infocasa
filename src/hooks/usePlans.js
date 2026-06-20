@@ -43,7 +43,8 @@ export const fetchPlans = async () => {
 };
 
 export const fetchUserPlan = async () => {
-  const user = await api.get("/auth/me");
+  const res = await api.get("/auth/me");
+  const user = res?.data || res;
   if (user && user.subscription) {
     return {
       id: user.subscription.id,
