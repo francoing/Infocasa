@@ -16,6 +16,7 @@ export default function SearchPage() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Todos");
   const [userId, setUserId] = useState(searchParams.get("userId") || "");
+  const [operation, setOperation] = useState(searchParams.get("operation") || "");
   const [sort, setSort] = useState(searchParams.get("sort") || "recent");
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -78,6 +79,7 @@ export default function SearchPage() {
     setMaxPrice(searchParams.get("maxPrice") || "");
     setSelectedType(searchParams.get("type") || "Todos");
     setUserId(searchParams.get("userId") || "");
+    setOperation(searchParams.get("operation") || "");
     setSort(searchParams.get("sort") || "recent");
     setPage(parseInt(searchParams.get("page")) || 1);
   }, [searchParams]);
@@ -89,6 +91,7 @@ export default function SearchPage() {
     maxPrice: searchParams.get("maxPrice"),
     type: searchParams.get("type"),
     userId: searchParams.get("userId"),
+    operation: searchParams.get("operation"),
     sort: searchParams.get("sort") || "recent",
     page: parseInt(searchParams.get("page")) || 1
   }), [searchParams]);
@@ -102,6 +105,7 @@ export default function SearchPage() {
     if (maxPrice) params.maxPrice = maxPrice;
     if (selectedType !== "Todos") params.type = selectedType;
     if (userId) params.userId = userId;
+    if (operation) params.operation = operation;
     params.sort = sort;
     params.page = 1;
     setSearchParams(params);
