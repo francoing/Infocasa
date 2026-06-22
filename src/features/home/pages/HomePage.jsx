@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Search, MapPin, ShieldCheck, Map, ArrowRight, BarChart3, Loader2, X, Check, Home, Building, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,6 +6,8 @@ import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
 import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
+import { useUserProvince } from "../../../hooks/useUserProvince";
+import LocationGateModal from "../components/LocationGateModal";
 
 /* ---------- Constantes ---------- */
 
@@ -65,6 +67,36 @@ export default function HomePage() {
   const [bathrooms, setBathrooms] = useState("");
   const [step, setStep] = useState(1); // 1 → operación, 2 → ubicación
   const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  // — Gate de ubicación → solo pregunta ubicación UNA VEZ
+  const { status: gateStatus, province: userProvince, error: gateError, checkProvince, reset: resetGate } = useUserProvince();
+  const [gateOpen, setGateOpen] = useState(false);
+  const [locationVerified, setLocationVerified] = useState(() =>
+    sessionStorage.getItem("infocasa_location_verified") === "true"
+  );
+
+  // Cuando el gate se resuelve "allowed", recordamos y navegamos
+  useEffect(() => {
+    if (gateStatus === "allowed" && gateOpen) {
+      setGateOpen(false);
+      setLocationVerified(true);
+      sessionStorage.setItem("infocasa_location_verified", "true");
+      navigate(`/explore/${operation}`);
+      resetGate();
+    }
+  }, [gateStatus]);
+
+  const handleGateAccept = () => {
+    checkProvince();
+  };
+
+  const handleGateClose = () => {
+    setGateOpen(false);
+    if (gateStatus !== "allowed") {
+      setOperation("");
+    }
+    resetGate();
+  };
 
   const featured = properties.slice(0, 6);
 
@@ -146,10 +178,14 @@ export default function HomePage() {
     navigate(`/search?${queryParams.toString()}`);
   };
 
-  // — Selección de operación → avanza al nivel 2
+  // — Selección de operación → abre gate de ubicación
   const selectOperation = (op) => {
     setOperation(op);
-    setStep(2);
+    if (locationVerified) {
+      navigate(`/explore/${op}`);
+    } else {
+      setGateOpen(true);
+    }
   };
 
   return (
@@ -174,227 +210,217 @@ export default function HomePage() {
               Experimenta el motor de búsqueda de propiedades más refinado, diseñado para quienes valoran la claridad, la velocidad y la estética premium.
             </motion.p>
             
-            <motion.form
-              onSubmit={handleSearch}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 max-w-2xl mx-auto space-y-6"
-            >
-              {/* ========== NIVEL 1: Botones de Operación ========== */}
-              <div className="space-y-4">
-                <p className="text-xs uppercase tracking-widest font-bold text-slate-400 text-center">
-                  ¿Qué querés hacer?
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {OPERATIONS.map((op) => {
-                    const Icon = op.icon;
-                    const active = operation === op.id;
-                    return (
-                      <button
-                        key={op.id}
-                        type="button"
-                        onClick={() => selectOperation(op.id)}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-xl font-bold text-sm transition-all active:scale-95 ${
-                          active
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 ring-2 ring-blue-600 ring-offset-2"
-                            : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
-                      >
-                        <Icon className="w-6 h-6" />
-                        {op.id}
-                      </button>
-                    );
-                  })}
+            {
+              /* ========== FORMULARIO NORMAL (sin exploración) ========== */
+              <motion.form
+                onSubmit={handleSearch}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 max-w-2xl mx-auto space-y-6"
+              >
+                {/* ========== NIVEL 1: Botones de Operación ========== */}
+                <div className="space-y-4">
+                  <p className="text-xs uppercase tracking-widest font-bold text-slate-400 text-center">
+                    ¿Qué querés hacer?
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {OPERATIONS.map((op) => {
+                      const Icon = op.icon;
+                      const active = operation === op.id;
+                      return (
+                        <button
+                          key={op.id}
+                          type="button"
+                          onClick={() => selectOperation(op.id)}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl font-bold text-sm transition-all active:scale-95 ${
+                            active
+                              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 ring-2 ring-blue-600 ring-offset-2"
+                              : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
+                        >
+                          <Icon className="w-6 h-6" />
+                          {op.id}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* ========== NIVEL 2: Búsqueda Inteligente con Tags ========== */}
-              <AnimatePresence>
-                {step >= 2 && (
-                  <motion.div
-                    key="level2"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-3 overflow-hidden"
-                  >
-                    <p className="text-xs uppercase tracking-widest font-bold text-slate-400">
-                      Ubicación o características
-                    </p>
-                    <div className="relative flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-                      <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                      <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                        {locationTags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold"
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => removeLocationTag(tag)}
-                              className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                        <input
-                          ref={inputRef}
-                          type="text"
-                          value={inputValue}
-                          onChange={(e) => {
-                            setInputValue(e.target.value);
-                            setQuery(e.target.value);
-                            setShowSuggestions(e.target.value.trim().length >= 2);
-                          }}
-                          onKeyDown={handleTagKeyDown}
-                          onFocus={() => setShowSuggestions(suggestions.length > 0)}
-                          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                          placeholder={locationTags.length === 0 ? "Ej: Barrio Norte, Centro, Córdoba..." : ""}
-                          autoComplete="off"
-                          className="flex-1 min-w-[120px] border-none p-0 bg-transparent text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-0 outline-none"
-                        />
-                      </div>
-                      {inputValue && (
-                        <button
-                          type="button"
-                          onClick={() => addLocationTag(inputValue)}
-                          className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex-shrink-0"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    {/* — Dropdown Geoapify (responsive) — */}
-                    {showSuggestions && suggestions.length > 0 && (
-                      <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto">
-                        {suggestions.map((s, i) => (
-                          <li key={i}>
-                            <button
-                              type="button"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                selectSuggestion(s);
-                              }}
-                              onMouseEnter={() => setFocusedIdx(i)}
-                              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
-                                i === focusedIdx
-                                  ? "bg-blue-50 text-blue-700"
-                                  : "text-slate-700 hover:bg-slate-50"
-                              }`}
-                            >
-                              <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                              <span className="font-medium">{s.value}</span>
-                            </button>
-                          </li>
-                        ))}
-                        {geoLoading && (
-                          <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
-                            <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ========== Botón de Acción ========== */}
-              {step >= 2 && (
-                <button
-                  type="button"
-                  onClick={() => setFilterModalOpen(true)}
-                  className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
-                >
-                  <Search className="w-5 h-5" />
-                  Buscar propiedades
-                </button>
-              )}
-
-              {/* ========== Modal de Filtros ========== */}
-              <AnimatePresence>
-                {filterModalOpen && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
-                    onClick={() => setFilterModalOpen(false)}
-                  >
+                {/* ========== NIVEL 2: Búsqueda Inteligente con Tags ========== */}
+                <AnimatePresence>
+                  {step >= 2 && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                      transition={{ duration: 0.2 }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 sm:p-8 w-full max-w-[480px] max-h-[90vh] overflow-y-auto flex flex-col"
+                      key="level2"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-3 overflow-hidden"
                     >
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-slate-900">Filtros adicionales</h3>
-                        <button
-                          type="button"
-                          onClick={() => setFilterModalOpen(false)}
-                          className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
-                        >
-                          <X className="w-5 h-5 text-slate-500" />
-                        </button>
-                      </div>
-
-                      {/* Filters */}
-                      <div className="space-y-5 flex-1">
-                        <SelectGroup
-                          label="Tipo de Propiedad"
-                          options={PROPERTY_TYPES}
-                          value={propertyTypes}
-                          onChange={setPropertyTypes}
-                        />
-                        <div className="grid grid-cols-2 gap-5">
-                          <SelectGroup
-                            label="Ambientes"
-                            options={ROOMS}
-                            value={rooms}
-                            onChange={setRooms}
-                          />
-                          <SelectGroup
-                            label="Baños"
-                            options={BATHROOMS}
-                            value={bathrooms}
-                            onChange={setBathrooms}
+                      <p className="text-xs uppercase tracking-widest font-bold text-slate-400">
+                        Ubicación o características
+                      </p>
+                      <div className="relative flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                        <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                        <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                          {locationTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold"
+                            >
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => removeLocationTag(tag)}
+                                className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => {
+                              setInputValue(e.target.value);
+                              setQuery(e.target.value);
+                              setShowSuggestions(e.target.value.trim().length >= 2);
+                            }}
+                            onKeyDown={handleTagKeyDown}
+                            onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            placeholder={locationTags.length === 0 ? "Ej: Barrio Norte, Centro, Córdoba..." : ""}
+                            autoComplete="off"
+                            className="flex-1 min-w-[120px] border-none p-0 bg-transparent text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-0 outline-none"
                           />
                         </div>
+                        {inputValue && (
+                          <button
+                            type="button"
+                            onClick={() => addLocationTag(inputValue)}
+                            className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex-shrink-0"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-3 mt-8 pt-5 border-t border-slate-100">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPropertyTypes("");
-                            setRooms("");
-                            setBathrooms("");
-                          }}
-                          className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
-                        >
-                          Limpiar filtros
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSearch}
-                          className="flex-[2] py-3 bg-blue-600 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
-                        >
-                          <Search className="w-4 h-4" />
-                          Buscar
-                        </button>
-                      </div>
+                      {/* — Dropdown Geoapify — */}
+                      {showSuggestions && suggestions.length > 0 && (
+                        <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto">
+                          {suggestions.map((s, i) => (
+                            <li key={i}>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  selectSuggestion(s);
+                                }}
+                                onMouseEnter={() => setFocusedIdx(i)}
+                                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
+                                  i === focusedIdx
+                                    ? "bg-blue-50 text-blue-700"
+                                    : "text-slate-700 hover:bg-slate-50"
+                                }`}
+                              >
+                                <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                                <span className="font-medium">{s.value}</span>
+                              </button>
+                            </li>
+                          ))}
+                          {geoLoading && (
+                            <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
+                            </li>
+                          )}
+                        </ul>
+                      )}
                     </motion.div>
-                  </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ========== Botón de Acción ========== */}
+                {step >= 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterModalOpen(true)}
+                    className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                  >
+                    <Search className="w-5 h-5" />
+                    Buscar propiedades
+                  </button>
                 )}
-              </AnimatePresence>
-            </motion.form>
+
+                {/* ========== Modal de Filtros ========== */}
+                <AnimatePresence>
+                  {filterModalOpen && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+                      onClick={() => setFilterModalOpen(false)}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 sm:p-8 w-full max-w-[480px] max-h-[90vh] overflow-y-auto flex flex-col"
+                      >
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-lg font-bold text-slate-900">Filtros adicionales</h3>
+                          <button
+                            type="button"
+                            onClick={() => setFilterModalOpen(false)}
+                            className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                          >
+                            <X className="w-5 h-5 text-slate-500" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-5 flex-1">
+                          <SelectGroup label="Tipo de Propiedad" options={PROPERTY_TYPES} value={propertyTypes} onChange={setPropertyTypes} />
+                          <div className="grid grid-cols-2 gap-5">
+                            <SelectGroup label="Ambientes" options={ROOMS} value={rooms} onChange={setRooms} />
+                            <SelectGroup label="Baños" options={BATHROOMS} value={bathrooms} onChange={setBathrooms} />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-8 pt-5 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => { setPropertyTypes(""); setRooms(""); setBathrooms(""); }}
+                            className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                          >
+                            Limpiar filtros
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSearch}
+                            className="flex-[2] py-3 bg-blue-600 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                          >
+                            <Search className="w-4 h-4" /> Buscar
+                          </button>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.form>
+            }
+
+            {/* ========== LocationGateModal ========== */}
+            <LocationGateModal
+              open={gateOpen}
+              status={gateStatus}
+              province={userProvince}
+              error={gateError}
+              onAccept={handleGateAccept}
+              onClose={handleGateClose}
+            />
           </div>
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-slate-100/20 rounded-full blur-3xl"></div>

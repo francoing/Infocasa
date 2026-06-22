@@ -1,5 +1,6 @@
 import { useAuthStore } from "../store/useAuthStore";
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 const getHeaders = (isMultipart = false) => {
@@ -37,7 +38,7 @@ const handleResponse = async (res) => {
   return res.json();
 };
 
-export const api = {
+const realApi = {
   get: async (endpoint) => {
     const res = await fetch(`${API_URL}${endpoint}`, {
       headers: getHeaders()
@@ -83,3 +84,22 @@ export const api = {
     return handleResponse(res);
   }
 };
+
+/**
+ * Proxy que switchea entre mock y backend real en caliente.
+ * - VITE_USE_MOCK=false → usa realApi (fetch al backend)
+ * - VITE_USE_MOCK=true  → importa y usa mockApi (datos locales)
+ *
+ * El mock se importa lazy para no inflar el bundle en producción.
+ */
+export const api = new Proxy({}, {
+  get(_, method) {
+    return async (...args) => {
+      if (USE_MOCK) {
+        const mod = await import("../mock/index.js");
+        return mod.mockApi[method](...args);
+      }
+      return realApi[method](...args);
+    };
+  },
+});

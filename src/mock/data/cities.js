@@ -1,0 +1,98 @@
+export const CITIES = [
+  // — Tucumán —
+  {
+    id: "sm-tucuman",
+    name: "San Miguel de Tucumán",
+    province: "Tucumán",
+    lat: -26.8303,
+    lng: -65.2038,
+    description: "Capital de la provincia, centro histórico y comercial",
+  },
+  {
+    id: "yerba-buena",
+    name: "Yerba Buena",
+    province: "Tucumán",
+    lat: -26.8122,
+    lng: -65.2982,
+    description: "Zona residencial premium, country clubs y golf",
+  },
+  {
+    id: "tafi-viejo",
+    name: "Tafí Viejo",
+    province: "Tucumán",
+    lat: -26.7343,
+    lng: -65.2592,
+    description: "Ciudad industrial con crecimiento urbano",
+  },
+  {
+    id: "concepcion",
+    name: "Concepción",
+    province: "Tucumán",
+    lat: -27.3447,
+    lng: -65.5999,
+    description: "Segunda ciudad más importante del sur tucumano",
+  },
+  {
+    id: "banda-rio-sali",
+    name: "Banda del Río Salí",
+    province: "Tucumán",
+    lat: -26.8412,
+    lng: -65.1602,
+    description: "Zona industrial y residencial del este",
+  },
+  {
+    id: "alderetes",
+    name: "Alderetes",
+    province: "Tucumán",
+    lat: -26.8167,
+    lng: -65.1333,
+    description: "Ciudad dormitorio en crecimiento",
+  },
+  {
+    id: "famailla",
+    name: "Famaillá",
+    province: "Tucumán",
+    lat: -27.0542,
+    lng: -65.4017,
+    description: "Ciudad del sur con tradición azucarera",
+  },
+  {
+    id: "lules",
+    name: "Lules",
+    province: "Tucumán",
+    lat: -26.9167,
+    lng: -65.3333,
+    description: "Ciudad del centro con perfil agrícola",
+  },
+  // — Santiago del Estero —
+  {
+    id: "sgo-estero",
+    name: "Santiago del Estero",
+    province: "Santiago del Estero",
+    lat: -27.795,
+    lng: -64.2615,
+    description: "Capital provincial, 'Madre de Ciudades'",
+  },
+  {
+    id: "la-banda",
+    name: "La Banda",
+    province: "Santiago del Estero",
+    lat: -27.7333,
+    lng: -64.25,
+    description: "Segunda ciudad más poblada de la provincia",
+  },
+  {
+    id: "termas-rio-hondo",
+    name: "Termas de Río Hondo",
+    province: "Santiago del Estero",
+    lat: -27.4833,
+    lng: -64.8667,
+    description: "Ciudad turística con aguas termales",
+  },
+];
+
+export const PROVINCE_COORDS = {
+  "Tucumán": { lat: -26.9, lng: -65.4, zoom: 9 },
+  "Santiago del Estero": { lat: -27.8, lng: -64.3, zoom: 8 },
+  "both": { lat: -27.3, lng: -64.8, zoom: 8 },
+};

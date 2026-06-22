@@ -75,7 +75,7 @@ export default function PropertyCard({ property }) {
         </div>
         <h3 className="font-semibold text-lg mb-2 truncate">{property.title}</h3>
         <p className="text-slate-500 text-sm flex items-center gap-1 mb-2">
-          <MapPin className="w-4 h-4" /> {property.location}
+          <MapPin className="w-4 h-4" /> {typeof property.location === 'string' ? property.location : [property.location?.neighborhood, property.location?.city, property.location?.province].filter(Boolean).join(', ')}
         </p>
         {property.user && (
           <div className="text-[11px] font-black text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5 mb-3">
