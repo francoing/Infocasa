@@ -11,14 +11,15 @@ export const fetchPlans = async () => {
     const limitStr = plan.property_limit ? `Hasta ${plan.property_limit} propiedades` : "Propiedades ilimitadas";
     const featuredStr = plan.featured_limit > 0 ? `Hasta ${plan.featured_limit} destacadas` : "Sin destacadas";
 
-    if (Number(plan.id) === 1 || plan.name?.toLowerCase() === 'basic') {
+    const nameLower = plan.name?.toLowerCase() || '';
+    if (nameLower.includes('básico') || nameLower.includes('basico') || nameLower.includes('basic')) {
       features = [
         limitStr,
         featuredStr,
         "Soporte básico por email",
         "Publicación estándar"
       ];
-    } else if (Number(plan.id) === 2 || plan.name?.toLowerCase() === 'premium') {
+    } else if (nameLower.includes('premium')) {
       features = [
         limitStr,
         featuredStr,
@@ -72,21 +73,25 @@ export const usePlans = () => {
     queryClient = new QueryClient();
   }
 
+  const { user } = useAuthStore();
+  const userRole = user?.role || "guest";
+  const userId = user?.id || "guest";
+
   const getPlans = useCallback(async () => {
     return queryClient.fetchQuery({
-      queryKey: ["plans"],
+      queryKey: ["plans", userRole],
       queryFn: fetchPlans,
       staleTime: 5 * 60 * 1000,
     });
-  }, [queryClient]);
+  }, [queryClient, userRole]);
 
   const getUserPlan = useCallback(async () => {
     return queryClient.fetchQuery({
-      queryKey: ["userPlan"],
+      queryKey: ["userPlan", userId],
       queryFn: fetchUserPlan,
       staleTime: 1000,
     });
-  }, [queryClient]);
+  }, [queryClient, userId]);
 
   const validateLimit = useCallback(async () => {
     const userPlan = await getUserPlan();
@@ -118,7 +123,8 @@ export const usePlans = () => {
       });
     },
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["userPlan"] });
+      queryClient.invalidateQueries({ queryKey: ["userPlan", userId] });
+      queryClient.invalidateQueries({ queryKey: ["plans", userRole] });
       queryClient.invalidateQueries({ queryKey: ["auth_me"] });
       await useAuthStore.getState().refreshUser();
     }
@@ -163,13 +169,13 @@ export const usePlans = () => {
     // Hooks de React Query que reciben opciones
     usePlansQuery: (options = {}) => useQuery({
       ...options,
-      queryKey: ["plans"],
+      queryKey: ["plans", userRole],
       queryFn: fetchPlans,
       staleTime: 5 * 60 * 1000,
     }),
     useUserPlanQuery: (options = {}) => useQuery({
       ...options,
-      queryKey: ["userPlan"],
+      queryKey: ["userPlan", userId],
       queryFn: fetchUserPlan,
       staleTime: 1000,
     })

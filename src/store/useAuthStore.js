@@ -93,7 +93,7 @@ export const useAuthStore = create((set, get) => ({
   register: async (userData) => {
     set({ error: null });
     try {
-      const res = await api.post("/auth/register", {
+      const payload = {
         name: userData.name,
         email: userData.email,
         password: userData.password,
@@ -101,7 +101,18 @@ export const useAuthStore = create((set, get) => ({
         role: userData.role,
         phone_area: userData.phoneArea,
         phone_number: userData.phoneNumber,
-      });
+      };
+
+      if (userData.role === 'agent') {
+        payload.agency_name = userData.agency_name;
+        payload.cuit = userData.cuit;
+        payload.fantasy_name = userData.fantasy_name;
+        payload.tax_condition = userData.tax_condition;
+        payload.business_name = userData.business_name;
+        payload.agency_address = userData.agency_address;
+      }
+
+      const res = await api.post("/auth/register", payload);
 
       if (res && res.access_token) {
         const enriched = enrichUser(res.user);
