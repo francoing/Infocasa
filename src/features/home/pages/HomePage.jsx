@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, MapPin, ShieldCheck, Map, ArrowRight, BarChart3, Loader2, X, Check, Home, Building, ChevronDown } from "lucide-react";
+import { Search, MapPin, ShieldCheck, Shield, Users, Map, ArrowRight, BarChart3, Loader2, X, Check, Home, Building, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Layout from "../../../common/components/Layout";
@@ -275,63 +275,62 @@ export default function HomePage() {
                 </div>
 
                 {/* Ubicación field with GeoapifyAutocomplete */}
-                <div className="space-y-1.5 relative">
+                <div className="space-y-1.5 relative z-20">
                   <label className="text-xs uppercase tracking-widest font-black text-blue-600 block">
                     Ubicación
                   </label>
-                  <div className="relative flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all shadow-sm">
-                    <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={inputValue}
-                      onChange={(e) => {
-                        setInputValue(e.target.value);
-                        setQuery(e.target.value);
-                        setShowSuggestions(e.target.value.trim().length >= 2);
-                      }}
-                      onKeyDown={handleTagKeyDown}
-                      onFocus={() => setShowSuggestions(suggestions.length > 0)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      placeholder="¿Dónde querés vivir?"
-                      autoComplete="off"
-                      className="flex-1 border-none p-0 bg-transparent text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 outline-none"
-                    />
-                  </div>
+                  <div className="relative">
+                    <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all shadow-sm">
+                      <MapPin className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => {
+                          setInputValue(e.target.value);
+                          setQuery(e.target.value);
+                          setShowSuggestions(e.target.value.trim().length >= 2);
+                        }}
+                        onKeyDown={handleTagKeyDown}
+                        onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                        placeholder="¿Dónde querés vivir?"
+                        autoComplete="off"
+                        className="flex-1 border-none p-0 bg-transparent text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 outline-none"
+                      />
+                    </div>
 
-                  {/* Suggestions List */}
-                  {showSuggestions && suggestions.length > 0 && (
-                    <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto">
-                      {suggestions.map((s, i) => (
-                        <li key={i}>
-                          <button
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setInputValue(s.city || s.state || s.value);
-                              setShowSuggestions(false);
-                              setFocusedIdx(-1);
-                              clearSuggestions();
-                            }}
-                            onMouseEnter={() => setFocusedIdx(i)}
-                            className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
-                              i === focusedIdx
-                                ? "bg-blue-50 text-blue-700"
-                                : "text-slate-700 hover:bg-slate-50"
-                            }`}
-                          >
-                            <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                            <span className="font-semibold">{s.value}</span>
-                          </button>
-                        </li>
-                      ))}
-                      {geoLoading && (
-                        <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
-                        </li>
-                      )}
-                    </ul>
-                  )}
+                    {/* Suggestions List */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto">
+                        {suggestions.map((s, i) => (
+                          <li key={i}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                selectSuggestion(s);
+                              }}
+                              onMouseEnter={() => setFocusedIdx(i)}
+                              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
+                                i === focusedIdx
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
+                              <span className="font-semibold">{s.value}</span>
+                            </button>
+                          </li>
+                        ))}
+                        {geoLoading && (
+                          <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
                 </div>
 
                 {/* Filters row: Tipo and Precio */}
@@ -433,61 +432,91 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Value Proposition / Bento */}
-        <section className="bg-slate-50 py-24 px-6 lg:px-12">
+        {/* Por qué Infocasa (Benefits) */}
+        <section className="bg-slate-50 py-24 px-6 lg:px-12 text-center">
           <div className="max-w-7xl mx-auto w-full">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              <div className="md:col-span-8 bg-white p-10 lg:p-14 rounded-3xl border border-slate-200 flex flex-col justify-between shadow-sm">
-                <div className="max-w-md">
-                  <h2 className="text-3xl font-bold text-slate-900 mb-6">Información del mercado que te impulsa.</h2>
-                  <p className="text-slate-600 mb-8">Accede a datos en tiempo real, tendencias de precios históricos e informes comunitarios directamente en tu panel de propiedad.</p>
+            <div className="flex flex-col items-center mb-16">
+              <span className="inline-block bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-4">
+                Por qué Infocasa
+              </span>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">
+                Más opciones, mejores decisiones
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {/* Opciones */}
+              <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                  <Search className="w-8 h-8" />
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="bg-slate-100 p-4 rounded-2xl">
-                    <BarChart3 className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <div className="bg-slate-100 p-4 rounded-2xl">
-                    <Map className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <div className="bg-slate-100 p-4 rounded-2xl">
-                    <ShieldCheck className="w-8 h-8 text-blue-600" />
-                  </div>
-                </div>
+                <h3 className="text-lg font-bold text-slate-900">Opciones</h3>
+                <p className="text-sm text-slate-500 font-medium">Amplia variedad verificada.</p>
               </div>
-              <div className="md:col-span-4 bg-blue-600 p-10 lg:p-14 rounded-3xl flex flex-col justify-center text-white">
-                <ShieldCheck className="w-12 h-12 mb-6" />
-                <h3 className="text-2xl font-bold mb-4">Solo Agentes Certificados</h3>
-                <p className="text-blue-100/80 mb-8">Cada profesional en nuestra plataforma es evaluado por su experiencia, conocimiento local e integridad.</p>
-                <Link to="/register" className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-slate-100 transition-colors w-full text-center">
-                  Postular como Agente
-                </Link>
+
+              {/* Confianza */}
+              <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Confianza</h3>
+                <p className="text-sm text-slate-500 font-medium">Seguridad en cada paso.</p>
+              </div>
+
+              {/* Acompañamiento */}
+              <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                  <Users className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Acompañamiento</h3>
+                <p className="text-sm text-slate-500 font-medium">Asesoramiento personalizado.</p>
+              </div>
+
+              {/* Decisiones */}
+              <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                  <Home className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Decisiones</h3>
+                <p className="text-sm text-slate-500 font-medium">Información clara y transparente.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Map CTA Section */}
-        <section className="max-w-7xl mx-auto px-6 lg:px-12 py-24 w-full">
-          <div className="relative h-[450px] rounded-3xl overflow-hidden shadow-2xl">
-            <img 
-              className="w-full h-full object-cover grayscale opacity-40" 
-              src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200"
-              alt="Search Map"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-transparent flex items-center px-10 md:px-20">
-              <div className="max-w-md text-white">
-                <h2 className="text-3xl font-bold mb-4">Buscar en el Mapa</h2>
-                <p className="text-blue-100 mb-8">Visualiza tu futuro vecindario. Mira la proximidad a parques, escuelas y servicios esenciales en tiempo real.</p>
-                <button 
-                  onClick={handleMapExplore}
-                  className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold shadow-xl hover:-translate-y-1 transition-transform flex items-center gap-3"
+        {/* CTA Section */}
+        <section className="bg-blue-600 py-20 px-6 lg:px-12 text-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+            <div className="space-y-6 text-left">
+              <h2 className="text-3xl md:text-5xl font-black leading-tight">
+                ¿Tenés una propiedad para <span className="underline decoration-white/50 underline-offset-8">vender o alquilar</span>?
+              </h2>
+              <p className="text-lg text-white/90">
+                Publicá tu propiedad y llegá a miles de personas buscando exactamente lo que ofrecés.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-4">
+                <Link 
+                  to="/register" 
+                  className="bg-white text-blue-600 border-2 border-transparent hover:bg-slate-50 py-3.5 px-8 rounded-[10px] font-bold text-base transition-all shadow-lg active:scale-95"
                 >
-                  Explorar Mapa Local
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                  Publicar ahora
+                </Link>
+                <Link 
+                  to="/search" 
+                  className="border-2 border-white text-white hover:bg-white/10 py-3.5 px-8 rounded-[10px] font-bold text-base transition-all active:scale-95"
+                >
+                  Conocer más
+                </Link>
               </div>
             </div>
+            <div className="rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl">
+              <img 
+                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800" 
+                alt="Propiedad" 
+                className="w-full h-[300px] md:h-[400px] object-cover"
+              />
+            </div>
           </div>
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
         </section>
       </div>
     </Layout>

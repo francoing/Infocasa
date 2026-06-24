@@ -99,8 +99,14 @@ function Header() {
 }
 
 function Footer() {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+
   return (
-    <footer className="w-full border-t-4 border-blue-600 bg-[#111111] text-white mt-20">
+    <footer className={cn(
+      "w-full border-t-4 border-blue-600 bg-[#111111] text-white",
+      isHome ? "mt-0" : "mt-20"
+    )}>
       <div className="flex flex-col md:flex-row justify-between items-center px-12 py-16 max-w-7xl mx-auto w-full gap-8">
         <div className="text-center md:text-left">
           <div className="mb-4">
