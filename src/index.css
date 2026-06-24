@@ -24,6 +24,15 @@ body {
   background: radial-gradient(circle at 0% 0%, #eff6ff 0%, #ffffff 50%);
 }
 
+.hero-bg-mockup {
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+    url('/img/32177974.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
