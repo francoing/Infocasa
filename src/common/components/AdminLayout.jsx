@@ -27,7 +27,7 @@ export default function AdminLayout({ children }) {
     navigate('/');
   };
 
-  const dashboardPath = isAdmin ? '/admin' : '/dashboard';
+  const dashboardPath = '/dashboard';
 
   const sidebarContent = (
     <>

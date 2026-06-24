@@ -41,7 +41,7 @@ function Header() {
   };
 
   // Determinar la ruta del tablero según el rol
-  const dashboardPath = isAdmin ? '/admin' : '/dashboard';
+  const dashboardPath = '/dashboard';
 
   return (
     <header className="bg-[#edd446] fixed top-0 w-full z-50 border-b border-[#cca425] shadow-sm">
