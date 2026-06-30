@@ -64,6 +64,19 @@ const mockFetch = async (endpoint, options = {}) => {
     return { data: [] };
   }
 
+  // GET /zones
+  if (method === "GET" && path === "/zones") {
+    return {
+      data: [
+        { id: 1, name: "Zona Norte" },
+        { id: 2, name: "Zona Sur" },
+        { id: 3, name: "Zona Oeste" },
+        { id: 4, name: "Zona Este" },
+        { id: 5, name: "Centro" }
+      ]
+    };
+  }
+
   // Fallback
   return { data: [] };
 };

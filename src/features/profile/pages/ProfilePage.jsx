@@ -6,36 +6,67 @@ import { usePlans } from '@/hooks/usePlans';
 import { useToast } from '@/hooks/useToast';
 import { useAuthStore } from '@/store/useAuthStore';
 import Layout from '@/common/components/Layout';
+import { api } from '@/api/api';
 import CheckoutModal from '@/features/dashboard/components/CheckoutModal';
-import { Camera, Save, Lock, User as UserIcon, Phone, Loader2, Crown, CheckCircle } from 'lucide-react';
+import { Camera, Save, Lock, User as UserIcon, Phone, Loader2, Crown, CheckCircle, Building } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, updateProfile, updatePassword, updateAvatar } = useAuth();
-  const { usePlansQuery, assignPlan, payWithMercadoPago } = usePlans();
+  const { user, updateProfile, updatePassword, updateAvatar, refreshUser } = useAuth();
+  const { usePlansQuery, assignPlan, payWithMercadoPago, verifyMercadoPagoPayment } = usePlans();
   const { data: plansList = [] } = usePlansQuery();
   const toast = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Al volver del sandbox de MP, refrescar el usuario y limpiar caché
+  // Al volver del checkout de MP, verificar el pago y activar la suscripción
   useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    if (paymentStatus) {
-      // Forzar refresh del usuario y del plan para mostrar datos actualizados
-      useAuthStore.getState().checkAuth();
-      queryClient.invalidateQueries({ queryKey: ['userPlan'] });
-      queryClient.invalidateQueries({ queryKey: ['auth_me'] });
+    const paymentStatus     = searchParams.get('payment');
+    const collectionStatus  = searchParams.get('collection_status') ?? searchParams.get('status');
+    const paymentId         = searchParams.get('payment_id');
+    const preferenceId      = searchParams.get('preference_id');
+    const externalReference = searchParams.get('external_reference');
 
-      if (paymentStatus === 'success') {
-        toast.success('¡Tu suscripción ha sido procesada con éxito!');
-      } else if (paymentStatus === 'failure') {
-        toast.error('El pago no pudo completarse. Por favor, intenta de nuevo.');
-      } else if (paymentStatus === 'pending') {
-        toast.info('Tu pago está pendiente de aprobación.');
-      }
-      searchParams.delete('payment');
-      setSearchParams(searchParams, { replace: true });
+    // Detectar si venimos de MP: tiene payment_id o preference_id en la URL
+    const isFromMercadoPago = !!(paymentId || preferenceId || externalReference);
+    if (!paymentStatus && !isFromMercadoPago) return;
+
+    // Limpiar todos los query params de MP de la URL inmediatamente
+    const cleaned = new URLSearchParams(searchParams);
+    ['payment','payment_id','collection_id','collection_status','status',
+     'external_reference','payment_type','merchant_order_id','preference_id',
+     'site_id','processing_mode','merchant_account_id'].forEach(k => cleaned.delete(k));
+    setSearchParams(cleaned, { replace: true });
+
+    const isApproved = paymentStatus === 'success' || collectionStatus === 'approved';
+    const isFailure  = paymentStatus === 'failure'  || collectionStatus === 'rejected';
+    const isPending  = paymentStatus === 'pending'  || collectionStatus === 'pending';
+
+    if (isApproved || (isFromMercadoPago && !isFailure && !isPending)) {
+      // Llamar al backend para verificar y activar la suscripción
+      verifyMercadoPagoPayment({ paymentId, preferenceId, externalReference })
+        .then((res) => {
+          // Actualizar el usuario en el store con los datos frescos del backend
+          if (res?.user) {
+            const enriched = { ...res.user, role: res.user.roles?.[0]?.name || 'buyer' };
+            localStorage.setItem('auth_user', JSON.stringify(enriched));
+            useAuthStore.setState({ user: enriched });
+          }
+          queryClient.invalidateQueries({ queryKey: ['userPlan'] });
+          queryClient.invalidateQueries({ queryKey: ['auth_me'] });
+          toast.success('¡Tu suscripción ha sido activada con éxito!');
+        })
+        .catch((err) => {
+          console.error('Error al verificar el pago con MP:', err);
+          // Fallback: al menos refrescar el usuario desde /auth/me
+          useAuthStore.getState().checkAuth();
+          queryClient.invalidateQueries({ queryKey: ['userPlan'] });
+          toast.success('¡Pago procesado! Tu plan se actualizará en breve.');
+        });
+    } else if (isFailure) {
+      toast.error('El pago no pudo completarse. Por favor, intenta de nuevo.');
+    } else if (isPending) {
+      toast.info('Tu pago está pendiente de aprobación.');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -46,6 +77,7 @@ export default function ProfilePage() {
   const [loadingInfo, setLoadingInfo] = useState(false);
   const [loadingPass, setLoadingPass] = useState(false);
   const [loadingAvatar, setLoadingAvatar] = useState(false);
+  const [loadingAgency, setLoadingAgency] = useState(false);
 
   // Perfil
   const [infoForm, setInfoForm] = useState({
@@ -54,12 +86,60 @@ export default function ProfilePage() {
     phone_number: user?.phone_number || '',
   });
 
+  // Inmobiliaria
+  const [agencyForm, setAgencyForm] = useState({
+    name: user?.agency?.name || '',
+    cuit: user?.agency?.cuit || '',
+    fantasy_name: user?.agency?.fantasy_name || '',
+    tax_condition: user?.agency?.tax_condition || '',
+    business_name: user?.agency?.business_name || '',
+    address: user?.agency?.address || '',
+  });
+
   // Password
   const [passForm, setPassForm] = useState({
     current_password: '',
     password: '',
     password_confirmation: '',
   });
+
+  useEffect(() => {
+    if (user?.agency) {
+      setAgencyForm({
+        name: user.agency.name || '',
+        cuit: user.agency.cuit || '',
+        fantasy_name: user.agency.fantasy_name || '',
+        tax_condition: user.agency.tax_condition || '',
+        business_name: user.agency.business_name || '',
+        address: user.agency.address || '',
+      });
+    }
+  }, [user]);
+
+  const handleAgencySubmit = async (e) => {
+    e.preventDefault();
+    setLoadingAgency(true);
+    try {
+      if (user?.agency?.id) {
+        await api.put(`/agencies/${user.agency.id}`, agencyForm);
+        toast.success('Información de la inmobiliaria actualizada correctamente.');
+      } else {
+        await api.post('/agencies', agencyForm);
+        toast.success('Inmobiliaria registrada correctamente.');
+      }
+      await refreshUser();
+    } catch (err) {
+      if (err.status === 422 && err.data?.errors) {
+        Object.values(err.data.errors).forEach((messages) => {
+          messages.forEach((msg) => toast.error(msg));
+        });
+      } else {
+        toast.error('Error al guardar la información de la inmobiliaria.');
+      }
+    } finally {
+      setLoadingAgency(false);
+    }
+  };
 
   const handleInfoSubmit = async (e) => {
     e.preventDefault();
@@ -226,7 +306,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {plansList.map(plan => {
                   const isCurrentPlan = user?.subscription?.plan?.id === plan.id;
-                  const isPopular = plan.name?.toLowerCase() === 'premium';
+                  const isPopular = plan.name?.toLowerCase().includes('premium');
 
                   return (
                     <div 
@@ -343,6 +423,103 @@ export default function ProfilePage() {
                 </div>
               </form>
             </div>
+
+            {/* Información de la Inmobiliaria (Solo para Agentes) */}
+            {user?.role === 'agent' && (
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                  <div className="p-2.5 bg-slate-50 text-slate-600 rounded-xl">
+                    <Building className="w-5 h-5" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900">Información de la Inmobiliaria</h2>
+                </div>
+                <form onSubmit={handleAgencySubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Nombre Comercial</label>
+                      <input
+                        type="text"
+                        required
+                        value={agencyForm.name}
+                        onChange={(e) => setAgencyForm({ ...agencyForm, name: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Nombre de Fantasía</label>
+                      <input
+                        type="text"
+                        required
+                        value={agencyForm.fantasy_name}
+                        onChange={(e) => setAgencyForm({ ...agencyForm, fantasy_name: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Razón Social</label>
+                      <input
+                        type="text"
+                        required
+                        value={agencyForm.business_name}
+                        onChange={(e) => setAgencyForm({ ...agencyForm, business_name: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">CUIT</label>
+                      <input
+                        type="text"
+                        required
+                        value={agencyForm.cuit}
+                        onChange={(e) => setAgencyForm({ ...agencyForm, cuit: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Condición Fiscal</label>
+                      <select
+                        required
+                        value={agencyForm.tax_condition}
+                        onChange={(e) => setAgencyForm({ ...agencyForm, tax_condition: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
+                      >
+                        <option value="">Selecciona una condición</option>
+                        <option value="Responsable Inscripto">Responsable Inscripto</option>
+                        <option value="Monotributista">Monotributista</option>
+                        <option value="Exento">IVA Exento</option>
+                        <option value="Consumidor Final">Consumidor Final</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Dirección Comercial</label>
+                      <input
+                        type="text"
+                        value={agencyForm.address}
+                        onChange={(e) => setAgencyForm({ ...agencyForm, address: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={loadingAgency}
+                      className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {loadingAgency ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                      Guardar Inmobiliaria
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
 
             {/* Seguridad / Contraseña */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">

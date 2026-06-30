@@ -54,6 +54,9 @@ export default function PropertyDetailPage() {
 
   const images = property.images?.length > 0 ? property.images.map(img => img.url || img) : [property.imageUrl];
 
+  const hasTech = !!(property.constructionYear || (property.expenses?.amount > 0) || property.parkingSpaces > 0 || property.condition || property.disposition || property.orientation || property.petsAllowed || property.professionalUse);
+  const hasFeatures = !!(property.features && property.features.length > 0);
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-10">
@@ -213,6 +216,111 @@ export default function PropertyDetailPage() {
               <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-line">{property.description}</p>
             </div>
 
+            {/* Additional Features / Technical Details */}
+            {(hasTech || hasFeatures) && (
+              <div className="space-y-6 border-t border-slate-100 pt-10">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Detalles y Comodidades</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Technical details grid */}
+                  {hasTech && (
+                    <div className={`bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-4 ${
+                      !hasFeatures ? "md:col-span-2" : ""
+                    }`}>
+                      <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Ficha Técnica</h3>
+                      <div className={`grid gap-x-6 gap-y-4 text-sm font-semibold ${
+                        !hasFeatures ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4" : "grid-cols-2"
+                      }`}>
+                        {property.expenses?.amount > 0 && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Expensas</span>
+                            <span className="text-slate-800">{property.expenses.currency === 'USD' ? 'USD' : '$'} {Number(property.expenses.amount).toLocaleString()}</span>
+                          </div>
+                        )}
+                        {property.parkingSpaces > 0 && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cocheras</span>
+                            <span className="text-slate-800">{property.parkingSpaces}</span>
+                          </div>
+                        )}
+                        {property.constructionYear && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Año de construcción</span>
+                            <span className="text-slate-800">{property.constructionYear}</span>
+                          </div>
+                        )}
+                        {property.condition && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Estado</span>
+                            <span className="text-slate-800">
+                              {property.condition === "good" ? "Excelente / Bueno" :
+                               property.condition === "new" ? "A Estrenar" :
+                               property.condition === "under_construction" ? "En Construcción" :
+                               property.condition === "to_refurbish" ? "A Refaccionar" : property.condition}
+                            </span>
+                          </div>
+                        )}
+                        {property.disposition && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Disposición</span>
+                            <span className="text-slate-800 capitalize">
+                              {property.disposition === "front" ? "Frente" :
+                               property.disposition === "back" ? "Contrafrente" :
+                               property.disposition === "lateral" ? "Lateral" :
+                               property.disposition === "internal" ? "Interno" : property.disposition}
+                            </span>
+                          </div>
+                        )}
+                        {property.orientation && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Orientación</span>
+                            <span className="text-slate-800 capitalize">
+                              {property.orientation === "north" ? "Norte" :
+                               property.orientation === "south" ? "Sur" :
+                               property.orientation === "east" ? "Este" :
+                               property.orientation === "west" ? "Oeste" : property.orientation}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Acepta Mascotas</span>
+                          <span className="text-slate-800">{property.petsAllowed ? "Sí" : "No"}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Apto Profesional</span>
+                          <span className="text-slate-800">{property.professionalUse ? "Sí" : "No"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Amenities list */}
+                  {hasFeatures && (
+                    <div className={`bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-4 ${
+                      !hasTech ? "md:col-span-2" : ""
+                    }`}>
+                      <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Servicios y Amenities</h3>
+                      <div className={`grid gap-4 ${
+                        !hasTech ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4" : "grid-cols-2"
+                      }`}>
+                        {property.features.map((feat, idx) => {
+                          const name = typeof feat === "string" ? feat : feat?.name || "";
+                          if (!name) return null;
+                          const label = name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                          return (
+                            <div key={idx} className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                              <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              <span>{label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Map Section */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
@@ -232,14 +340,19 @@ export default function PropertyDetailPage() {
             {/* Price Box */}
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
               <div>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Precio de Venta</p>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">
+                  {property.operation === "Alquiler" ? "Precio de Alquiler" : property.operation === "Desarrollo" ? "Precio de Desarrollo" : "Precio de Venta"}
+                </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-slate-900">USD {property.price.toLocaleString()}</span>
+                  <span className="text-4xl font-black text-slate-900">
+                    {property.priceCurrency === 'USD' ? 'USD' : '$'} {property.price.toLocaleString()}
+                    {property.operation === "Alquiler" && <span className="text-sm font-bold text-slate-500"> /mes</span>}
+                  </span>
                 </div>
                 {property.priceHistory?.length > 0 && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-green-600">
                     <TrendingDown className="w-4 h-4" />
-                    <span>Rebajado de USD {property.priceHistory[property.priceHistory.length - 1].oldPrice.toLocaleString()} ({property.priceHistory[property.priceHistory.length - 1].percentage}% off)</span>
+                    <span>Rebajado de {property.priceCurrency === 'USD' ? 'USD' : '$'} {property.priceHistory[property.priceHistory.length - 1].oldPrice.toLocaleString()} ({property.priceHistory[property.priceHistory.length - 1].percentage}% off)</span>
                   </div>
                 )}
               </div>

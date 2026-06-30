@@ -29,7 +29,6 @@ export function useUserProvince() {
   const [state, setState] = useState(initialState);
 
   const checkProvince = useCallback(() => {
-    // El browser soporta geolocation?
     if (!navigator.geolocation) {
       setState({
         status: "error",

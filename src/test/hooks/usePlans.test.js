@@ -29,12 +29,18 @@ vi.mock("@/api/api", () => {
   };
 });
 
-// Mock auth store for assignMutation.onSuccess
-vi.mock("@/store/useAuthStore", () => ({
-  useAuthStore: {
-    getState: vi.fn(),
-  },
-}));
+vi.mock("@/store/useAuthStore", () => {
+  const mockStore = vi.fn(() => ({
+    user: null,
+  }));
+  mockStore.getState = vi.fn(() => ({
+    refreshUser: vi.fn().mockResolvedValue(undefined),
+  }));
+  return {
+    useAuthStore: mockStore,
+  };
+});
+
 
 beforeEach(() => {
   vi.clearAllMocks();

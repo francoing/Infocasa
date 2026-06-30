@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, X, Sparkles, Zap, Star, Crown } from "lucide-react";
+import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, Sparkles, Zap, Star, Crown, Home } from "lucide-react";
 import ImageUploader from "./ImageUploader";
 import MapLocationSelector from "./MapLocationSelector";
 import { api } from "../../../api/api";
@@ -11,37 +11,56 @@ const INITIAL_STATE = {
   price_currency: "USD",
   location_id: "",
   property_type_id: "",
+  zone_id: "",
   status: "venta", // operation
   bedrooms: "",
   bathrooms: "",
+  rooms: "",
   area: "",
+  area_covered: "",
   imageUrl: "",
   gallery: [],
-  features: [],
   featured: false,
   latitude: null,
   longitude: null,
   showExactAddress: true,
-  publication_type: "basic"
+  publication_type: "basic",
+  address: "",
+  expenses_amount: "",
+  expenses_currency: "ARS",
+  parking_spaces: "",
+  construction_year: "",
+  condition: "good",
+  disposition: "",
+  orientation: "",
+  pets_allowed: false,
+  professional_use: false,
+  features: []
 };
 
 export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false, userPlan = null }) {
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [locations, setLocations] = useState([]);
   const [propertyTypes, setPropertyTypes] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [availableFeatures, setAvailableFeatures] = useState([]);
   const [loadingRefs, setLoadingRefs] = useState(true);
-  const [newFeature, setNewFeature] = useState("");
+
 
   useEffect(() => {
     const fetchRefData = async () => {
       try {
         setLoadingRefs(true);
-        const [locRes, typeRes] = await Promise.all([
+        const [locRes, typeRes, zoneRes, featRes] = await Promise.all([
           api.get("/locations"),
-          api.get("/property-types")
+          api.get("/property-types"),
+          api.get("/zones"),
+          api.get("/property-features")
         ]);
         setLocations(locRes.data || []);
         setPropertyTypes(typeRes.data || []);
+        setZones(zoneRes.data || []);
+        setAvailableFeatures(featRes.data?.data || []);
       } catch (err) {
         console.error("Error loading reference data:", err);
       } finally {
@@ -61,13 +80,15 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
         price_currency: initialData.priceCurrency || "USD",
         location_id: initialData.locationDetails?.id || initialData.location_id || "",
         property_type_id: initialData.typeId || initialData.property_type_id || "",
-        status: initialData.operationRaw === "rent" ? "alquiler" : "venta",
-        bedrooms: initialData.bedrooms || "",
-        bathrooms: initialData.bathrooms || "",
-        area: initialData.areaTotal || initialData.area || "",
+        zone_id: initialData.zoneId || initialData.zone?.id || initialData.zone_id || "",
+        status: initialData.operationRaw === "rent" ? "alquiler" : initialData.operationRaw === "development" ? "desarrollo" : "venta",
+        bedrooms: initialData.bedrooms !== undefined && initialData.bedrooms !== null ? initialData.bedrooms : "",
+        bathrooms: initialData.bathrooms !== undefined && initialData.bathrooms !== null ? initialData.bathrooms : "",
+        rooms: initialData.rooms !== undefined && initialData.rooms !== null ? initialData.rooms : "",
+        area: initialData.areaTotal !== undefined && initialData.areaTotal !== null ? initialData.areaTotal : "",
+        area_covered: initialData.areaCovered !== undefined && initialData.areaCovered !== null ? initialData.areaCovered : "",
         imageUrl: initialData.imageUrl || "",
         gallery: initialData.images?.map(img => img.url) || [],
-        features: initialData.features || [],
         featured: !!initialData.featured,
         latitude: (() => {
           const val = initialData.locationDetails?.latitude ?? initialData.latitude;
@@ -77,7 +98,18 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           const val = initialData.locationDetails?.longitude ?? initialData.longitude;
           return val !== null && val !== undefined ? Number(val) : null;
         })(),
-        showExactAddress: initialData.showExactAddress !== undefined ? !!initialData.showExactAddress : true
+        showExactAddress: initialData.showExactAddress !== undefined ? !!initialData.showExactAddress : true,
+        address: initialData.address || "",
+        expenses_amount: initialData.expenses?.amount ?? "",
+        expenses_currency: initialData.expenses?.currency || "ARS",
+        parking_spaces: initialData.parking_spaces ?? "",
+        construction_year: initialData.construction_year ?? "",
+        condition: initialData.condition || "good",
+        disposition: initialData.disposition || "",
+        orientation: initialData.orientation || "",
+        pets_allowed: !!initialData.pets_allowed,
+        professional_use: !!initialData.professional_use,
+        features: initialData.features?.map(f => f.name) || []
       });
     }
   }, [initialData]);
@@ -98,22 +130,14 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     }));
   };
 
-  const handleAddFeature = (e) => {
-    if (e) e.preventDefault();
-    if (newFeature.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        features: [...prev.features, newFeature.trim()]
-      }));
-      setNewFeature("");
-    }
-  };
-
-  const removeFeature = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index)
-    }));
+  const handleFeatureToggle = (featureName) => {
+    setFormData(prev => {
+      const exists = prev.features.includes(featureName);
+      const newFeatures = exists
+        ? prev.features.filter(name => name !== featureName)
+        : [...prev.features, featureName];
+      return { ...prev, features: newFeatures };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -131,15 +155,27 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       price_usd: priceUsdVal,
       location_id: Number(formData.location_id),
       property_type_id: Number(formData.property_type_id),
-      operation: formData.status === "alquiler" ? "rent" : "sale",
-      bedrooms: Number(formData.bedrooms),
-      bathrooms: Number(formData.bathrooms),
-      rooms: Number(formData.bedrooms) + 1,
-      area_total: Number(formData.area),
-      area_covered: Number(formData.area) * 0.9,
+      zone_id: Number(formData.zone_id),
+      operation: formData.status === "alquiler" ? "rent" : formData.status === "desarrollo" ? "development" : "sale",
+      bedrooms: formData.bedrooms !== "" && formData.bedrooms !== null ? Number(formData.bedrooms) : null,
+      bathrooms: formData.bathrooms !== "" && formData.bathrooms !== null ? Number(formData.bathrooms) : null,
+      rooms: formData.rooms !== "" && formData.rooms !== null ? Number(formData.rooms) : null,
+      area_total: formData.area !== "" && formData.area !== null ? Number(formData.area) : null,
+      area_covered: formData.area_covered !== "" && formData.area_covered !== null ? Number(formData.area_covered) : null,
       latitude: formData.latitude ? Number(formData.latitude) : null,
       longitude: formData.longitude ? Number(formData.longitude) : null,
       show_exact_address: formData.showExactAddress !== undefined ? !!formData.showExactAddress : true,
+      address: formData.address || null,
+      expenses_amount: formData.expenses_amount !== "" && formData.expenses_amount !== null ? Number(formData.expenses_amount) : null,
+      expenses_currency: formData.expenses_amount ? formData.expenses_currency : null,
+      parking_spaces: formData.parking_spaces !== "" && formData.parking_spaces !== null ? Number(formData.parking_spaces) : 0,
+      construction_year: formData.construction_year !== "" && formData.construction_year !== null ? Number(formData.construction_year) : null,
+      condition: formData.condition || "good",
+      disposition: formData.disposition || null,
+      orientation: formData.orientation || null,
+      pets_allowed: !!formData.pets_allowed,
+      professional_use: !!formData.professional_use,
+      features: formData.features,
       status: "published",
       publication_type: formData.publication_type,
       gallery: formData.gallery
@@ -172,180 +208,439 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Basic Info */}
-        <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5 text-blue-600" />
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Información Principal</h3>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Título de la publicación</label>
-            <input 
-              required
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 outline-none transition-all"
-              placeholder="Ej: Mansión Moderna en Yerba Buena"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Descripción detallada</label>
-            <textarea 
-              required
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 outline-none transition-all"
-              placeholder="Describe las características principales..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
+        {/* Left Column: Información y Detalles Técnicos */}
+        <div className="space-y-10">
+          {/* Información Principal */}
+          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Información Principal</h3>
+            </div>
+            
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Propiedad</label>
-              <select 
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Título de la publicación</label>
+              <input 
                 required
-                name="property_type_id" 
-                value={formData.property_type_id} 
-                onChange={handleChange} 
-                className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
-              >
-                <option value="">Selecciona tipo...</option>
-                {propertyTypes.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 outline-none transition-all font-semibold"
+                placeholder="Ej: Mansión Moderna en Yerba Buena"
+              />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
-              <select name="status" value={formData.status} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold">
-                <option value="venta">Venta</option>
-                <option value="alquiler">Alquiler</option>
-              </select>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2 space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Precio</label>
-              <div className="relative">
-                <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
-                <input required type="number" name="price" value={formData.price} onChange={handleChange} className="w-full pl-10 pr-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-black text-xl" placeholder="0" />
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Descripción detallada</label>
+              <textarea 
+                required
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 outline-none transition-all font-medium leading-relaxed"
+                placeholder="Describe las características principales..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Propiedad</label>
+                <select 
+                  required
+                  name="property_type_id" 
+                  value={formData.property_type_id} 
+                  onChange={handleChange} 
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">Selecciona tipo...</option>
+                  {propertyTypes.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
+                <select name="status" value={formData.status} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white">
+                  <option value="venta">Venta</option>
+                  <option value="alquiler">Alquiler</option>
+                  <option value="desarrollo">Desarrollo</option>
+                </select>
               </div>
             </div>
-            <div className="col-span-1 space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Moneda</label>
-              <select name="price_currency" value={formData.price_currency} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold">
-                <option value="USD">USD</option>
-                <option value="ARS">ARS</option>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Precio</label>
+                <div className="relative">
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
+                  <input required type="number" name="price" value={formData.price} onChange={handleChange} className="w-full pl-10 pr-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-black text-xl" placeholder="0" />
+                </div>
+              </div>
+              <div className="col-span-1 space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Moneda</label>
+                <select name="price_currency" value={formData.price_currency} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white">
+                  <option value="USD">USD</option>
+                  <option value="ARS">ARS</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Detalles Técnicos y Superficies */}
+          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Maximize className="w-5 h-5 text-blue-600" />
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Detalles Técnicos y Superficie</h3>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Maximize className="w-3.5 h-3.5 text-blue-600" /> m² Totales
+                </label>
+                <input 
+                  type="number" 
+                  name="area" 
+                  value={formData.area} 
+                  onChange={handleChange} 
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                  placeholder="Ej: 120"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Maximize className="w-3.5 h-3.5 text-blue-600 rotate-90" /> m² Cubiertos
+                </label>
+                <input 
+                  type="number" 
+                  name="area_covered" 
+                  value={formData.area_covered} 
+                  onChange={handleChange} 
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                  placeholder="Ej: 100"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Home className="w-3.5 h-3.5 text-blue-600" /> Ambientes
+                </label>
+                <input 
+                  type="number" 
+                  name="rooms" 
+                  value={formData.rooms} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                  placeholder="Ej: 3"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Bed className="w-3.5 h-3.5 text-blue-600" /> Dorm.
+                </label>
+                <input 
+                  type="number" 
+                  name="bedrooms" 
+                  value={formData.bedrooms} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                  placeholder="Ej: 2"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Bath className="w-3.5 h-3.5 text-blue-600" /> Baños
+                </label>
+                <input 
+                  type="number" 
+                  name="bathrooms" 
+                  value={formData.bathrooms} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                  placeholder="Ej: 1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 pt-2">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cocheras / Garajes</label>
+                <input 
+                  type="number"
+                  name="parking_spaces"
+                  value={formData.parking_spaces}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
+                  placeholder="Ej: 1"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Año de Edificación</label>
+                <input 
+                  type="number"
+                  name="construction_year"
+                  value={formData.construction_year}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
+                  placeholder="Ej: 2018"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Estado de la propiedad y Normas */}
+          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Home className="w-5 h-5 text-blue-600" />
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Estado y Normas</h3>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Estado de la propiedad</label>
+              <select 
+                name="condition"
+                value={formData.condition}
+                onChange={handleChange}
+                className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+              >
+                <option value="good">Excelente / Bueno</option>
+                <option value="new">A Estrenar</option>
+                <option value="under_construction">En Construcción</option>
+                <option value="to_refurbish">A Refaccionar</option>
               </select>
             </div>
-          </div>
-        </section>
 
-        {/* Location & Details */}
-        <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin className="w-5 h-5 text-blue-600" />
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Ubicación y Comodidades</h3>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación (Tucumán)</label>
-            <select 
-              required 
-              name="location_id" 
-              value={formData.location_id} 
-              onChange={handleChange} 
-              className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
-            >
-              <option value="">Selecciona una ubicación...</option>
-              {locations.map(loc => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.neighborhood}, {loc.city}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación en el mapa</label>
-              {formData.latitude !== null && formData.latitude !== undefined && formData.longitude !== null && formData.longitude !== undefined && (
-                <span className="text-xs font-bold text-blue-600">
-                  {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}
-                </span>
-              )}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Disposición</label>
+                <select 
+                  name="disposition"
+                  value={formData.disposition}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">No especifica</option>
+                  <option value="front">Frente</option>
+                  <option value="back">Contrafrente</option>
+                  <option value="lateral">Lateral</option>
+                  <option value="internal">Interno</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Orientación</label>
+                <select 
+                  name="orientation"
+                  value={formData.orientation}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">No especifica</option>
+                  <option value="north">Norte</option>
+                  <option value="south">Sur</option>
+                  <option value="east">Este</option>
+                  <option value="west">Oeste</option>
+                </select>
+              </div>
             </div>
-            <MapLocationSelector 
-              latitude={formData.latitude}
-              longitude={formData.longitude}
-              onChange={({ latitude, longitude }) => {
-                setFormData(prev => ({
-                  ...prev,
-                  latitude,
-                  longitude
-                }));
-              }}
-            />
-            <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
-          </div>
 
-          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <input 
-              type="checkbox"
-              id="showExactAddress"
-              name="showExactAddress"
-              checked={formData.showExactAddress}
-              onChange={handleChange}
-              className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
-            />
-            <label htmlFor="showExactAddress" className="text-sm font-bold text-slate-700 cursor-pointer selection:bg-transparent select-none">
-              Mostrar dirección exacta en la web
-            </label>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
+                <input 
+                  type="checkbox"
+                  id="pets_allowed"
+                  name="pets_allowed"
+                  checked={formData.pets_allowed}
+                  onChange={handleChange}
+                  className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                />
+                <label htmlFor="pets_allowed" className="text-sm font-bold text-slate-700 cursor-pointer selection:bg-transparent select-none">
+                  Acepta Mascotas
+                </label>
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
+                <input 
+                  type="checkbox"
+                  id="professional_use"
+                  name="professional_use"
+                  checked={formData.professional_use}
+                  onChange={handleChange}
+                  className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                />
+                <label htmlFor="professional_use" className="text-sm font-bold text-slate-700 cursor-pointer selection:bg-transparent select-none">
+                  Apto Profesional / Uso Comercial
+                </label>
+              </div>
+            </div>
+          </section>
+        </div>
 
-          <div className="grid grid-cols-3 gap-4">
+        {/* Right Column: Ubicación, Gastos y Servicios */}
+        <div className="space-y-10">
+          {/* Ubicación y Mapa */}
+          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-5 h-5 text-blue-600" />
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Ubicación y Dirección</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación (Tucumán)</label>
+                <select 
+                  required 
+                  name="location_id" 
+                  value={formData.location_id} 
+                  onChange={handleChange} 
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">Selecciona ubicación...</option>
+                  {locations.map(loc => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.neighborhood}, {loc.city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Zona</label>
+                <select 
+                  required 
+                  name="zone_id" 
+                  value={formData.zone_id} 
+                  onChange={handleChange} 
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">Selecciona zona...</option>
+                  {zones.map(z => (
+                    <option key={z.id} value={z.id}>{z.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Maximize className="w-3 h-3" /> m² Totales</label>
-              <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Bed className="w-3 h-3" /> Dorm.</label>
-              <input required type="number" name="bedrooms" value={formData.bedrooms} onChange={handleChange} className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Bath className="w-3 h-3" /> Baños</label>
-              <input required type="number" name="bathrooms" value={formData.bathrooms} onChange={handleChange} className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Características Extras</label>
-            <div className="flex gap-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Escrita</label>
               <input 
-                value={newFeature}
-                onChange={(e) => setNewFeature(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
-                className="flex-1 px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none"
-                placeholder="Piscina, Parrilla..."
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
+                placeholder="Ej: Av. Aconquija 1200, Yerba Buena"
               />
-              <button type="button" onClick={handleAddFeature} className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all">OK</button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {(formData.features || []).map((feature, index) => (
-                <span key={index} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-black border border-blue-100 uppercase tracking-tighter">
-                  {feature}
-                  <button type="button" onClick={() => removeFeature(index)} className="hover:text-red-600"><X className="w-4 h-4" /></button>
-                </span>
-              ))}
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación en el mapa</label>
+                {formData.latitude !== null && formData.latitude !== undefined && formData.longitude !== null && formData.longitude !== undefined && (
+                  <span className="text-xs font-bold text-blue-600">
+                    {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}
+                  </span>
+                )}
+              </div>
+              <MapLocationSelector 
+                latitude={formData.latitude}
+                longitude={formData.longitude}
+                onChange={({ latitude, longitude }) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    latitude,
+                    longitude
+                  }));
+                }}
+              />
+              <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
             </div>
-          </div>
-        </section>
+
+            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <input 
+                type="checkbox"
+                id="showExactAddress"
+                name="showExactAddress"
+                checked={formData.showExactAddress}
+                onChange={handleChange}
+                className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+              />
+              <label htmlFor="showExactAddress" className="text-sm font-bold text-slate-700 cursor-pointer selection:bg-transparent select-none">
+                Mostrar dirección exacta en la web
+              </label>
+            </div>
+          </section>
+
+          {/* Expensas y Finanzas */}
+          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">💰</span>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Gastos y Expensas</h3>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Monto de Expensas (Opcional)</label>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
+                  <input 
+                    type="number"
+                    name="expenses_amount"
+                    value={formData.expenses_amount}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold text-lg"
+                    placeholder="0"
+                  />
+                </div>
+                <select 
+                  name="expenses_currency" 
+                  value={formData.expenses_currency} 
+                  onChange={handleChange} 
+                  className="w-28 px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="ARS">ARS</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Servicios y Amenities */}
+          {availableFeatures.length > 0 && (
+            <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Servicios y Amenities</h3>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {availableFeatures.map(feat => {
+                  const isChecked = formData.features.includes(feat.name);
+                  const label = feat.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  return (
+                    <button
+                      key={feat.id}
+                      type="button"
+                      onClick={() => handleFeatureToggle(feat.name)}
+                      className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
+                        isChecked
+                          ? "border-blue-500 bg-blue-50/50 text-blue-700 font-bold"
+                          : "border-slate-200 hover:border-slate-300 text-slate-600"
+                      }`}
+                    >
+                      <input 
+                        type="checkbox"
+                        checked={isChecked}
+                        readOnly
+                        className="w-4 h-4 rounded text-blue-600 border-slate-300 pointer-events-none"
+                      />
+                      <span className="text-[10px] uppercase font-black tracking-tighter leading-none">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </div>
       </div>
 
       {/* Publication Type Selector — only for new properties */}
