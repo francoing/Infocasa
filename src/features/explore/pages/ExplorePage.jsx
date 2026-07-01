@@ -73,8 +73,8 @@ export default function ExplorePage() {
         groups[loc.city] = {
           name: loc.city,
           province: loc.province || '',
-          lat: prop.latitude || cityLookup?.lat,
-          lng: prop.longitude || cityLookup?.lng,
+          lat: cityLookup?.lat || prop.latitude,
+          lng: cityLookup?.lng || prop.longitude,
           description: '',
         };
       }
@@ -209,11 +209,10 @@ export default function ExplorePage() {
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s); }}
                     onMouseEnter={() => setFocusedIdx(i)}
-                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
-                      i === focusedIdx
+                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${i === focusedIdx
                         ? "bg-blue-50 text-blue-700"
                         : "text-slate-700 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
                     <span className="font-medium">{s.value}</span>

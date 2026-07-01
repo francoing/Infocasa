@@ -80,7 +80,11 @@ export const mapProperty = (p) => {
     viewsCount: item.views_count || item.viewsCount || item.views || 0,
     isFavorited: item.is_favorited || false,
     status: item.status,
-    createdAt: item.created_at
+    createdAt: item.created_at,
+    // Certificación
+    certificationStatus: item.certification_status || null,
+    isCertified: !!item.is_certified,
+    certificationDocumentUrl: item.certification_document_url || null
   };
 };
 
@@ -161,6 +165,7 @@ export const getPublisherById = async (userId) => {
 
 export const createProperty = async (propertyData) => {
   const queryClient = getQueryClient();
+  // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.post("/properties", propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["me_properties"] });
@@ -169,6 +174,7 @@ export const createProperty = async (propertyData) => {
 
 export const updateProperty = async (id, propertyData) => {
   const queryClient = getQueryClient();
+  // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.put(`/properties/${id}`, propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["property", id] });

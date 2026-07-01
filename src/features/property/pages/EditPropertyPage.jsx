@@ -6,7 +6,6 @@ import { getPropertyById, updateProperty } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 import { Loader2 } from "lucide-react";
-import { api } from "../../../api/api";
 
 export default function EditPropertyPage() {
   const { id } = useParams();
@@ -42,32 +41,10 @@ export default function EditPropertyPage() {
   const handleSubmit = async (formData) => {
     try {
       setSubmitting(true);
-      
-      // Separamos la galería del payload de texto
-      const { gallery, ...textData } = formData;
 
-      // 1. Actualizar datos de texto
-      await updateProperty(id, textData);
-
-      // 2. Gestionar eliminación de imágenes viejas
-      const originalImages = initialData.images || [];
-      const currentGalleryUrls = gallery.filter(item => typeof item === 'string');
-      const deletedImages = originalImages.filter(origImg => !currentGalleryUrls.includes(origImg.url));
-
-      for (const deletedImg of deletedImages) {
-        await api.delete(`/properties/${id}/images/${deletedImg.id}`);
-      }
-
-      // 3. Gestionar subida de imágenes nuevas (instancias de File)
-      const newImageFiles = gallery.filter(item => item instanceof File);
-      if (newImageFiles.length > 0) {
-        const uploadFormData = new FormData();
-        newImageFiles.forEach(file => {
-          uploadFormData.append("files[]", file);
-        });
-        
-        await api.post(`/properties/${id}/images`, uploadFormData);
-      }
+      // formData es un FormData del PropertyForm
+      // Actualizar la propiedad con FormData
+      await updateProperty(id, formData);
 
       toast.success("Propiedad actualizada correctamente.");
       navigate("/dashboard");
