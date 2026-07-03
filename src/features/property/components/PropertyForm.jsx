@@ -39,6 +39,19 @@ const INITIAL_STATE = {
   certification_document: null
 };
 
+const EXTRAS = [
+  { value: "jardin", label: "Jardín" },
+  { value: "pileta", label: "Pileta" },
+  { value: "parrilla", label: "Parrilla" },
+  { value: "quincho", label: "Quincho" },
+  { value: "balcon", label: "Balcón" },
+  { value: "terraza", label: "Terraza" },
+  { value: "lavadero", label: "Lavadero" },
+  { value: "patio", label: "Patio" },
+  { value: "azotea", label: "Azotea" },
+  { value: "fondo", label: "Fondo" },
+];
+
 export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false, userPlan = null }) {
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [locations, setLocations] = useState([]);
@@ -285,9 +298,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Propiedad</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <select 
                   required
                   name="property_type_id" 
@@ -300,9 +316,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
                 <select name="status" value={formData.status} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white">
                   <option value="venta">Venta</option>
                   <option value="alquiler">Alquiler</option>
@@ -337,11 +350,16 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Detalles Técnicos y Superficie</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                   <Maximize className="w-3.5 h-3.5 text-blue-600" /> m² Totales
                 </label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Maximize className="w-3.5 h-3.5 text-blue-600 rotate-90" /> m² Cubiertos
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <input 
                   type="number" 
                   name="area" 
@@ -350,11 +368,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
                   placeholder="Ej: 120"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-                  <Maximize className="w-3.5 h-3.5 text-blue-600 rotate-90" /> m² Cubiertos
-                </label>
                 <input 
                   type="number" 
                   name="area_covered" 
@@ -366,11 +379,19 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                   <Home className="w-3.5 h-3.5 text-blue-600" /> Ambientes
                 </label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Bed className="w-3.5 h-3.5 text-blue-600" /> Dorm.
+                </label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Bath className="w-3.5 h-3.5 text-blue-600" /> Baños
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <input 
                   type="number" 
                   name="rooms" 
@@ -379,11 +400,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
                   placeholder="Ej: 3"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-                  <Bed className="w-3.5 h-3.5 text-blue-600" /> Dorm.
-                </label>
                 <input 
                   type="number" 
                   name="bedrooms" 
@@ -392,11 +408,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
                   placeholder="Ej: 2"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-                  <Bath className="w-3.5 h-3.5 text-blue-600" /> Baños
-                </label>
                 <input 
                   type="number" 
                   name="bathrooms" 
@@ -408,9 +419,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 pt-2">
-              <div className="space-y-2">
+            <div className="pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cocheras / Garajes</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Año de Edificación</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <input 
                   type="number"
                   name="parking_spaces"
@@ -419,9 +433,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 1"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Año de Edificación</label>
                 <input 
                   type="number"
                   name="construction_year"
@@ -430,6 +441,36 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 2018"
                 />
+              </div>
+            </div>
+
+            {/* Extras de la propiedad */}
+            <div className="pt-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Extras de la propiedad</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {EXTRAS.map(extra => {
+                  const isChecked = formData.features.includes(extra.value);
+                  return (
+                    <button
+                      key={extra.value}
+                      type="button"
+                      onClick={() => handleFeatureToggle(extra.value)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-left transition-all ${
+                        isChecked
+                          ? "border-blue-500 bg-blue-50/50 text-blue-700 font-bold"
+                          : "border-slate-200 hover:border-slate-300 text-slate-600"
+                      }`}
+                    >
+                      <input 
+                        type="checkbox"
+                        checked={isChecked}
+                        readOnly
+                        className="w-4 h-4 rounded text-blue-600 border-slate-300 pointer-events-none"
+                      />
+                      <span className="text-[10px] uppercase font-black tracking-tighter leading-none">{extra.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -456,9 +497,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Disposición</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Orientación</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <select 
                   name="disposition"
                   value={formData.disposition}
@@ -471,9 +515,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   <option value="lateral">Lateral</option>
                   <option value="internal">Interno</option>
                 </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Orientación</label>
                 <select 
                   name="orientation"
                   value={formData.orientation}
@@ -529,9 +570,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Ubicación y Dirección</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación (Tucumán)</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Zona</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <select 
                   required 
                   name="location_id" 
@@ -546,10 +590,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Zona</label>
                 <select 
                   required 
                   name="zone_id" 
