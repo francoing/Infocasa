@@ -23,6 +23,16 @@ const mockFetch = async (endpoint, options = {}) => {
     return { data: { id: Date.now(), ...JSON.parse(options.body || "{}") } };
   }
 
+  // POST /auth/forgot-password — simular envío de correo de recuperación
+  if (method === "POST" && path === "/auth/forgot-password") {
+    return { message: "Si el email está registrado, recibirás un enlace para restablecer tu contraseña." };
+  }
+
+  // POST /auth/reset-password — simular cambio de clave
+  if (method === "POST" && path === "/auth/reset-password") {
+    return { message: "Contraseña restablecida exitosamente." };
+  }
+
   // PUT /properties/:id — simular actualización
   if (method === "PUT" && path.startsWith("/properties/")) {
     return { data: { id: parseInt(path.split("/")[2], 10), ...JSON.parse(options.body || "{}") } };
