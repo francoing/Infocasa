@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, Sparkles, Zap, Star, Crown, Home } from "lucide-react";
+import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, Sparkles, Zap, Star, Crown, Home, ShieldCheck, Upload, FileText, X, AlertCircle } from "lucide-react";
 import ImageUploader from "./ImageUploader";
 import MapLocationSelector from "./MapLocationSelector";
 import { api } from "../../../api/api";
@@ -35,8 +35,22 @@ const INITIAL_STATE = {
   orientation: "",
   pets_allowed: false,
   professional_use: false,
-  features: []
+  features: [],
+  certification_document: null
 };
+
+const EXTRAS = [
+  { value: "jardin", label: "Jardín" },
+  { value: "pileta", label: "Pileta" },
+  { value: "parrilla", label: "Parrilla" },
+  { value: "quincho", label: "Quincho" },
+  { value: "balcon", label: "Balcón" },
+  { value: "terraza", label: "Terraza" },
+  { value: "lavadero", label: "Lavadero" },
+  { value: "patio", label: "Patio" },
+  { value: "azotea", label: "Azotea" },
+  { value: "fondo", label: "Fondo" },
+];
 
 export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false, userPlan = null }) {
   const [formData, setFormData] = useState(INITIAL_STATE);
@@ -45,6 +59,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
   const [zones, setZones] = useState([]);
   const [availableFeatures, setAvailableFeatures] = useState([]);
   const [loadingRefs, setLoadingRefs] = useState(true);
+  const [formError, setFormError] = useState("");
 
 
   useEffect(() => {
@@ -81,7 +96,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
         location_id: initialData.locationDetails?.id || initialData.location_id || "",
         property_type_id: initialData.typeId || initialData.property_type_id || "",
         zone_id: initialData.zoneId || initialData.zone?.id || initialData.zone_id || "",
-        status: initialData.operationRaw === "rent" ? "alquiler" : initialData.operationRaw === "development" ? "desarrollo" : "venta",
+        status: initialData.operationRaw === "temporary_rent" ? "temporary_rent" : initialData.operationRaw === "rent" ? "alquiler" : initialData.operationRaw === "development" ? "desarrollo" : "venta",
         bedrooms: initialData.bedrooms !== undefined && initialData.bedrooms !== null ? initialData.bedrooms : "",
         bathrooms: initialData.bathrooms !== undefined && initialData.bathrooms !== null ? initialData.bathrooms : "",
         rooms: initialData.rooms !== undefined && initialData.rooms !== null ? initialData.rooms : "",
@@ -109,7 +124,10 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
         orientation: initialData.orientation || "",
         pets_allowed: !!initialData.pets_allowed,
         professional_use: !!initialData.professional_use,
-        features: initialData.features?.map(f => f.name) || []
+        features: initialData.features?.map(f => f.name) || [],
+        certification_document: initialData.certificationDocumentUrl
+          ? { existingUrl: initialData.certificationDocumentUrl, name: "Comprobante ya cargado" }
+          : null
       });
     }
   }, [initialData]);
@@ -130,6 +148,17 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     }));
   };
 
+  const handleCertDocChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setFormData(prev => ({ ...prev, certification_document: file }));
+  };
+
+  const clearCertDoc = () => {
+    setFormData(prev => ({ ...prev, certification_document: null }));
+  };
+
+  const isTempRent = formData.status === 'temporary_rent';
+
   const handleFeatureToggle = (featureName) => {
     setFormData(prev => {
       const exists = prev.features.includes(featureName);
@@ -142,45 +171,72 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
+    // Validar certificación para Alquiler Temporario
+    if (isTempRent && !formData.certification_document) {
+      setFormError("Para Alquiler Temporario es obligatorio adjuntar un comprobante de servicio que acredite el domicilio.");
+      return;
+    }
+    setFormError("");
+
     const priceVal = Number(formData.price);
     const currencyVal = formData.price_currency || "USD";
     const priceUsdVal = currencyVal === "ARS" ? Math.round(priceVal / 1000) : priceVal;
 
-    const finalData = {
-      title: formData.title,
-      description: formData.description,
-      price_amount: priceVal,
-      price_currency: currencyVal,
-      price_usd: priceUsdVal,
-      location_id: Number(formData.location_id),
-      property_type_id: Number(formData.property_type_id),
-      zone_id: Number(formData.zone_id),
-      operation: formData.status === "alquiler" ? "rent" : formData.status === "desarrollo" ? "development" : "sale",
-      bedrooms: formData.bedrooms !== "" && formData.bedrooms !== null ? Number(formData.bedrooms) : null,
-      bathrooms: formData.bathrooms !== "" && formData.bathrooms !== null ? Number(formData.bathrooms) : null,
-      rooms: formData.rooms !== "" && formData.rooms !== null ? Number(formData.rooms) : null,
-      area_total: formData.area !== "" && formData.area !== null ? Number(formData.area) : null,
-      area_covered: formData.area_covered !== "" && formData.area_covered !== null ? Number(formData.area_covered) : null,
-      latitude: formData.latitude ? Number(formData.latitude) : null,
-      longitude: formData.longitude ? Number(formData.longitude) : null,
-      show_exact_address: formData.showExactAddress !== undefined ? !!formData.showExactAddress : true,
-      address: formData.address || null,
-      expenses_amount: formData.expenses_amount !== "" && formData.expenses_amount !== null ? Number(formData.expenses_amount) : null,
-      expenses_currency: formData.expenses_amount ? formData.expenses_currency : null,
-      parking_spaces: formData.parking_spaces !== "" && formData.parking_spaces !== null ? Number(formData.parking_spaces) : 0,
-      construction_year: formData.construction_year !== "" && formData.construction_year !== null ? Number(formData.construction_year) : null,
-      condition: formData.condition || "good",
-      disposition: formData.disposition || null,
-      orientation: formData.orientation || null,
-      pets_allowed: !!formData.pets_allowed,
-      professional_use: !!formData.professional_use,
-      features: formData.features,
-      status: "published",
-      publication_type: formData.publication_type,
-      gallery: formData.gallery
-    };
-    onSubmit(finalData);
+    // Mapear operación al valor de API
+    let operation;
+    if (formData.status === "alquiler") operation = "rent";
+    else if (formData.status === "temporary_rent") operation = "temporary_rent";
+    else if (formData.status === "desarrollo") operation = "development";
+    else operation = "sale";
+
+    // Construir FormData (el backend espera multipart/form-data)
+    const fd = new FormData();
+    fd.append("title", formData.title);
+    fd.append("description", formData.description);
+    fd.append("price_amount", priceVal);
+    fd.append("price_currency", currencyVal);
+    fd.append("price_usd", priceUsdVal);
+    fd.append("location_id", Number(formData.location_id));
+    fd.append("property_type_id", Number(formData.property_type_id));
+    fd.append("zone_id", Number(formData.zone_id));
+    fd.append("operation", operation);
+    if (formData.bedrooms !== "") fd.append("bedrooms", Number(formData.bedrooms));
+    if (formData.bathrooms !== "") fd.append("bathrooms", Number(formData.bathrooms));
+    if (formData.rooms !== "") fd.append("rooms", Number(formData.rooms));
+    if (formData.area !== "") fd.append("area_total", Number(formData.area));
+    if (formData.area_covered !== "") fd.append("area_covered", Number(formData.area_covered));
+    if (formData.latitude) fd.append("latitude", Number(formData.latitude));
+    if (formData.longitude) fd.append("longitude", Number(formData.longitude));
+    fd.append("show_exact_address", formData.showExactAddress ? "1" : "0");
+    if (formData.address) fd.append("address", formData.address);
+    if (formData.expenses_amount !== "") {
+      fd.append("expenses_amount", Number(formData.expenses_amount));
+      fd.append("expenses_currency", formData.expenses_currency);
+    }
+    fd.append("parking_spaces", formData.parking_spaces !== "" ? Number(formData.parking_spaces) : 0);
+    if (formData.construction_year !== "") fd.append("construction_year", Number(formData.construction_year));
+    fd.append("condition", formData.condition || "good");
+    if (formData.disposition) fd.append("disposition", formData.disposition);
+    if (formData.orientation) fd.append("orientation", formData.orientation);
+    fd.append("pets_allowed", formData.pets_allowed ? "1" : "0");
+    fd.append("professional_use", formData.professional_use ? "1" : "0");
+    fd.append("status", "published");
+    fd.append("publication_type", formData.publication_type);
+
+    // Features como array
+    formData.features.forEach(f => fd.append("features[]", f));
+
+    // Imágenes (si son Files)
+    const imageFiles = formData.gallery.filter(item => item instanceof File);
+    imageFiles.forEach(file => fd.append("images[]", file));
+
+    // Certificación (solo para temporarios)
+    if (isTempRent && formData.certification_document instanceof File) {
+      fd.append("certification_document", formData.certification_document);
+    }
+
+    onSubmit(fd);
   };
 
   if (loadingRefs) {
@@ -242,9 +298,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Propiedad</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <select 
                   required
                   name="property_type_id" 
@@ -257,12 +316,10 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
                 <select name="status" value={formData.status} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white">
                   <option value="venta">Venta</option>
                   <option value="alquiler">Alquiler</option>
+                  <option value="temporary_rent">Alquiler Temporario</option>
                   <option value="desarrollo">Desarrollo</option>
                 </select>
               </div>
@@ -293,11 +350,16 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Detalles Técnicos y Superficie</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                   <Maximize className="w-3.5 h-3.5 text-blue-600" /> m² Totales
                 </label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Maximize className="w-3.5 h-3.5 text-blue-600 rotate-90" /> m² Cubiertos
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <input 
                   type="number" 
                   name="area" 
@@ -306,11 +368,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
                   placeholder="Ej: 120"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-                  <Maximize className="w-3.5 h-3.5 text-blue-600 rotate-90" /> m² Cubiertos
-                </label>
                 <input 
                   type="number" 
                   name="area_covered" 
@@ -322,11 +379,19 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                   <Home className="w-3.5 h-3.5 text-blue-600" /> Ambientes
                 </label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Bed className="w-3.5 h-3.5 text-blue-600" /> Dorm.
+                </label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  <Bath className="w-3.5 h-3.5 text-blue-600" /> Baños
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <input 
                   type="number" 
                   name="rooms" 
@@ -335,11 +400,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
                   placeholder="Ej: 3"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-                  <Bed className="w-3.5 h-3.5 text-blue-600" /> Dorm.
-                </label>
                 <input 
                   type="number" 
                   name="bedrooms" 
@@ -348,11 +408,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
                   placeholder="Ej: 2"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-                  <Bath className="w-3.5 h-3.5 text-blue-600" /> Baños
-                </label>
                 <input 
                   type="number" 
                   name="bathrooms" 
@@ -364,9 +419,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 pt-2">
-              <div className="space-y-2">
+            <div className="pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cocheras / Garajes</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Año de Edificación</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <input 
                   type="number"
                   name="parking_spaces"
@@ -375,9 +433,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 1"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Año de Edificación</label>
                 <input 
                   type="number"
                   name="construction_year"
@@ -386,6 +441,36 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 2018"
                 />
+              </div>
+            </div>
+
+            {/* Extras de la propiedad */}
+            <div className="pt-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Extras de la propiedad</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {EXTRAS.map(extra => {
+                  const isChecked = formData.features.includes(extra.value);
+                  return (
+                    <button
+                      key={extra.value}
+                      type="button"
+                      onClick={() => handleFeatureToggle(extra.value)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-left transition-all ${
+                        isChecked
+                          ? "border-blue-500 bg-blue-50/50 text-blue-700 font-bold"
+                          : "border-slate-200 hover:border-slate-300 text-slate-600"
+                      }`}
+                    >
+                      <input 
+                        type="checkbox"
+                        checked={isChecked}
+                        readOnly
+                        className="w-4 h-4 rounded text-blue-600 border-slate-300 pointer-events-none"
+                      />
+                      <span className="text-[10px] uppercase font-black tracking-tighter leading-none">{extra.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -412,9 +497,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Disposición</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Orientación</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <select 
                   name="disposition"
                   value={formData.disposition}
@@ -427,9 +515,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   <option value="lateral">Lateral</option>
                   <option value="internal">Interno</option>
                 </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Orientación</label>
                 <select 
                   name="orientation"
                   value={formData.orientation}
@@ -485,9 +570,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Ubicación y Dirección</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación (Tucumán)</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Zona</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <select 
                   required 
                   name="location_id" 
@@ -502,10 +590,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Zona</label>
                 <select 
                   required 
                   name="zone_id" 
@@ -603,6 +687,106 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               </div>
             </div>
           </section>
+
+          {/* Certificación — solo para Alquiler Temporario */}
+          {isTempRent && (
+            <section className="bg-white p-8 rounded-[2.5rem] border border-emerald-200 shadow-sm space-y-6">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Certificación de Domicilio</h3>
+              </div>
+              
+              <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl">
+                <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                  Para publicar un <strong>Alquiler Temporario</strong> necesitás adjuntar una <strong>boleta de servicio</strong> (luz, gas, agua, internet) del domicilio.
+                  Esto verifica que la dirección existe y te corresponde.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                  Comprobante de servicio <span className="text-red-500">*</span>
+                  {formData.certification_document && (
+                    <span className="text-emerald-600 normal-case font-bold text-[10px] flex items-center gap-1 ml-2">
+                      <FileText className="w-3 h-3" /> Archivo seleccionado
+                    </span>
+                  )}
+                </label>
+
+                {!formData.certification_document ? (
+                  <label className="flex flex-col items-center justify-center w-full min-h-[100px] px-6 py-6 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all group">
+                    <Upload className="w-7 h-7 text-slate-300 group-hover:text-emerald-500 transition-colors mb-2" />
+                    <span className="text-sm font-bold text-slate-500 group-hover:text-emerald-600 transition-colors">
+                  Hacé clic para subir tu boleta
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1">PDF, JPG o PNG — Máx. 5 MB</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleCertDocChange}
+                      className="hidden"
+                    />
+                  </label>
+                ) : formData.certification_document.existingUrl ? (
+                  <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <div className="p-3 bg-emerald-100 rounded-xl">
+                      <FileText className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-900">Comprobante ya cargado</p>
+                      <p className="text-[11px] text-emerald-600 font-semibold">Aprobado / En revisión</p>
+                    </div>
+                    <label className="p-2 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer" title="Reemplazar archivo">
+                      <Upload className="w-5 h-5 text-blue-400 hover:text-blue-600" />
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleCertDocChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={clearCertDoc}
+                      className="p-2 hover:bg-red-50 rounded-xl transition-colors"
+                      title="Eliminar archivo"
+                    >
+                      <X className="w-5 h-5 text-red-400 hover:text-red-600" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                    <div className="p-3 bg-emerald-100 rounded-xl">
+                      <FileText className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-900 truncate">
+                        {formData.certification_document.name}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {(formData.certification_document.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearCertDoc}
+                      className="p-2 hover:bg-red-50 rounded-xl transition-colors"
+                      title="Eliminar archivo"
+                    >
+                      <X className="w-5 h-5 text-red-400 hover:text-red-600" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {formError && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-red-700">{formError}</p>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Servicios y Amenities */}
           {availableFeatures.length > 0 && (

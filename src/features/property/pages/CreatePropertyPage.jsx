@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../../api/api";
 import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
 import { createProperty } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
-import { api } from "../../../api/api";
 
 export default function CreatePropertyPage() {
   const [loading, setLoading] = useState(false);
@@ -20,37 +20,23 @@ export default function CreatePropertyPage() {
     try {
       setLoading(true);
 
-      // Separamos la galería y el tipo de publicación del payload principal
-      const { gallery, publication_type, ...textData } = formData;
+      // formData ya es un FormData (construido en PropertyForm.handleSubmit)
+      // Agregar userId y publishedAt
+      formData.append("userId", user.id);
+      formData.append("publishedAt", new Date().toISOString());
 
-      const res = await createProperty({
-        ...textData,
-        userId: user.id,
-        publishedAt: new Date().toISOString()
-      });
+      const res = await createProperty(formData);
 
       const newProperty = res.data;
 
-      // Si hay imágenes nuevas (instancias de File), subirlas
-      if (gallery && gallery.length > 0) {
-        const imageFiles = gallery.filter(item => item instanceof File);
-        if (imageFiles.length > 0) {
-          const uploadFormData = new FormData();
-          imageFiles.forEach(file => {
-            uploadFormData.append("files[]", file);
-          });
-          await api.post(`/properties/${newProperty.id}/images`, uploadFormData);
-        }
-      }
-
       // Crear la publicación con el tipo seleccionado (basic/featured/premium)
+      const publicationType = formData.get("publication_type") || "basic";
       try {
         await api.post("/publications", {
           property_id: newProperty.id,
-          type: publication_type || "basic",
+          type: publicationType,
         });
       } catch (pubErr) {
-        // Si el usuario no tiene suscripción activa, avisamos pero no bloqueamos
         if (pubErr.status === 403) {
           toast.error("Propiedad creada, pero no tienes una suscripción activa para publicarla. Activa un plan desde tu panel.");
           navigate("/dashboard");
@@ -76,7 +62,6 @@ export default function CreatePropertyPage() {
           <h1 className="text-3xl font-bold text-slate-900">Publicar Nueva Propiedad</h1>
           <p className="text-slate-500 mt-2">Completa la información detallada para atraer a potenciales clientes.</p>
         </div>
-
 
         <PropertyForm 
           onSubmit={handleSubmit} 
