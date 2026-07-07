@@ -202,4 +202,28 @@ export const useAuthStore = create((set, get) => ({
       console.error("Error refreshing user", err);
     }
   },
+
+  forgotPassword: async (email) => {
+    set({ error: null });
+    try {
+      const res = await api.post("/auth/forgot-password", { email });
+      return res;
+    } catch (err) {
+      const msg = err.message || "Hubo un problema al procesar tu solicitud. Intenta de nuevo.";
+      set({ error: msg });
+      throw err;
+    }
+  },
+
+  resetPassword: async (data) => {
+    set({ error: null });
+    try {
+      const res = await api.post("/auth/reset-password", data);
+      return res;
+    } catch (err) {
+      const msg = err.message || "Hubo un problema al restablecer tu contraseña. Intenta de nuevo.";
+      set({ error: msg });
+      throw err;
+    }
+  },
 }));
