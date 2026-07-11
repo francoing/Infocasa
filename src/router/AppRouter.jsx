@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 import ProtectedRoute from './ProtectedRoute';
+import loadingIcon from '../assets/img/Icono.png';
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('../features/home/pages/HomePage'));
@@ -21,7 +21,11 @@ const ExplorePage = lazy(() => import('../features/explore/pages/ExplorePage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-    <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+    <img
+      src={loadingIcon}
+      alt="Cargando..."
+      className="w-20 h-20 object-contain animate-heartbeat mb-4"
+    />
     <p className="text-slate-500 font-black animate-pulse uppercase tracking-widest text-[10px]">Cargando InfoCasa...</p>
   </div>
 );

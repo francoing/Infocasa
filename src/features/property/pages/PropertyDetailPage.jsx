@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   MapPin, Bed, Bath, Maximize, Home, Share2, Heart, 
   ChevronLeft, ChevronRight, X, Image as ImageIcon,
-  CheckCircle2, Loader2, Calendar, User, MessageCircle,
+  CheckCircle2, Calendar, User, MessageCircle,
   TrendingDown, Percent, Phone
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import Layout from "@/common/components/Layout";
 import PropertyCard from "@/common/components/PropertyCard";
 import PropertyMap from "../components/PropertyMap";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import loadingIcon from "@/assets/img/Icono.png";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -43,7 +44,7 @@ export default function PropertyDetailPage() {
     return (
       <Layout>
         <div className="min-h-[70vh] flex flex-col items-center justify-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+          <img src={loadingIcon} alt="Cargando..." className="w-20 h-20 object-contain animate-heartbeat mb-4" />
           <p className="text-slate-500 font-bold animate-pulse">Cargando propiedad premium...</p>
         </div>
       </Layout>
@@ -443,7 +444,7 @@ export default function PropertyDetailPage() {
                     disabled={isSubmitting}
                     className="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-600/10 flex items-center justify-center gap-2"
                   >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                    {isSubmitting ? <img src={loadingIcon} alt="" className="w-5 h-5 object-contain animate-heartbeat" /> : <MessageCircle className="w-5 h-5" />}
                     Enviar Consulta
                   </button>
                 </form>
