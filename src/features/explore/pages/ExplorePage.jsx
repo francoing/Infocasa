@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Loader2, MapPin, Search } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
 import { mapProperty } from "../../../hooks/useProperties";
 import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
-import { CITIES } from "../../../mock/data/cities";
 import { api } from "../../../api/api";
 
 const OPERATION_MAP = {
@@ -60,47 +59,9 @@ export default function ExplorePage() {
     return () => { cancelled = true; };
   }, [opConfig]);
 
-  // Agrupar propiedades por ciudad para los marcadores del mapa
-  const cityGroups = useMemo(() => {
-    const groups = {};
-
-    explorationProperties.forEach(prop => {
-      const loc = prop.locationDetails;
-      if (!loc?.city) return;
-
-      if (!groups[loc.city]) {
-        const cityLookup = CITIES.find(c => c.name === loc.city);
-        groups[loc.city] = {
-          name: loc.city,
-          province: loc.province || '',
-          lat: cityLookup?.lat || prop.latitude,
-          lng: cityLookup?.lng || prop.longitude,
-          description: '',
-        };
-      }
-
-      groups[loc.city].properties = (groups[loc.city].properties || []);
-      groups[loc.city].properties.push(prop);
-
-      if (!groups[loc.city].lat && prop.latitude) {
-        groups[loc.city].lat = prop.latitude;
-        groups[loc.city].lng = prop.longitude;
-      }
-    });
-
-    Object.values(groups).forEach(g => {
-      g.description = `${g.properties.length} ${g.properties.length === 1 ? 'propiedad' : 'propiedades'} disponible${g.properties.length === 1 ? '' : 's'}`;
-    });
-
-    return Object.values(groups).filter(g => g.lat && g.lng);
-  }, [explorationProperties]);
-
-  // Click en marcador → navegar a search con la ciudad y operación
-  const handleCityClick = (cityName) => {
-    const params = new URLSearchParams();
-    params.set("location", cityName);
-    params.set("operation", opConfig.searchOp);
-    navigate(`/search?${params.toString()}`);
+  // Click en marcador → navegar al detalle de la propiedad
+  const handlePropertyClick = (propertyId) => {
+    navigate(`/property/${propertyId}`);
   };
 
   // Selección de sugerencia Geoapify → navegar a search
@@ -249,7 +210,7 @@ export default function ExplorePage() {
                 Reintentar
               </button>
             </div>
-          ) : cityGroups.length === 0 ? (
+          ) : explorationProperties.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200">
               <MapPin className="w-8 h-8 text-slate-300 mb-2" />
               <p className="text-sm text-slate-400 font-medium">
@@ -258,8 +219,8 @@ export default function ExplorePage() {
             </div>
           ) : (
             <ProvinceMap
-              cities={cityGroups}
-              onCityClick={handleCityClick}
+              properties={explorationProperties}
+              onPropertyClick={handlePropertyClick}
             />
           )}
         </div>
