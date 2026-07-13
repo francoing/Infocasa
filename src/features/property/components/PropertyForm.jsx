@@ -60,6 +60,8 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
   const [availableFeatures, setAvailableFeatures] = useState([]);
   const [loadingRefs, setLoadingRefs] = useState(true);
   const [formError, setFormError] = useState("");
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           api.get("/property-features")
         ]);
         setLocations(locRes.data || []);
+        console.log("🏙️ /locations — data:", locRes.data);
         setPropertyTypes(typeRes.data || []);
         setZones(zoneRes.data || []);
         setAvailableFeatures(featRes.data?.data || []);
@@ -132,12 +135,99 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     }
   }, [initialData]);
 
+  /** Cuando se cargan locations + hay initialData → derivar provincia/departamento */
+  useEffect(() => {
+    if (initialData && locations.length > 0) {
+      const locId = initialData.locationDetails?.id || initialData.location_id;
+      if (locId) {
+        const loc = locations.find(l => l.id == locId);
+        if (loc) {
+          setSelectedProvince(loc.province);
+          setSelectedDepartment(loc.department);
+        }
+      }
+    }
+  }, [initialData, locations]);
+
+  /** Cuando cambian los filtros, si la ubicación elegida ya no está disponible → resetear */
+  useEffect(() => {
+    if (locations.length === 0 || !formData.location_id) return;
+
+    const currentZoneName = zones.find(z => z.id == formData.zone_id)?.name || "";
+    const zoneKw = getZoneKeyword(currentZoneName);
+
+    const stillExists = locations.some(l => {
+      if (selectedProvince && l.province !== selectedProvince) return false;
+      if (selectedDepartment && l.department !== selectedDepartment) return false;
+      if (zoneKw && !l.neighborhood.toLowerCase().includes(zoneKw)) return false;
+      return l.id == formData.location_id;
+    });
+
+    if (!stillExists) {
+      setFormData(prev => ({ ...prev, location_id: "" }));
+    }
+  }, [selectedProvince, selectedDepartment, formData.zone_id, formData.location_id, locations]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleProvinceChange = (e) => {
+    const prov = e.target.value;
+    setSelectedProvince(prov);
+    setSelectedDepartment("");
+    setFormData(prev => ({ ...prev, location_id: "" }));
+  };
+
+  const handleDepartmentChange = (e) => {
+    const dept = e.target.value;
+    setSelectedDepartment(dept);
+    setFormData(prev => ({ ...prev, location_id: "" }));
+  };
+
+  /** Deriva un keyword de búsqueda desde el nombre de la zona (Zona Norte → "norte", Centro → "centro") */
+  const getZoneKeyword = (zoneName) => {
+    if (!zoneName) return "";
+    const name = zoneName.toLowerCase();
+    if (name.includes("norte")) return "norte";
+    if (name.includes("sur")) return "sur";
+    if (name.includes("este")) return "este";
+    if (name.includes("oeste")) return "oeste";
+    if (name.includes("centro")) return "centro";
+    return "";
+  };
+
+  /** Busca la ubicación más cercana a unas coordenadas dentro de la lista */
+  const findClosestLocation = (lat, lng, locs) => {
+    let closest = null;
+    let minDist = Infinity;
+    for (const loc of locs) {
+      const dlat = lat - parseFloat(loc.latitude);
+      const dlng = lng - parseFloat(loc.longitude);
+      const dist = dlat * dlat + dlng * dlng;
+      if (dist < minDist) {
+        minDist = dist;
+        closest = loc;
+      }
+    }
+    return closest;
+  };
+
+  /** Cuando el usuario marca un punto en el mapa → auto-completar cascade */
+  const handleMapLocationChange = ({ latitude, longitude }) => {
+    setFormData(prev => ({ ...prev, latitude, longitude }));
+    if (latitude != null && longitude != null && locations.length > 0) {
+      const closest = findClosestLocation(latitude, longitude, locations);
+      if (closest) {
+        setSelectedProvince(closest.province);
+        setSelectedDepartment(closest.department);
+        setFormData(prev => ({ ...prev, location_id: closest.id }));
+      }
+    }
   };
 
   const handleImagesChange = (images) => {
@@ -172,6 +262,16 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Validar provincia y departamento
+    if (!selectedProvince) {
+      setFormError("Debes seleccionar una provincia.");
+      return;
+    }
+    if (!selectedDepartment) {
+      setFormError("Debes seleccionar un departamento.");
+      return;
+    }
+
     // Validar certificación para Alquiler Temporario
     if (isTempRent && !formData.certification_document) {
       setFormError("Para Alquiler Temporario es obligatorio adjuntar un comprobante de servicio que acredite el domicilio.");
@@ -198,6 +298,8 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     fd.append("price_currency", currencyVal);
     fd.append("price_usd", priceUsdVal);
     fd.append("location_id", Number(formData.location_id));
+    fd.append("province", selectedProvince || "");
+    fd.append("department", selectedDepartment || "");
     fd.append("property_type_id", Number(formData.property_type_id));
     fd.append("zone_id", Number(formData.zone_id));
     fd.append("operation", operation);
@@ -239,6 +341,25 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     onSubmit(fd);
   };
 
+  // ---- Datos derivados de la cascada provincia → departamento → ubicación ----
+  const provinces = [...new Set(locations.map(l => l.province))].sort();
+  const departments = [...new Set(
+    locations
+      .filter(l => !selectedProvince || l.province === selectedProvince)
+      .map(l => l.department)
+  )].sort();
+  const selectedZoneName = zones.find(z => z.id == formData.zone_id)?.name || "";
+  const zoneKeyword = getZoneKeyword(selectedZoneName);
+  const filteredLocations = locations.filter(l => {
+    // Filtro por provincia
+    if (selectedProvince && l.province !== selectedProvince) return false;
+    // Filtro por departamento
+    if (selectedDepartment && l.department !== selectedDepartment) return false;
+    // Filtro adicional por zona (coincide con el barrio)
+    if (zoneKeyword && !l.neighborhood.toLowerCase().includes(zoneKeyword)) return false;
+    return true;
+  });
+
   if (loadingRefs) {
     return (
       <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl border border-slate-200">
@@ -250,16 +371,16 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
-      
+
       {/* Photo Uploader Section */}
       <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-6">
           <Camera className="w-5 h-5 text-blue-600" />
           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Fotos de la propiedad</h3>
         </div>
-        <ImageUploader 
-          images={formData.gallery} 
-          onChange={handleImagesChange} 
+        <ImageUploader
+          images={formData.gallery}
+          onChange={handleImagesChange}
         />
       </section>
 
@@ -272,10 +393,10 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <Sparkles className="w-5 h-5 text-blue-600" />
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Información Principal</h3>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Título de la publicación</label>
-              <input 
+              <input
                 required
                 name="title"
                 value={formData.title}
@@ -287,7 +408,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Descripción detallada</label>
-              <textarea 
+              <textarea
                 required
                 name="description"
                 value={formData.description}
@@ -304,11 +425,11 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Operación</label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <select 
+                <select
                   required
-                  name="property_type_id" 
-                  value={formData.property_type_id} 
-                  onChange={handleChange} 
+                  name="property_type_id"
+                  value={formData.property_type_id}
+                  onChange={handleChange}
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
                 >
                   <option value="">Selecciona tipo...</option>
@@ -360,20 +481,20 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 </label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <input 
-                  type="number" 
-                  name="area" 
-                  value={formData.area} 
-                  onChange={handleChange} 
-                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                <input
+                  type="number"
+                  name="area"
+                  value={formData.area}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 120"
                 />
-                <input 
-                  type="number" 
-                  name="area_covered" 
-                  value={formData.area_covered} 
-                  onChange={handleChange} 
-                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                <input
+                  type="number"
+                  name="area_covered"
+                  value={formData.area_covered}
+                  onChange={handleChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 100"
                 />
               </div>
@@ -392,28 +513,28 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 </label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <input 
-                  type="number" 
-                  name="rooms" 
-                  value={formData.rooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                <input
+                  type="number"
+                  name="rooms"
+                  value={formData.rooms}
+                  onChange={handleChange}
+                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 3"
                 />
-                <input 
-                  type="number" 
-                  name="bedrooms" 
-                  value={formData.bedrooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                <input
+                  type="number"
+                  name="bedrooms"
+                  value={formData.bedrooms}
+                  onChange={handleChange}
+                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 2"
                 />
-                <input 
-                  type="number" 
-                  name="bathrooms" 
-                  value={formData.bathrooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold" 
+                <input
+                  type="number"
+                  name="bathrooms"
+                  value={formData.bathrooms}
+                  onChange={handleChange}
+                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 1"
                 />
               </div>
@@ -425,7 +546,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Año de Edificación</label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <input 
+                <input
                   type="number"
                   name="parking_spaces"
                   value={formData.parking_spaces}
@@ -433,7 +554,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
                   placeholder="Ej: 1"
                 />
-                <input 
+                <input
                   type="number"
                   name="construction_year"
                   value={formData.construction_year}
@@ -455,13 +576,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                       key={extra.value}
                       type="button"
                       onClick={() => handleFeatureToggle(extra.value)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-left transition-all ${
-                        isChecked
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-left transition-all ${isChecked
                           ? "border-blue-500 bg-blue-50/50 text-blue-700 font-bold"
                           : "border-slate-200 hover:border-slate-300 text-slate-600"
-                      }`}
+                        }`}
                     >
-                      <input 
+                      <input
                         type="checkbox"
                         checked={isChecked}
                         readOnly
@@ -484,7 +604,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Estado de la propiedad</label>
-              <select 
+              <select
                 name="condition"
                 value={formData.condition}
                 onChange={handleChange}
@@ -503,7 +623,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Orientación</label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <select 
+                <select
                   name="disposition"
                   value={formData.disposition}
                   onChange={handleChange}
@@ -515,7 +635,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   <option value="lateral">Lateral</option>
                   <option value="internal">Interno</option>
                 </select>
-                <select 
+                <select
                   name="orientation"
                   value={formData.orientation}
                   onChange={handleChange}
@@ -532,7 +652,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
-                <input 
+                <input
                   type="checkbox"
                   id="pets_allowed"
                   name="pets_allowed"
@@ -545,7 +665,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 </label>
               </div>
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
-                <input 
+                <input
                   type="checkbox"
                   id="professional_use"
                   name="professional_use"
@@ -569,32 +689,65 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <MapPin className="w-5 h-5 text-blue-600" />
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Ubicación y Dirección</h3>
             </div>
-            
+
+            {/* Fila 1: Provincia + Departamento */}
             <div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación (Tucumán)</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Provincia</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Departamento</label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <select
+                  required
+                  value={selectedProvince}
+                  onChange={handleProvinceChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">Selecciona provincia...</option>
+                  {provinces.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+                <select
+                  required
+                  value={selectedDepartment}
+                  onChange={handleDepartmentChange}
+                  className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
+                >
+                  <option value="">Selecciona departamento...</option>
+                  {departments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Fila 2: Ubicación + Zona */}
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ubicación</label>
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Zona</label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <select 
-                  required 
-                  name="location_id" 
-                  value={formData.location_id} 
-                  onChange={handleChange} 
+                <select
+                  required
+                  name="location_id"
+                  value={formData.location_id}
+                  onChange={handleChange}
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
                 >
                   <option value="">Selecciona ubicación...</option>
-                  {locations.map(loc => (
+                  {filteredLocations.map(loc => (
                     <option key={loc.id} value={loc.id}>
                       {loc.neighborhood}, {loc.city}
                     </option>
                   ))}
                 </select>
-                <select 
-                  required 
-                  name="zone_id" 
-                  value={formData.zone_id} 
-                  onChange={handleChange} 
+                <select
+                  required
+                  name="zone_id"
+                  value={formData.zone_id}
+                  onChange={handleChange}
                   className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
                 >
                   <option value="">Selecciona zona...</option>
@@ -607,7 +760,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Escrita</label>
-              <input 
+              <input
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
@@ -625,22 +778,16 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   </span>
                 )}
               </div>
-              <MapLocationSelector 
+              <MapLocationSelector
                 latitude={formData.latitude}
                 longitude={formData.longitude}
-                onChange={({ latitude, longitude }) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    latitude,
-                    longitude
-                  }));
-                }}
+                onChange={handleMapLocationChange}
               />
               <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
             </div>
 
             <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <input 
+              <input
                 type="checkbox"
                 id="showExactAddress"
                 name="showExactAddress"
@@ -666,7 +813,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               <div className="flex gap-4">
                 <div className="relative flex-1">
                   <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
-                  <input 
+                  <input
                     type="number"
                     name="expenses_amount"
                     value={formData.expenses_amount}
@@ -675,10 +822,10 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                     placeholder="0"
                   />
                 </div>
-                <select 
-                  name="expenses_currency" 
-                  value={formData.expenses_currency} 
-                  onChange={handleChange} 
+                <select
+                  name="expenses_currency"
+                  value={formData.expenses_currency}
+                  onChange={handleChange}
                   className="w-28 px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white"
                 >
                   <option value="ARS">ARS</option>
@@ -695,7 +842,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Certificación de Domicilio</h3>
               </div>
-              
+
               <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl">
                 <p className="text-xs font-bold text-amber-800 leading-relaxed">
                   Para publicar un <strong>Alquiler Temporario</strong> necesitás adjuntar una <strong>boleta de servicio</strong> (luz, gas, agua, internet) del domicilio.
@@ -717,7 +864,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   <label className="flex flex-col items-center justify-center w-full min-h-[100px] px-6 py-6 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all group">
                     <Upload className="w-7 h-7 text-slate-300 group-hover:text-emerald-500 transition-colors mb-2" />
                     <span className="text-sm font-bold text-slate-500 group-hover:text-emerald-600 transition-colors">
-                  Hacé clic para subir tu boleta
+                      Hacé clic para subir tu boleta
                     </span>
                     <span className="text-[10px] text-slate-400 mt-1">PDF, JPG o PNG — Máx. 5 MB</span>
                     <input
@@ -805,13 +952,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                       key={feat.id}
                       type="button"
                       onClick={() => handleFeatureToggle(feat.name)}
-                      className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
-                        isChecked
+                      className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${isChecked
                           ? "border-blue-500 bg-blue-50/50 text-blue-700 font-bold"
                           : "border-slate-200 hover:border-slate-300 text-slate-600"
-                      }`}
+                        }`}
                     >
-                      <input 
+                      <input
                         type="checkbox"
                         checked={isChecked}
                         readOnly
@@ -831,7 +977,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       {!initialData && (() => {
         const featuredLimit = userPlan?.featured_limit ?? 0;
         const canFeatured = featuredLimit > 0;
-        const canPremium  = featuredLimit > 0;
+        const canPremium = featuredLimit > 0;
 
         const plans = [
           {
@@ -888,13 +1034,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   type="button"
                   disabled={plan.locked}
                   onClick={() => !plan.locked && setFormData(prev => ({ ...prev, publication_type: plan.type }))}
-                  className={`relative p-6 rounded-2xl border-2 transition-all text-left ${
-                    plan.locked
+                  className={`relative p-6 rounded-2xl border-2 transition-all text-left ${plan.locked
                       ? "border-slate-700 opacity-50 cursor-not-allowed"
                       : formData.publication_type === plan.type
                         ? plan.active
                         : plan.color
-                  }`}
+                    }`}
                 >
                   <div className={`mb-3 ${plan.locked ? "text-slate-600" : formData.publication_type === plan.type ? plan.iconColor : "text-slate-500"}`}>
                     {plan.icon}
@@ -903,7 +1048,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
                   <p className="text-slate-400 text-xs font-medium mt-1 leading-relaxed">{plan.desc}</p>
                   {plan.locked && (
                     <div className="mt-3 flex items-center gap-1.5 text-slate-500 text-xs font-bold">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                       Requiere plan {plan.requiredPlan}
                     </div>
                   )}
@@ -920,8 +1065,8 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       {/* Final Actions */}
       <div className="flex flex-col md:flex-row justify-end gap-6 pt-10 border-t border-slate-200">
         <button type="button" onClick={onCancel} className="px-10 py-5 rounded-3xl font-black text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest text-sm">Cancelar</button>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading}
           className="bg-blue-600 text-white px-12 py-5 rounded-3xl font-black text-lg hover:bg-blue-700 shadow-2xl shadow-blue-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
         >
