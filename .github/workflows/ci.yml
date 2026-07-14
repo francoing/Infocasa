@@ -16,12 +16,9 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # `npm install` (no `npm ci`) a propósito: package.json y package-lock.json están
-      # desincronizados por el bump a vitest 4 (arrastra esbuild 0.28.x, el lock tiene 0.21.x).
-      # Es deuda preexistente del toolchain — ver PROJECT-MAP. Volver a `npm ci` cuando el
-      # lock esté sano (alinear vitest con vite 5 + regenerar lock).
+      # Lock ya sincronizado (vitest 2.1.9 + vite 5 + esbuild 0.21.5). npm ci = install reproducible.
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci
 
       # Fitness function con dientes: boundary UI→api + límites de tamaño/complejidad
       # (lee .ai/policies/architecture-policies.yaml). --max-warnings 0 → exit 1 en cualquier violación.
@@ -29,8 +26,8 @@ jobs:
       - name: Lint (architecture gate)
         run: npm run lint
 
-      # Advisory: el stack de test (vitest 4 + vite 5 + jsdom) está roto (deuda preexistente).
-      # No bloquea el PR de gobernanza; reactivar como gate duro al arreglar el toolchain.
-      - name: Tests (advisory — toolchain WIP)
+      # Advisory: jsdom fallaba localmente (Windows, node_modules inconsistente). En CI limpio de
+      # Linux debería cargar. Verificar el run y, si pasa, quitar `continue-on-error` (gate duro).
+      - name: Tests (advisory — verificar en CI limpio)
         run: npm run test
         continue-on-error: true
