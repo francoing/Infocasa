@@ -281,7 +281,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
     const priceVal = Number(formData.price);
     const currencyVal = formData.price_currency || "USD";
-    const priceUsdVal = currencyVal === "ARS" ? Math.round(priceVal / 1000) : priceVal;
 
     // Mapear operación al valor de API
     let operation;
@@ -296,7 +295,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     fd.append("description", formData.description);
     fd.append("price_amount", priceVal);
     fd.append("price_currency", currencyVal);
-    fd.append("price_usd", priceUsdVal);
     fd.append("location_id", Number(formData.location_id));
     fd.append("province", selectedProvince || "");
     fd.append("department", selectedDepartment || "");

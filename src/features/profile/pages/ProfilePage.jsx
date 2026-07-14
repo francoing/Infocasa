@@ -68,7 +68,6 @@ export default function ProfilePage() {
     } else if (isPending) {
       toast.info('Tu pago está pendiente de aprobación.');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [showCheckout, setShowCheckout] = useState(false);

@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main, QA]
+  pull_request:
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fitness function con dientes: boundary UI→api + límites de tamaño/complejidad
+      # (lee .ai/policies/architecture-policies.yaml). --max-warnings 0 → exit 1 en cualquier violación.
+      - name: Lint (architecture gate)
+        run: npm run lint
+
+      # Nota: el toolchain de test (vitest+jsdom) debe estar sano en CI limpio.
+      # Si falla por dependencias, ver PROJECT-MAP "Backlog" — no relajar el lint para compensar.
+      - name: Tests
+        run: npm run test

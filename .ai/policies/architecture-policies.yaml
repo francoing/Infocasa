@@ -1,0 +1,44 @@
+version: 1
+
+# ENFORCED por .eslintrc.cjs (lee este archivo con js-yaml) + `npm run lint` (--max-warnings 0).
+#
+# A diferencia del backend (herramienta AST propia con tiers warning/error), ESLint aplica
+# UN techo por regla; con --max-warnings 0 cualquier violación bloquea (exit 1). Los dientes
+# vienen de: reglas en nivel `error` + boundary de importación + el gate en CI/pre-commit.
+#
+# Números iniciales, tuneables. Ajustar acá (no en .eslintrc.cjs) — la config los lee.
+
+# Límites por tipo de archivo (scope). `files` = globs que definen el scope.
+scopes:
+  component:
+    files:
+      - "src/**/components/**/*.jsx"
+      - "src/common/components/**/*.jsx"
+    max_lines: 300
+    max_lines_per_function: 200
+    complexity: 20
+    max_depth: 4
+
+  page:
+    files:
+      - "src/features/**/pages/**/*.jsx"
+    max_lines: 400
+    max_lines_per_function: 300
+    complexity: 20
+    max_depth: 4
+
+  hook:
+    files:
+      - "src/hooks/**/*.js"
+    max_lines: 250
+    max_lines_per_function: 150
+    complexity: 20
+    max_depth: 4
+
+# Boundaries estructurales (mapea a "no queries en controllers" del backend).
+boundaries:
+  # El cliente HTTP único solo puede importarse desde la capa de datos (hooks).
+  api_client:
+    module: "api/api"          # se matchea contra el import (…/api/api.js)
+    allowed_importers:
+      - "src/hooks/**"
