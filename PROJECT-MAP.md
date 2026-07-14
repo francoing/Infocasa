@@ -23,7 +23,7 @@ src/
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, useLeads, usePlans,
 │                            useAdminData, useDashboardData, useAuth, useAgencies, useGeoapifyPlaces, useUserProvince, useToast
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanBadge, PlanStatusCard, ToastContainer,
-│                            WhatsAppButton, Loader, Logo
+│                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/utils.js          ← helpers (clsx/tailwind-merge)
 ├── data/provincias.json  ← datos estáticos de provincias
@@ -41,6 +41,7 @@ src/
 | `/explore/:operation` | ExplorePage (mapa) | pública |
 | `/share/:propertyId?` | SharePage | pública |
 | `/login` `/register` `/forgot-password` `/reset-password` | Auth pages | pública |
+| `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/profile` | ProfilePage | `auth` (cualquier rol) |
 | `/dashboard` | DashboardPage | owner / agent / admin / buyer |
 | `/dashboard/properties/create` | CreatePropertyPage | owner / agent / admin |

@@ -16,6 +16,7 @@ const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'));
 const CreatePropertyPage = lazy(() => import('../features/property/pages/CreatePropertyPage'));
 const EditPropertyPage = lazy(() => import('../features/property/pages/EditPropertyPage'));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));
+const EmailVerifiedPage = lazy(() => import('../features/auth/pages/EmailVerifiedPage'));
 const SharePage = lazy(() => import('../features/share/pages/SharePage'));
 const ExplorePage = lazy(() => import('../features/explore/pages/ExplorePage'));
 
@@ -39,6 +40,7 @@ const AppRouter = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/email-verified" element={<EmailVerifiedPage />} />
 
           {/* Ruta de Compartir - Pública */}
           <Route path="/share/:propertyId?" element={<SharePage />} />

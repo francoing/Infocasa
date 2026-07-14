@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { usePlans } from "../../hooks/usePlans";
 import Logo from "./Logo";
 import WhatsAppButton from "./WhatsAppButton";
+import EmailVerificationBanner from "./EmailVerificationBanner";
 
 export default function AdminLayout({ children }) {
   const { user, logout, isAdmin, isPublisher } = useAuth();
@@ -129,7 +130,10 @@ export default function AdminLayout({ children }) {
         <Logo size="text-xl" />
       </div>
 
-      <main className="flex-1 min-w-0 pt-16 lg:pt-0">{children}</main>
+      <main className="flex-1 min-w-0 pt-16 lg:pt-0">
+        <EmailVerificationBanner />
+        {children}
+      </main>
       <WhatsAppButton />
     </div>
   );

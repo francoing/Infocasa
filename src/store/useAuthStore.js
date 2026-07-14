@@ -226,4 +226,18 @@ export const useAuthStore = create((set, get) => ({
       throw err;
     }
   },
+
+  // Reenvía el correo de verificación (usuario logueado no verificado). Throttled en backend.
+  resendVerification: async () => {
+    set({ error: null });
+    try {
+      return await api.post("/auth/email/verification-notification");
+    } catch (err) {
+      const msg = err.status === 429
+        ? "Esperá unos minutos antes de reintentar."
+        : (err.message || "No pudimos reenviar el correo. Intentá de nuevo.");
+      set({ error: msg });
+      throw err;
+    }
+  },
 }));
