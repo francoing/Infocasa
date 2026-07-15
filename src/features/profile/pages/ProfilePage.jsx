@@ -6,7 +6,7 @@ import { usePlans } from '@/hooks/usePlans';
 import { useToast } from '@/hooks/useToast';
 import { useAuthStore } from '@/store/useAuthStore';
 import Layout from '@/common/components/Layout';
-import { api } from '@/api/api';
+import { createAgency, updateAgency } from '@/hooks/useAgencies';
 import CheckoutModal from '@/features/dashboard/components/CheckoutModal';
 import { Camera, Save, Lock, User as UserIcon, Phone, Loader2, Crown, CheckCircle, Building } from 'lucide-react';
 
@@ -120,10 +120,10 @@ export default function ProfilePage() {
     setLoadingAgency(true);
     try {
       if (user?.agency?.id) {
-        await api.put(`/agencies/${user.agency.id}`, agencyForm);
+        await updateAgency(user.agency.id, agencyForm);
         toast.success('Información de la inmobiliaria actualizada correctamente.');
       } else {
-        await api.post('/agencies', agencyForm);
+        await createAgency(agencyForm);
         toast.success('Inmobiliaria registrada correctamente.');
       }
       await refreshUser();

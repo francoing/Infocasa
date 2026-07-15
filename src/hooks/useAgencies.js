@@ -21,3 +21,15 @@ export const useAgencies = () => {
     error: query.error?.message || null,
   };
 };
+
+/** Crea la inmobiliaria del usuario actual. Capa de datos (único lugar que toca api/api.js). */
+export const createAgency = async (data) => {
+  const res = await api.post("/agencies", data);
+  return res.data;
+};
+
+/** Actualiza los datos de una inmobiliaria existente. */
+export const updateAgency = async (id, data) => {
+  const res = await api.put(`/agencies/${id}`, data);
+  return res.data;
+};

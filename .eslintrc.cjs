@@ -57,7 +57,7 @@ const LEGACY = {
   'src/features/explore/pages/ExplorePage.jsx': ['no-restricted-imports'],
   'src/features/home/components/ProvinceMap.jsx': ['react-hooks/rules-of-hooks'],
   'src/features/home/pages/HomePage.jsx': ['max-lines', 'max-lines-per-function'],
-  'src/features/profile/pages/ProfilePage.jsx': ['complexity', 'max-lines', 'max-lines-per-function', 'no-restricted-imports'],
+  'src/features/profile/pages/ProfilePage.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
   'src/features/property/components/PropertyForm.jsx': ['complexity', 'max-lines', 'max-lines-per-function', 'no-restricted-imports'],
   'src/features/property/components/PropertyMap.jsx': ['react-hooks/rules-of-hooks'],
   'src/features/property/pages/CreatePropertyPage.jsx': ['no-restricted-imports'],

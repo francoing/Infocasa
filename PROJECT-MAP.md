@@ -92,7 +92,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 ### Backlog de reconciliación de la fitness function (ratchet)
 La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente están listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.**
 
-- **Boundary (UI→api directo)** — mover la llamada a un hook: `PropertyCard`, `ExplorePage`, `ProfilePage`, `PropertyForm`, `CreatePropertyPage`. *(`SearchPage` ya salió: usa `useAgencies`.)*
+- **Boundary (UI→api directo)** — mover la llamada a un hook: `PropertyCard`, `ExplorePage`, `PropertyForm`, `CreatePropertyPage`. *(`SearchPage` y `ProfilePage` ya salieron: usan `useAgencies` — `ProfilePage` vía `createAgency`/`updateAgency`, spec `profile/agency_hook`.)*
 - **rules-of-hooks (posibles bugs reales, prioridad)** — `PropertyCard`, `ProvinceMap`, `PropertyMap` (`useState`/`useQueryClient` condicional o fuera de hook), `useLeads`, `usePlans`, `useProperties`.
 - **Tamaño/complejidad (componentes/hooks gigantes)** — `PropertyForm` (993 líneas), `ProfilePage` (546), `PropertyDetailPage` (508), `HomePage` (468), `DashboardPage`, `useDashboardData`, `useProperties`, `usePropertyDetail`.
 
