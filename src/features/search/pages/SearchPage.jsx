@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
-import { api } from "../../../api/api";
+import { useAgencies } from "../../../hooks/useAgencies";
 import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
 
 export default function SearchPage() {
@@ -14,13 +14,14 @@ export default function SearchPage() {
   const [location, setLocation] = useState(searchParams.get("location") || "");
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
+  const [currency, setCurrency] = useState(searchParams.get("currency") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Todos");
   const [userId, setUserId] = useState(searchParams.get("userId") || "");
   const [operation, setOperation] = useState(searchParams.get("operation") || "");
   const [sort, setSort] = useState(searchParams.get("sort") || "recent");
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [agencies, setAgencies] = useState([]);
+  const { agencies } = useAgencies();
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState(-1);
   const inputRef = useRef(null);
@@ -59,24 +60,12 @@ export default function SearchPage() {
     }
   };
 
-  // Fetch agencies on mount
-  useEffect(() => {
-    const fetchAgencies = async () => {
-      try {
-        const res = await api.get("/agencies");
-        setAgencies(res.data || []);
-      } catch (err) {
-        console.error("Error fetching agencies:", err);
-      }
-    };
-    fetchAgencies();
-  }, []);
-
   // Update local states when search parameters change (e.g. from reset or back navigation)
   useEffect(() => {
     setLocation(searchParams.get("location") || "");
     setMinPrice(searchParams.get("minPrice") || "");
     setMaxPrice(searchParams.get("maxPrice") || "");
+    setCurrency(searchParams.get("currency") || "");
     setSelectedType(searchParams.get("type") || "Todos");
     setUserId(searchParams.get("userId") || "");
     setOperation(searchParams.get("operation") || "");
@@ -89,6 +78,7 @@ export default function SearchPage() {
     location: searchParams.get("location"),
     minPrice: searchParams.get("minPrice"),
     maxPrice: searchParams.get("maxPrice"),
+    currency: searchParams.get("currency"),
     type: searchParams.get("type"),
     userId: searchParams.get("userId"),
     operation: searchParams.get("operation"),
@@ -103,6 +93,7 @@ export default function SearchPage() {
     if (location) params.location = location;
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
+    if (currency) params.currency = currency;
     if (selectedType !== "Todos") params.type = selectedType;
     if (userId) params.userId = userId;
     if (operation) params.operation = operation;
@@ -116,6 +107,7 @@ export default function SearchPage() {
     setLocation("");
     setMinPrice("");
     setMaxPrice("");
+    setCurrency("");
     setSelectedType("Todos");
     setUserId("");
     setSort("recent");
@@ -211,19 +203,29 @@ export default function SearchPage() {
                 {/* Price */}
                 <div className="space-y-4">
                   <label className="text-sm font-semibold text-slate-500 block">Rango de Precio</label>
+                  {/* Moneda nativa (sin conversión). "Automática" deja que el backend decida por operación. */}
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 focus:border-blue-600 outline-none cursor-pointer"
+                  >
+                    <option value="">Moneda: automática</option>
+                    <option value="USD">USD (dólares)</option>
+                    <option value="ARS">ARS (pesos)</option>
+                  </select>
                   <div className="flex gap-4 items-center">
-                    <input 
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-600 outline-none" 
-                      placeholder="Mín" 
-                      type="number" 
+                    <input
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-600 outline-none"
+                      placeholder="Mín"
+                      type="number"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
                     />
                     <span className="text-slate-400">—</span>
-                    <input 
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-600 outline-none" 
-                      placeholder="Máx" 
-                      type="number" 
+                    <input
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-600 outline-none"
+                      placeholder="Máx"
+                      type="number"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
                     />

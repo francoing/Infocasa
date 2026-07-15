@@ -143,7 +143,6 @@ export const useDashboardData = () => {
   const reducePriceMutation = useMutation({
     mutationFn: async ({ id, newPrice }) => {
       return api.patch(`/properties/${id}`, {
-        price_usd: newPrice,
         price_amount: newPrice
       });
     },

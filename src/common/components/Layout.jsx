@@ -7,6 +7,7 @@ import Logo from "./Logo";
 import FooterLogo from "./FooterLogo";
 import AdminLayout from "./AdminLayout";
 import WhatsAppButton from "./WhatsAppButton";
+import EmailVerificationBanner from "./EmailVerificationBanner";
 
 export default function Layout({ children }) {
   const location = useLocation();
@@ -19,7 +20,10 @@ export default function Layout({ children }) {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow pt-20">{children}</main>
+      <main className="flex-grow pt-20">
+        <EmailVerificationBanner />
+        {children}
+      </main>
       <Footer />
       <WhatsAppButton />
     </div>

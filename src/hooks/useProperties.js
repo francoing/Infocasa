@@ -36,7 +36,7 @@ export const mapProperty = (p) => {
     id: item.id,
     title: item.title,
     description: item.description,
-    price: parseFloat(item.price?.usd || item.price?.amount || item.price_usd || item.price || 0),
+    price: parseFloat(item.price?.amount ?? item.price ?? 0),
     priceCurrency: item.price?.currency || item.currency || "USD",
     operation: item.operation === "sale" ? "Venta" : item.operation === "rent" ? "Alquiler" : item.operation === "development" ? "Desarrollo" : "Venta",
     operationRaw: item.operation,
@@ -114,6 +114,12 @@ export const useProperties = (filters = {}) => {
       
       if (filters.maxPrice) {
         queryParams.push(`price_max=${filters.maxPrice}`);
+      }
+
+      // Moneda nativa (sin conversión): solo se envía si el usuario eligió una;
+      // si no, el backend aplica su default por operación. Ver api-contract.md.
+      if (filters.currency) {
+        queryParams.push(`currency=${filters.currency}`);
       }
 
       if (filters.operation) {
