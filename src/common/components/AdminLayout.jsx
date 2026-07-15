@@ -50,7 +50,6 @@ export default function AdminLayout({ children }) {
         <Link to="/" className="block mb-2">
           <Logo size="text-2xl" />
         </Link>
-        <div className="h-1 w-12 bg-[#cca425] rounded-full"></div>
       </div>
       <nav className="flex-1 px-4 space-y-2">
         <SidebarLink
@@ -62,11 +61,11 @@ export default function AdminLayout({ children }) {
         />
         {(isAdmin || isPublisher) && (
           userPlan ? (
-            <SidebarLink 
-              to="/dashboard/properties/create" 
-              icon={<PlusCircle />} 
-              label="Publicar" 
-              active={location.pathname === '/dashboard/properties/create'} 
+            <SidebarLink
+              to="/dashboard/properties/create"
+              icon={<PlusCircle />}
+              label="Publicar"
+              active={location.pathname === '/dashboard/properties/create'}
               onClick={() => setSidebarOpen(false)}
             />
           ) : (
@@ -100,7 +99,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Desktop sidebar */}
-      <aside className="h-screen w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 sticky top-0 hidden lg:flex shadow-2xl">
+      <aside className="h-screen w-72 border-r border-slate-200 bg-white flex-col pt-0 pb-8 space-y-4 sticky top-0 hidden lg:flex shadow-2xl">
         {sidebarContent}
       </aside>
 
@@ -112,9 +111,8 @@ export default function AdminLayout({ children }) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 shadow-2xl transition-transform duration-300 lg:hidden ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 shadow-2xl transition-transform duration-300 lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {sidebarContent}
       </aside>

@@ -1,15 +1,12 @@
 import React from 'react';
+import logoHome from '../../assets/img/imagotipo-horitonzal.png';
 
-export default function Logo({ className = "", size = "text-2xl", showDotCom = true }) {
-  // Map text size classes to image height classes
-  const heightClass = size.includes('text-3xl') ? 'h-10' : size.includes('text-xl') ? 'h-7' : 'h-8';
-  
+export default function Logo({ className = "" }) {
   return (
-    <img 
-      src="/img/Infocasa.png" 
-      alt="Infocasa" 
-      className={`object-contain ${heightClass} ${className}`}
-      style={{ filter: 'none' }}
+    <img
+      src={logoHome}
+      alt="Infocasa"
+      className={`object-contain h-20 lg:h-28 ${className}`}
     />
   );
 }

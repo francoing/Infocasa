@@ -75,7 +75,6 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           api.get("/property-features")
         ]);
         setLocations(locRes.data || []);
-        console.log("🏙️ /locations — data:", locRes.data);
         setPropertyTypes(typeRes.data || []);
         setZones(zoneRes.data || []);
         setAvailableFeatures(featRes.data?.data || []);
