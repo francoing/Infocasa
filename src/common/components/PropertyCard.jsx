@@ -14,11 +14,12 @@ function formatDate(dateStr) {
 }
 
 export default function PropertyCard({ property }) {
-  if (!property) return null;
-
+  // Hooks primero, siempre — nunca después de un return condicional (rules-of-hooks).
   const toast = useToast();
-  const [isFavorited, setIsFavorited] = useState(property.isFavorited || false);
+  const [isFavorited, setIsFavorited] = useState(property?.isFavorited || false);
   const [loading, setLoading] = useState(false);
+
+  if (!property) return null;
 
   const handleFavoriteClick = async (e) => {
     e.preventDefault();
