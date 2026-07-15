@@ -16,7 +16,7 @@ export default function SearchPage() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [currency, setCurrency] = useState(searchParams.get("currency") || "");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Todos");
-  const [userId, setUserId] = useState(searchParams.get("userId") || "");
+  const [agencyId, setAgencyId] = useState(searchParams.get("agencyId") || "");
   const [operation, setOperation] = useState(searchParams.get("operation") || "");
   const [sort, setSort] = useState(searchParams.get("sort") || "recent");
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
@@ -67,7 +67,7 @@ export default function SearchPage() {
     setMaxPrice(searchParams.get("maxPrice") || "");
     setCurrency(searchParams.get("currency") || "");
     setSelectedType(searchParams.get("type") || "Todos");
-    setUserId(searchParams.get("userId") || "");
+    setAgencyId(searchParams.get("agencyId") || "");
     setOperation(searchParams.get("operation") || "");
     setSort(searchParams.get("sort") || "recent");
     setPage(parseInt(searchParams.get("page")) || 1);
@@ -80,7 +80,7 @@ export default function SearchPage() {
     maxPrice: searchParams.get("maxPrice"),
     currency: searchParams.get("currency"),
     type: searchParams.get("type"),
-    userId: searchParams.get("userId"),
+    agencyId: searchParams.get("agencyId"),
     operation: searchParams.get("operation"),
     sort: searchParams.get("sort") || "recent",
     page: parseInt(searchParams.get("page")) || 1
@@ -95,7 +95,7 @@ export default function SearchPage() {
     if (maxPrice) params.maxPrice = maxPrice;
     if (currency) params.currency = currency;
     if (selectedType !== "Todos") params.type = selectedType;
-    if (userId) params.userId = userId;
+    if (agencyId) params.agencyId = agencyId;
     if (operation) params.operation = operation;
     params.sort = sort;
     params.page = 1;
@@ -109,7 +109,7 @@ export default function SearchPage() {
     setMaxPrice("");
     setCurrency("");
     setSelectedType("Todos");
-    setUserId("");
+    setAgencyId("");
     setSort("recent");
     setSearchParams({});
     setShowMobileFilters(false);
@@ -255,8 +255,8 @@ export default function SearchPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-500 block">Inmobiliaria</label>
                   <select 
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
+                    value={agencyId}
+                    onChange={(e) => setAgencyId(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none cursor-pointer"
                   >
                     <option value="">Todas las inmobiliarias</option>

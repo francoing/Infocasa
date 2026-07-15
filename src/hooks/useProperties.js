@@ -127,6 +127,16 @@ export const useProperties = (filters = {}) => {
         queryParams.push(`operation=${op}`);
       }
 
+      // Filtro por inmobiliaria (agency_id).
+      if (filters.agencyId) {
+        queryParams.push(`agency_id=${filters.agencyId}`);
+      }
+
+      // Orden secundario por precio (destacadas siguen primero en el backend).
+      if (filters.sort === 'price_asc' || filters.sort === 'price_desc') {
+        queryParams.push(`sort=${filters.sort}`);
+      }
+
       if (filters.page) {
         queryParams.push(`page=${filters.page}`);
         queryParams.push(`per_page=6`);
@@ -184,6 +194,44 @@ export const updateProperty = async (id, propertyData) => {
   const res = await api.put(`/properties/${id}`, propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["property", id] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res;
+};
+
+/**
+ * Sube archivos de imagen al endpoint dedicado (el POST/PUT de la propiedad no procesa imágenes).
+ * Devuelve el array de imágenes creadas (en el orden enviado, cada una con `id`) para poder
+ * mapear los Files nuevos a sus IDs al fijar el orden. Ver spec property/image_management.
+ */
+export const uploadPropertyImages = async (propertyId, files) => {
+  if (!files || files.length === 0) return [];
+  const queryClient = getQueryClient();
+  const fd = new FormData();
+  files.forEach(file => fd.append("files[]", file));
+  const res = await api.post(`/properties/${propertyId}/images`, fd);
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res.data || [];
+};
+
+/** Borra una imagen existente de una propiedad. El backend promueve otra a portada si hacía falta. */
+export const deletePropertyImage = async (propertyId, imageId) => {
+  const queryClient = getQueryClient();
+  const res = await api.delete(`/properties/${propertyId}/images/${imageId}`);
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res;
+};
+
+/** Fija el orden de las imágenes; la primera del array queda como portada (`is_cover`). */
+export const updatePropertyImagesOrder = async (propertyId, imageIds) => {
+  if (!imageIds || imageIds.length === 0) return null;
+  const queryClient = getQueryClient();
+  const res = await api.put(`/properties/${propertyId}/images/order`, { image_ids: imageIds });
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["me_properties"] });
   return res;
 };

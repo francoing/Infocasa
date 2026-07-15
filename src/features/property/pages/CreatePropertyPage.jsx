@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../../api/api";
 import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
-import { createProperty } from "../../../hooks/useProperties";
+import { createProperty, uploadPropertyImages } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 
@@ -16,7 +16,7 @@ export default function CreatePropertyPage() {
   // Extract the user's active subscription plan for the publication type selector
   const userPlan = user?.subscription?.plan || null;
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, imageFiles) => {
     try {
       setLoading(true);
 
@@ -28,6 +28,16 @@ export default function CreatePropertyPage() {
       const res = await createProperty(formData);
 
       const newProperty = res.data;
+
+      // Subir imágenes nuevas al endpoint dedicado (el POST de la propiedad no las procesa).
+      if (imageFiles && imageFiles.length > 0) {
+        try {
+          await uploadPropertyImages(newProperty.id, imageFiles);
+        } catch (imgErr) {
+          console.error("Error subiendo imágenes:", imgErr);
+          toast.error("La propiedad se creó, pero hubo un problema al subir algunas fotos.");
+        }
+      }
 
       // Crear la publicación con el tipo seleccionado (basic/featured/premium)
       const publicationType = formData.get("publication_type") || "basic";
