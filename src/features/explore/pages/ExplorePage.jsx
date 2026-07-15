@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, MapPin, Search } from "lucide-react";
+import { ArrowLeft, MapPin, Search } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
 import { mapProperty } from "../../../hooks/useProperties";
@@ -182,7 +182,7 @@ export default function ExplorePage() {
               ))}
               {geoLoading && (
                 <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
+                  <img src="/img/Icono.png" alt="" className="w-3 h-3 object-contain animate-heartbeat inline-block" /> Buscando…
                 </li>
               )}
             </ul>
@@ -194,7 +194,7 @@ export default function ExplorePage() {
           {explorationLoading ? (
             <div className="flex items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <img src="/img/Icono.png" alt="Cargando..." className="w-10 h-10 object-contain animate-heartbeat" />
                 <span className="text-sm text-slate-400 font-medium">Cargando propiedades...</span>
               </div>
             </div>
