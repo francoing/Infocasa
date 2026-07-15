@@ -127,6 +127,16 @@ export const useProperties = (filters = {}) => {
         queryParams.push(`operation=${op}`);
       }
 
+      // Filtro por inmobiliaria (agency_id).
+      if (filters.agencyId) {
+        queryParams.push(`agency_id=${filters.agencyId}`);
+      }
+
+      // Orden secundario por precio (destacadas siguen primero en el backend).
+      if (filters.sort === 'price_asc' || filters.sort === 'price_desc') {
+        queryParams.push(`sort=${filters.sort}`);
+      }
+
       if (filters.page) {
         queryParams.push(`page=${filters.page}`);
         queryParams.push(`per_page=6`);
