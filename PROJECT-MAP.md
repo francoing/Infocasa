@@ -4,7 +4,7 @@
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
 > Para el QUÉ del negocio ver la capa compartida (`.ai/product/README.md` → backend); para el CÓMO técnico ver `.ai/context/`.
 >
-> Última sincronización: 2026-07-14 (reconciliación inicial contra el código + bootstrap de gobernanza).
+> Última sincronización: 2026-07-15 (gestión de imágenes al editar: borrar + reordenar/portada).
 
 ## Stack / Entorno
 - **React 18** + **Vite 5** · SPA. Rutas: **React Router 6** (lazy + code splitting).
@@ -84,7 +84,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **Filtro por inmobiliaria funciona** (`agency_id`; el estado `userId` se renombró a `agencyId`). Spec `search/search_coherence`.
 - ✅ **Moderación de certificación (admin)** — aprobar/rechazar temporarias desde el AdminPage. Spec `admin/certification_moderation`.
 - ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
-- 🟡 **Follow-up imágenes**: borrar/reordenar imágenes existentes al editar (`DELETE /images/{id}`, `PUT /images/order`) — requiere que `PropertyForm`/`ImageUploader` trackeen los IDs de imagen (hoy solo URLs). Pendiente.
+- ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
 - 🟢 **`ProfilePage` duplicado** — existe en `features/auth/pages/` y `features/profile/pages/`; el router usa el de `profile/`. El de `auth/` es código muerto (candidato a borrar).
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
 - 🟡 **`npm run test` — toolchain a medio arreglar.** `vitest` bajado de `^4.1.7` (incompatible con vite 5) a **`^2.1.9`** → `package-lock.json` regenerado y `npm ci` **vuelve a funcionar** (esbuild 0.21.5 alineado). Pero **jsdom** sigue fallando en el entorno **local** (Windows, `node_modules` inconsistente por instalaciones superpuestas / `EPERM`): `SyntaxError` cargando un archivo generado de jsdom. Muy probablemente **local-only** → verificar el paso de tests en CI limpio (Linux); si pasa, quitar `continue-on-error` de `ci.yml` y volverlo gate duro. Si también falla en CI, alinear jsdom.

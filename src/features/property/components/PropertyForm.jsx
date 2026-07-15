@@ -106,7 +106,8 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
         area: initialData.areaTotal !== undefined && initialData.areaTotal !== null ? initialData.areaTotal : "",
         area_covered: initialData.areaCovered !== undefined && initialData.areaCovered !== null ? initialData.areaCovered : "",
         imageUrl: initialData.imageUrl || "",
-        gallery: initialData.images?.map(img => img.url) || [],
+        // Imágenes existentes: preservar { id, url } para poder borrar/reordenar (spec property/image_management).
+        gallery: initialData.images?.map(img => ({ id: img.id, url: img.url, is_cover: img.is_cover })) || [],
         featured: !!initialData.featured,
         latitude: (() => {
           const val = initialData.locationDetails?.latitude ?? initialData.latitude;
@@ -231,9 +232,11 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
   };
 
   const handleImagesChange = (images) => {
+    const first = images[0];
+    const firstUrl = !first ? "" : first instanceof File ? "" : typeof first === "string" ? first : first.url || "";
     setFormData(prev => ({
       ...prev,
-      imageUrl: images.length > 0 ? (images[0] instanceof File ? "" : images[0]) : "",
+      imageUrl: firstUrl,
       gallery: images
     }));
   };
@@ -336,7 +339,24 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     // Se suben aparte al endpoint dedicado /images. Ver spec property/image_upload.
     const imageFiles = formData.gallery.filter(item => item instanceof File);
 
-    onSubmit(fd, imageFiles);
+    // Operaciones sobre imágenes existentes (solo relevantes al editar). Ver spec property/image_management.
+    const initialImages = initialData?.images || [];
+    const initialIds = initialImages.map(img => img.id);
+    const survivingIds = formData.gallery
+      .filter(item => !(item instanceof File) && item?.id != null)
+      .map(item => item.id);
+    const deletedImageIds = initialIds.filter(id => !survivingIds.includes(id));
+
+    // Orden de display: existentes por id, nuevos como placeholder (se resuelven a su id tras subir).
+    const order = formData.gallery.map(item =>
+      item instanceof File ? { type: "new" } : { type: "existing", id: item.id }
+    );
+
+    // ¿Cambió algo que requiera fijar orden? Borrados, archivos nuevos, o reordenamiento de existentes.
+    const orderChanged = JSON.stringify(survivingIds) !== JSON.stringify(initialIds.filter(id => survivingIds.includes(id)));
+    const changed = deletedImageIds.length > 0 || imageFiles.length > 0 || orderChanged;
+
+    onSubmit(fd, imageFiles, { deletedImageIds, order, changed });
   };
 
   // ---- Datos derivados de la cascada provincia → departamento → ubicación ----
