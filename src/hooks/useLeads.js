@@ -1,17 +1,9 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { api } from "../api/api";
 
-const getQueryClient = () => {
-  try {
-    return useQueryClient();
-  } catch (e) {
-    return new QueryClient();
-  }
-};
-
 export const useLeads = () => {
-  const queryClient = getQueryClient();
+  const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ["leads"],

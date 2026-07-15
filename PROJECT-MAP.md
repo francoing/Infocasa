@@ -26,7 +26,7 @@ src/
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanBadge, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
-├── lib/utils.js          ← helpers (clsx/tailwind-merge)
+├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
 ├── data/provincias.json  ← datos estáticos de provincias
 ├── mock/                 ← mockApi + handlers/searchProperties + data (switch por VITE_USE_MOCK)
 ├── theme/                ← tema
@@ -91,10 +91,10 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - 🟡 **`npm run test` — toolchain a medio arreglar.** `vitest` bajado de `^4.1.7` (incompatible con vite 5) a **`^2.1.9`** → `package-lock.json` regenerado y `npm ci` **vuelve a funcionar** (esbuild 0.21.5 alineado). Pero **jsdom** sigue fallando en el entorno **local** (Windows, `node_modules` inconsistente por instalaciones superpuestas / `EPERM`): `SyntaxError` cargando un archivo generado de jsdom. Muy probablemente **local-only** → verificar el paso de tests en CI limpio (Linux); si pasa, quitar `continue-on-error` de `ci.yml` y volverlo gate duro. Si también falla en CI, alinear jsdom.
 
 ### Backlog de reconciliación de la fitness function (ratchet)
-La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.** Auditoría de sanidad 2026-07-15 arrancó el paydown: quedan **11**.
+La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.** Auditoría de sanidad 2026-07-15 arrancó el paydown: quedan **9**.
 
 - **Boundary (UI→api directo)** — mover la llamada a un hook: `PropertyCard`, `ExplorePage`, `CreatePropertyPage`. *(Ya salieron: `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`).)*
-- **rules-of-hooks** — quedan `useLeads`, `usePlans`, `useProperties` (hack `getQueryClient`: `useQueryClient` en función normal → requiere singleton de QueryClient). *(✅ `PropertyCard`, `PropertyMap`, `ProvinceMap` corregidos — hooks antes del `return` condicional, eran crash real; spec `quality/hooks_order_fix`. `PropertyMap`+`ProvinceMap` salieron enteros del LEGACY.)*
+- **rules-of-hooks** — ✅ **categoría saldada.** `PropertyCard`/`PropertyMap`/`ProvinceMap`: hooks antes del `return` condicional (crash real; spec `quality/hooks_order_fix`). `useLeads`/`usePlans`/`useProperties`: el hack `getQueryClient` (que además **rompía la invalidación de cache** en las funciones exportadas de `useProperties`) → `useQueryClient()` incondicional + singleton en `src/lib/queryClient.js` (spec `quality/query_client_singleton`).
 - **Tamaño/complejidad (componentes/hooks gigantes)** — `PropertyForm` (1068), `DashboardPage` (981), `ProfilePage` (591), `HomePage` (524), `useDashboardData`, `useProperties`, `usePropertyDetail`. *(✅ `PropertyDetailPage` salió entero: partido en `components/detail/` — spec `property/detail_split`.)*
 
 ## Gobernanza

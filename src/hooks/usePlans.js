@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -66,12 +66,7 @@ export const fetchUserPlan = async () => {
 };
 
 export const usePlans = () => {
-  let queryClient;
-  try {
-    queryClient = useQueryClient();
-  } catch (e) {
-    queryClient = new QueryClient();
-  }
+  const queryClient = useQueryClient();
 
   const { user } = useAuthStore();
   const userRole = user?.role || "guest";
