@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
-import { getPropertyById, updateProperty } from "../../../hooks/useProperties";
+import { getPropertyById, updateProperty, uploadPropertyImages } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 import { Loader2 } from "lucide-react";
@@ -38,13 +38,23 @@ export default function EditPropertyPage() {
     fetchProperty();
   }, [id, user?.id, user?.role, navigate]);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, imageFiles) => {
     try {
       setSubmitting(true);
 
       // formData es un FormData del PropertyForm
       // Actualizar la propiedad con FormData
       await updateProperty(id, formData);
+
+      // Subir imágenes nuevas al endpoint dedicado.
+      if (imageFiles && imageFiles.length > 0) {
+        try {
+          await uploadPropertyImages(id, imageFiles);
+        } catch (imgErr) {
+          console.error("Error subiendo imágenes:", imgErr);
+          toast.error("La propiedad se actualizó, pero hubo un problema al subir algunas fotos.");
+        }
+      }
 
       toast.success("Propiedad actualizada correctamente.");
       navigate("/dashboard");

@@ -327,16 +327,16 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
     // Features como array
     formData.features.forEach(f => fd.append("features[]", f));
 
-    // Imágenes (si son Files)
-    const imageFiles = formData.gallery.filter(item => item instanceof File);
-    imageFiles.forEach(file => fd.append("images[]", file));
-
     // Certificación (solo para temporarios)
     if (isTempRent && formData.certification_document instanceof File) {
       fd.append("certification_document", formData.certification_document);
     }
 
-    onSubmit(fd);
+    // Imágenes nuevas (Files): NO van en el POST de la propiedad (el backend no las procesa ahí).
+    // Se suben aparte al endpoint dedicado /images. Ver spec property/image_upload.
+    const imageFiles = formData.gallery.filter(item => item instanceof File);
+
+    onSubmit(fd, imageFiles);
   };
 
   // ---- Datos derivados de la cascada provincia → departamento → ubicación ----

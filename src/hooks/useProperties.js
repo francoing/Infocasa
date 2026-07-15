@@ -198,6 +198,19 @@ export const updateProperty = async (id, propertyData) => {
   return res;
 };
 
+/** Sube archivos de imagen al endpoint dedicado (el POST/PUT de la propiedad no procesa imágenes). */
+export const uploadPropertyImages = async (propertyId, files) => {
+  if (!files || files.length === 0) return null;
+  const queryClient = getQueryClient();
+  const fd = new FormData();
+  files.forEach(file => fd.append("files[]", file));
+  const res = await api.post(`/properties/${propertyId}/images`, fd);
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res;
+};
+
 export const deleteProperty = async (id) => {
   const queryClient = getQueryClient();
   const res = await api.delete(`/properties/${id}`);
