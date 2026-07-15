@@ -82,6 +82,9 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **`useFilterStore` eliminado** (era código muerto).
 - ✅ **`sort` por precio ahora funciona** como orden **secundario** (backend `sort=price_asc|price_desc`; destacadas siguen primero). Spec `search/search_coherence`.
 - ✅ **Filtro por inmobiliaria funciona** (`agency_id`; el estado `userId` se renombró a `agencyId`). Spec `search/search_coherence`.
+- ✅ **Moderación de certificación (admin)** — aprobar/rechazar temporarias desde el AdminPage. Spec `admin/certification_moderation`.
+- ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
+- 🟡 **Follow-up imágenes**: borrar/reordenar imágenes existentes al editar (`DELETE /images/{id}`, `PUT /images/order`) — requiere que `PropertyForm`/`ImageUploader` trackeen los IDs de imagen (hoy solo URLs). Pendiente.
 - 🟢 **`ProfilePage` duplicado** — existe en `features/auth/pages/` y `features/profile/pages/`; el router usa el de `profile/`. El de `auth/` es código muerto (candidato a borrar).
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
 - 🟡 **`npm run test` — toolchain a medio arreglar.** `vitest` bajado de `^4.1.7` (incompatible con vite 5) a **`^2.1.9`** → `package-lock.json` regenerado y `npm ci` **vuelve a funcionar** (esbuild 0.21.5 alineado). Pero **jsdom** sigue fallando en el entorno **local** (Windows, `node_modules` inconsistente por instalaciones superpuestas / `EPERM`): `SyntaxError` cargando un archivo generado de jsdom. Muy probablemente **local-only** → verificar el paso de tests en CI limpio (Linux); si pasa, quitar `continue-on-error` de `ci.yml` y volverlo gate duro. Si también falla en CI, alinear jsdom.
