@@ -95,6 +95,29 @@ export const useAdminData = () => {
     deletePropertyMutation.mutate(id);
   };
 
+  // Mutación para moderar certificación (temporary_rent): aprobar/rechazar
+  const moderateCertificationMutation = useMutation({
+    mutationFn: async ({ id, status }) => {
+      return api.patch(`/admin/properties/${id}/verify`, { status });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin_properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success(
+        variables.status === "approved"
+          ? "Propiedad aprobada y publicada."
+          : "Propiedad rechazada. Se notificó al dueño."
+      );
+    },
+    onError: () => {
+      toast.error("No se pudo moderar la certificación.");
+    }
+  });
+
+  const moderateCertification = (id, status) => {
+    moderateCertificationMutation.mutate({ id, status });
+  };
+
   // Filtrado local
   const users = usersQuery.data || [];
   const filteredUsers = users.filter(u =>
@@ -136,6 +159,8 @@ export const useAdminData = () => {
     filteredLeads,
     handleAssignPlan,
     deleteProperty,
+    moderateCertification,
+    isModerating: moderateCertificationMutation.isPending,
     usersCount: users.length,
     propertiesCount: (propertiesQuery.data || []).length,
     leadsCount: (leadsQuery.data || []).length,
