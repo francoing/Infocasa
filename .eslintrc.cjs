@@ -61,7 +61,6 @@ const LEGACY = {
   'src/features/property/components/PropertyForm.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
   'src/features/property/components/PropertyMap.jsx': ['react-hooks/rules-of-hooks'],
   'src/features/property/pages/CreatePropertyPage.jsx': ['no-restricted-imports'],
-  'src/features/property/pages/PropertyDetailPage.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
   'src/features/search/pages/SearchPage.jsx': ['max-lines-per-function'],
   // Capa de datos (hooks) sobredimensionada / rules-of-hooks:
   'src/hooks/useDashboardData.js': ['complexity', 'max-lines', 'max-lines-per-function'],
