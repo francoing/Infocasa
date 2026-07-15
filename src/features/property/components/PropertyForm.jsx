@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Camera, MapPin, Bed, Bath, Maximize, Loader2, Save, Sparkles, Zap, Star, Crown, Home, ShieldCheck, Upload, FileText, X, AlertCircle } from "lucide-react";
 import ImageUploader from "./ImageUploader";
 import MapLocationSelector from "./MapLocationSelector";
-import { api } from "../../../api/api";
+import { usePropertyFormRefs } from "../../../hooks/usePropertyFormRefs";
 
 const INITIAL_STATE = {
   title: "",
@@ -54,39 +54,11 @@ const EXTRAS = [
 
 export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false, userPlan = null }) {
   const [formData, setFormData] = useState(INITIAL_STATE);
-  const [locations, setLocations] = useState([]);
-  const [propertyTypes, setPropertyTypes] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [availableFeatures, setAvailableFeatures] = useState([]);
-  const [loadingRefs, setLoadingRefs] = useState(true);
+  // Datos de referencia (ubicaciones, tipos, zonas, features) desde la capa de datos.
+  const { locations, propertyTypes, zones, availableFeatures, loadingRefs } = usePropertyFormRefs();
   const [formError, setFormError] = useState("");
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
-
-
-  useEffect(() => {
-    const fetchRefData = async () => {
-      try {
-        setLoadingRefs(true);
-        const [locRes, typeRes, zoneRes, featRes] = await Promise.all([
-          api.get("/locations"),
-          api.get("/property-types"),
-          api.get("/zones"),
-          api.get("/property-features")
-        ]);
-        setLocations(locRes.data || []);
-        console.log("🏙️ /locations — data:", locRes.data);
-        setPropertyTypes(typeRes.data || []);
-        setZones(zoneRes.data || []);
-        setAvailableFeatures(featRes.data?.data || []);
-      } catch (err) {
-        console.error("Error loading reference data:", err);
-      } finally {
-        setLoadingRefs(false);
-      }
-    };
-    fetchRefData();
-  }, []);
 
   useEffect(() => {
     if (initialData) {
