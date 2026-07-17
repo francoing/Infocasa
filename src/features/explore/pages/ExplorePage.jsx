@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, MapPin, Search } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
-import { mapProperty } from "../../../hooks/useProperties";
+import { useExploreProperties } from "../../../hooks/useExploreProperties";
 import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
-import { api } from "../../../api/api";
 
 const OPERATION_MAP = {
   Comprar: { api: "sale", label: "Comprá", searchOp: "Venta" },
@@ -17,47 +16,18 @@ export default function ExplorePage() {
   const navigate = useNavigate();
   const opConfig = OPERATION_MAP[operation];
 
-  const [explorationProperties, setExplorationProperties] = useState([]);
-  const [explorationLoading, setExplorationLoading] = useState(true);
-  const [explorationError, setExplorationError] = useState(null);
+  // Capa de datos: react-query (loading/error/cancelación). No fetchea si la operación es inválida.
+  const {
+    properties: explorationProperties,
+    loading: explorationLoading,
+    error: explorationError,
+  } = useExploreProperties(opConfig?.api);
 
   // — Geoapify autocomplete para el buscador
   const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
   const [searchValue, setSearchValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState(-1);
-
-  // Fetch properties cuando se monta la página
-  useEffect(() => {
-    if (!opConfig) {
-      setExplorationLoading(false);
-      setExplorationError("Operación no válida");
-      return;
-    }
-
-    let cancelled = false;
-
-    const fetchProperties = async () => {
-      setExplorationLoading(true);
-      setExplorationError(null);
-      try {
-        const res = await api.get(`/properties/search?operation=${opConfig.api}&per_page=50`);
-        if (cancelled) return;
-        const mapped = (res.data || []).map(p => mapProperty(p));
-        setExplorationProperties(mapped);
-      } catch (err) {
-        if (cancelled) return;
-        setExplorationError(err?.message || "Error al cargar propiedades");
-        setExplorationProperties([]);
-      } finally {
-        if (!cancelled) setExplorationLoading(false);
-      }
-    };
-
-    fetchProperties();
-
-    return () => { cancelled = true; };
-  }, [opConfig]);
 
   // Click en marcador → navegar al detalle de la propiedad
   const handlePropertyClick = (propertyId) => {

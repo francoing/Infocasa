@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { MapPin, Bed, Bath, Maximize, Heart, Calendar, Car } from "lucide-react";
-import { api } from "../../api/api";
+import { setPropertyFavorite } from "../../hooks/useFavorites";
 import { useToast } from "../../hooks/useToast";
 
 function formatDate(dateStr) {
@@ -29,14 +29,13 @@ export default function PropertyCard({ property }) {
 
     try {
       setLoading(true);
-      if (isFavorited) {
-        await api.delete(`/properties/${property.id}/favorite`);
-        setIsFavorited(false);
-        toast.info("Eliminado de favoritos");
-      } else {
-        await api.post(`/properties/${property.id}/favorite`);
-        setIsFavorited(true);
+      const next = !isFavorited;
+      await setPropertyFavorite(property.id, next);
+      setIsFavorited(next);
+      if (next) {
         toast.success("Agregado a favoritos");
+      } else {
+        toast.info("Eliminado de favoritos");
       }
     } catch (err) {
       console.error("Error toggling favorite:", err);
