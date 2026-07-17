@@ -56,8 +56,6 @@ const LEGACY = {
   'src/features/home/pages/HomePage.jsx': ['max-lines', 'max-lines-per-function'],
   'src/features/search/pages/SearchPage.jsx': ['max-lines-per-function'],
   // Capa de datos (hooks) sobredimensionada / rules-of-hooks:
-  'src/hooks/useProperties.js': ['complexity'],
-  'src/hooks/usePropertyDetail.js': ['max-lines-per-function'],
 };
 const legacyOverrides = Object.entries(LEGACY).map(([file, rules]) => ({
   files: [file],
