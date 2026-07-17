@@ -41,7 +41,8 @@ export const useAuthStore = create((set, get) => ({
     }
     set({ loading: true });
     try {
-      const currentUser = await api.get("/auth/me");
+      const res = await api.get("/auth/me");
+      const currentUser = res?.data || res;
       const enriched = enrichUser(currentUser);
       localStorage.setItem("auth_user", JSON.stringify(enriched));
       set({ 
@@ -92,7 +93,7 @@ export const useAuthStore = create((set, get) => ({
   register: async (userData) => {
     set({ error: null });
     try {
-      const res = await api.post("/auth/register", {
+      const payload = {
         name: userData.name,
         email: userData.email,
         password: userData.password,
@@ -100,7 +101,18 @@ export const useAuthStore = create((set, get) => ({
         role: userData.role,
         phone_area: userData.phoneArea,
         phone_number: userData.phoneNumber,
-      });
+      };
+
+      if (userData.role === 'agent') {
+        payload.agency_name = userData.agency_name;
+        payload.cuit = userData.cuit;
+        payload.fantasy_name = userData.fantasy_name;
+        payload.tax_condition = userData.tax_condition;
+        payload.business_name = userData.business_name;
+        payload.agency_address = userData.agency_address;
+      }
+
+      const res = await api.post("/auth/register", payload);
 
       if (res && res.access_token) {
         const enriched = enrichUser(res.user);
@@ -177,7 +189,8 @@ export const useAuthStore = create((set, get) => ({
     const token = get().token;
     if (!token) return;
     try {
-      const currentUser = await api.get("/auth/me");
+      const res = await api.get("/auth/me");
+      const currentUser = res?.data || res;
       const enriched = enrichUser(currentUser);
       localStorage.setItem("auth_user", JSON.stringify(enriched));
       set({ 
@@ -187,6 +200,44 @@ export const useAuthStore = create((set, get) => ({
       return enriched;
     } catch (err) {
       console.error("Error refreshing user", err);
+    }
+  },
+
+  forgotPassword: async (email) => {
+    set({ error: null });
+    try {
+      const res = await api.post("/auth/forgot-password", { email });
+      return res;
+    } catch (err) {
+      const msg = err.message || "Hubo un problema al procesar tu solicitud. Intenta de nuevo.";
+      set({ error: msg });
+      throw err;
+    }
+  },
+
+  resetPassword: async (data) => {
+    set({ error: null });
+    try {
+      const res = await api.post("/auth/reset-password", data);
+      return res;
+    } catch (err) {
+      const msg = err.message || "Hubo un problema al restablecer tu contraseña. Intenta de nuevo.";
+      set({ error: msg });
+      throw err;
+    }
+  },
+
+  // Reenvía el correo de verificación (usuario logueado no verificado). Throttled en backend.
+  resendVerification: async () => {
+    set({ error: null });
+    try {
+      return await api.post("/auth/email/verification-notification");
+    } catch (err) {
+      const msg = err.status === 429
+        ? "Esperá unos minutos antes de reintentar."
+        : (err.message || "No pudimos reenviar el correo. Intentá de nuevo.");
+      set({ error: msg });
+      throw err;
     }
   },
 }));

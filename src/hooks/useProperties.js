@@ -1,14 +1,6 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/api";
-
-const getQueryClient = () => {
-  try {
-    return useQueryClient();
-  } catch (e) {
-    return new QueryClient();
-  }
-};
+import { queryClient } from "../lib/queryClient";
 
 export const mapProperty = (p) => {
   if (!p) return null;
@@ -36,20 +28,24 @@ export const mapProperty = (p) => {
     id: item.id,
     title: item.title,
     description: item.description,
-    price: parseFloat(item.price?.usd || item.price?.amount || item.price_usd || item.price || 0),
+    price: parseFloat(item.price?.amount ?? item.price ?? 0),
     priceCurrency: item.price?.currency || item.currency || "USD",
-    operation: item.operation === "sale" ? "Venta" : item.operation === "rent" ? "Alquiler" : "Desarrollo",
+    operation: item.operation === "sale" ? "Venta" : item.operation === "rent" ? "Alquiler" : item.operation === "development" ? "Desarrollo" : "Venta",
     operationRaw: item.operation,
     rooms: item.dimensions?.rooms || 0,
     bedrooms: item.dimensions?.bedrooms || 0,
     bathrooms: item.dimensions?.bathrooms || 0,
     areaTotal: parseFloat(item.dimensions?.area_total || 0),
     areaCovered: parseFloat(item.dimensions?.area_covered || 0),
+    area: parseFloat(item.dimensions?.area_total || 0),
     location: locationStr,
     locationDetails: item.location,
     type: item.property_type?.name || "Departamento",
     typeId: item.property_type?.id,
+    zoneId: item.zone_id || item.zone?.id || null,
+    zone: item.zone || null,
     agency: item.agency,
+
     owner: item.owner,
     imageUrl,
     images: item.images || [],
@@ -62,16 +58,29 @@ export const mapProperty = (p) => {
     showExactAddress: item.show_exact_address,
     latitude: item.coordinates?.latitude || item.location?.latitude || null,
     longitude: item.coordinates?.longitude || item.location?.longitude || null,
+    address: item.address || "",
+    expenses: item.expenses || { amount: null, currency: "ARS" },
+    parkingSpaces: item.parking_spaces || 0,
+    constructionYear: item.construction_year || null,
+    condition: item.condition || "good",
+    disposition: item.disposition || "",
+    orientation: item.orientation || "",
+    petsAllowed: !!item.pets_allowed,
+    professionalUse: !!item.professional_use,
+    features: item.features || [],
     favoritesCount: item.favorites_count || item.favoritesCount || item.favorites || 0,
     viewsCount: item.views_count || item.viewsCount || item.views || 0,
     isFavorited: item.is_favorited || false,
     status: item.status,
-    createdAt: item.created_at
+    createdAt: item.created_at,
+    // Certificación
+    certificationStatus: item.certification_status || null,
+    isCertified: !!item.is_certified,
+    certificationDocumentUrl: item.certification_document_url || null
   };
 };
 
 export const useProperties = (filters = {}) => {
-  const queryClient = getQueryClient();
   const queryKey = ["properties", "search", filters];
 
   const query = useQuery({
@@ -98,9 +107,25 @@ export const useProperties = (filters = {}) => {
         queryParams.push(`price_max=${filters.maxPrice}`);
       }
 
+      // Moneda nativa (sin conversión): solo se envía si el usuario eligió una;
+      // si no, el backend aplica su default por operación. Ver api-contract.md.
+      if (filters.currency) {
+        queryParams.push(`currency=${filters.currency}`);
+      }
+
       if (filters.operation) {
         let op = filters.operation === 'Alquiler' ? 'rent' : filters.operation === 'Venta' ? 'sale' : filters.operation;
         queryParams.push(`operation=${op}`);
+      }
+
+      // Filtro por inmobiliaria (agency_id).
+      if (filters.agencyId) {
+        queryParams.push(`agency_id=${filters.agencyId}`);
+      }
+
+      // Orden secundario por precio (destacadas siguen primero en el backend).
+      if (filters.sort === 'price_asc' || filters.sort === 'price_desc') {
+        queryParams.push(`sort=${filters.sort}`);
       }
 
       if (filters.page) {
@@ -133,7 +158,6 @@ export const fetchPropertyById = async (id) => {
 };
 
 export const getPropertyById = async (id) => {
-  const queryClient = getQueryClient();
   return queryClient.fetchQuery({
     queryKey: ["property", id],
     queryFn: () => fetchPropertyById(id),
@@ -146,7 +170,7 @@ export const getPublisherById = async (userId) => {
 };
 
 export const createProperty = async (propertyData) => {
-  const queryClient = getQueryClient();
+  // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.post("/properties", propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["me_properties"] });
@@ -154,7 +178,7 @@ export const createProperty = async (propertyData) => {
 };
 
 export const updateProperty = async (id, propertyData) => {
-  const queryClient = getQueryClient();
+  // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.put(`/properties/${id}`, propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["property", id] });
@@ -162,8 +186,42 @@ export const updateProperty = async (id, propertyData) => {
   return res;
 };
 
+/**
+ * Sube archivos de imagen al endpoint dedicado (el POST/PUT de la propiedad no procesa imágenes).
+ * Devuelve el array de imágenes creadas (en el orden enviado, cada una con `id`) para poder
+ * mapear los Files nuevos a sus IDs al fijar el orden. Ver spec property/image_management.
+ */
+export const uploadPropertyImages = async (propertyId, files) => {
+  if (!files || files.length === 0) return [];
+  const fd = new FormData();
+  files.forEach(file => fd.append("files[]", file));
+  const res = await api.post(`/properties/${propertyId}/images`, fd);
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res.data || [];
+};
+
+/** Borra una imagen existente de una propiedad. El backend promueve otra a portada si hacía falta. */
+export const deletePropertyImage = async (propertyId, imageId) => {
+  const res = await api.delete(`/properties/${propertyId}/images/${imageId}`);
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res;
+};
+
+/** Fija el orden de las imágenes; la primera del array queda como portada (`is_cover`). */
+export const updatePropertyImagesOrder = async (propertyId, imageIds) => {
+  if (!imageIds || imageIds.length === 0) return null;
+  const res = await api.put(`/properties/${propertyId}/images/order`, { image_ids: imageIds });
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  return res;
+};
+
 export const deleteProperty = async (id) => {
-  const queryClient = getQueryClient();
   const res = await api.delete(`/properties/${id}`);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["property", id] });

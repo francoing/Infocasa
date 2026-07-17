@@ -1,20 +1,10 @@
 import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import AppRouter from './router/AppRouter';
 import ToastContainer from './common/components/ToastContainer';
 import { useAuthStore } from './store/useAuthStore';
-
-// Configuración global de QueryClient
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false, // Evita recargas agresivas al cambiar de ventana en desarrollo
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutos
-    },
-  },
-});
+import { queryClient } from './lib/queryClient';
 
 function App() {
   const checkAuth = useAuthStore((state) => state.checkAuth);

@@ -8,7 +8,7 @@ import { mapProperty, getPropertiesByUser } from "./useProperties";
 
 export const useDashboardData = () => {
   const { user } = useAuth();
-  const { getUserPlan, getPlans, assignPlan, usePlansQuery, useUserPlanQuery } = usePlans();
+  const { getUserPlan, getPlans, assignPlan, payWithMercadoPago, usePlansQuery, useUserPlanQuery } = usePlans();
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -143,7 +143,6 @@ export const useDashboardData = () => {
   const reducePriceMutation = useMutation({
     mutationFn: async ({ id, newPrice }) => {
       return api.patch(`/properties/${id}`, {
-        price_usd: newPrice,
         price_amount: newPrice
       });
     },
@@ -171,7 +170,7 @@ export const useDashboardData = () => {
     }
     const reduction = prop.price * (pct / 100);
     const newPrice = Math.round(prop.price - reduction);
-    
+
     setReducingId(prop.id);
     reducePriceMutation.mutate({ id: prop.id, newPrice });
   };
@@ -284,18 +283,27 @@ export const useDashboardData = () => {
     return replyToLeadMutation.mutateAsync({ leadId, body });
   };
 
-  const handleAssignPlan = async (planId) => {
+  const handleAssignPlan = async (plan) => {
     try {
-      await assignPlan(planId);
-      setShowCheckout(false);
-      toast.success("Plan actualizado con éxito.");
+      if (Number(plan.price) > 0) {
+        const preference = await payWithMercadoPago(plan.id);
+        if (preference?.redirect_url) {
+          window.open(preference.redirect_url, '_blank');
+        } else {
+          toast.error("No se pudo obtener la URL de pago.");
+        }
+      } else {
+        await assignPlan(plan.id);
+        setShowCheckout(false);
+        toast.success("¡Plan activado con éxito!");
+      }
     } catch (err) {
       toast.error(err.message || "Error al procesar el pago del plan.");
       throw err;
     }
   };
 
-  const loading = 
+  const loading =
     (isBuyer && (favoritesQuery.isLoading || sentLeadsQuery.isLoading)) ||
     (!isBuyer && (propertiesQuery.isLoading || leadsQuery.isLoading || userPlanQuery.isLoading || plansQuery.isLoading));
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Users, Home, Shield, Power, Trash2, CreditCard, ChevronRight, Loader2, Search, MessageSquare, Mail, Phone, Calendar, Star, Edit } from "lucide-react";
+import { Users, Home, Shield, Power, Trash2, CreditCard, ChevronRight, Loader2, Search, MessageSquare, Mail, Phone, Calendar, Star, Edit, CheckCircle2, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import Layout from "@/common/components/Layout";
 import PlanBadge from "@/common/components/PlanBadge";
@@ -23,6 +23,8 @@ export default function AdminPage() {
     filteredLeads,
     handleAssignPlan,
     deleteProperty,
+    moderateCertification,
+    isModerating,
     usersCount,
     propertiesCount,
     leadsCount,
@@ -162,11 +164,11 @@ export default function AdminPage() {
                             <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-0.5">{p.status}</div>
                           </td>
                           <td className="px-8 py-5 text-sm font-bold text-slate-500">{p.location}</td>
-                          <td className="px-8 py-5 text-sm font-black text-slate-900">USD {p.price.toLocaleString()}</td>
+                          <td className="px-8 py-5 text-sm font-black text-slate-900">{p.priceCurrency} {p.price.toLocaleString()}</td>
                           <td className="px-8 py-5 text-right flex justify-end gap-2">
-                             {/* Featured toggling is disabled as the property's featured status depends on the publication system */}
-                             <Link 
-                               to={`/dashboard/properties/edit/${p.id}`} 
+                             <CertificationActions property={p} onModerate={moderateCertification} disabled={isModerating} />
+                             <Link
+                               to={`/dashboard/properties/edit/${p.id}`}
                                className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                                title="Editar propiedad"
                              >
@@ -304,4 +306,36 @@ function TabButton({ active, onClick, label }) {
 
 function XIcon() {
   return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+}
+
+/** Botones de aprobar/rechazar para propiedades con certificación pendiente (temporary_rent). */
+function CertificationActions({ property, onModerate, disabled }) {
+  if (property.certificationStatus !== "pending") return null;
+
+  const handleReject = () => {
+    if (window.confirm("¿Rechazar esta certificación? La propiedad vuelve a borrador y se notifica al dueño.")) {
+      onModerate(property.id, "rejected");
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => onModerate(property.id, "approved")}
+        disabled={disabled}
+        className="p-3 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all disabled:opacity-40"
+        title="Aprobar certificación (publicar)"
+      >
+        <CheckCircle2 className="w-5 h-5" />
+      </button>
+      <button
+        onClick={handleReject}
+        disabled={disabled}
+        className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-40"
+        title="Rechazar certificación"
+      >
+        <XCircle className="w-5 h-5" />
+      </button>
+    </>
+  );
 }
