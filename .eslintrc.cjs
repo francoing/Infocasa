@@ -54,7 +54,6 @@ const LEGACY = {
   // Capa UI llamando al HTTP directo (boundary) + componentes/páginas gigantes:
   'src/common/components/PropertyCard.jsx': ['complexity'],
   'src/features/home/pages/HomePage.jsx': ['max-lines', 'max-lines-per-function'],
-  'src/features/property/components/PropertyForm.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
   'src/features/search/pages/SearchPage.jsx': ['max-lines-per-function'],
   // Capa de datos (hooks) sobredimensionada / rules-of-hooks:
   'src/hooks/useDashboardData.js': ['complexity', 'max-lines', 'max-lines-per-function'],
