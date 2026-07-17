@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { queryClient } from "../lib/queryClient";
 import { buildProperty } from "./property.mappers";
+import { buildSearchQueryString } from "./properties.query";
 
 /** Normaliza una propiedad del backend (o `{data}`) al shape que consume la UI. */
 export const mapProperty = (p) => {
@@ -15,58 +16,10 @@ export const useProperties = (filters = {}) => {
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      let queryParams = [];
-      
-      if (filters.location) {
-        queryParams.push(`city=${encodeURIComponent(filters.location)}`);
-      }
-      
-      if (filters.type && filters.type !== "Todos") {
-        let typeId = filters.type.toLowerCase() === 'departamento' ? 1 : filters.type.toLowerCase() === 'casa' ? 2 : null;
-        if (typeId) {
-          queryParams.push(`property_type_id=${typeId}`);
-        }
-      }
-      
-      if (filters.minPrice) {
-        queryParams.push(`price_min=${filters.minPrice}`);
-      }
-      
-      if (filters.maxPrice) {
-        queryParams.push(`price_max=${filters.maxPrice}`);
-      }
-
-      // Moneda nativa (sin conversión): solo se envía si el usuario eligió una;
-      // si no, el backend aplica su default por operación. Ver api-contract.md.
-      if (filters.currency) {
-        queryParams.push(`currency=${filters.currency}`);
-      }
-
-      if (filters.operation) {
-        let op = filters.operation === 'Alquiler' ? 'rent' : filters.operation === 'Venta' ? 'sale' : filters.operation;
-        queryParams.push(`operation=${op}`);
-      }
-
-      // Filtro por inmobiliaria (agency_id).
-      if (filters.agencyId) {
-        queryParams.push(`agency_id=${filters.agencyId}`);
-      }
-
-      // Orden secundario por precio (destacadas siguen primero en el backend).
-      if (filters.sort === 'price_asc' || filters.sort === 'price_desc') {
-        queryParams.push(`sort=${filters.sort}`);
-      }
-
-      if (filters.page) {
-        queryParams.push(`page=${filters.page}`);
-        queryParams.push(`per_page=6`);
-      } else {
-        queryParams.push(`per_page=12`);
-      }
-
-      const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
+      // Moneda nativa (sin conversión) y orden secundario por precio los resuelve
+      // buildSearchQueryString; el backend impone "destacadas primero". Ver api-contract.md.
+      const queryString = buildSearchQueryString(filters);
       const res = await api.get(`/properties/search${queryString}`);
-      
       const rawProperties = res.data || [];
       return rawProperties.map(p => mapProperty(p));
     },

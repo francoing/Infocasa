@@ -16,4 +16,14 @@ if [ $status -ne 0 ]; then
 fi
 
 echo "✔ Lint OK"
+
+# Recordatorio de PROJECT-MAP (no bloquea).
+# Si tocaste src/, el mapa puede haber quedado desactualizado.
+if git diff --cached --name-only | grep -q "^src/"; then
+  echo ""
+  echo "⚠  Tocaste src/ — ¿actualizaste PROJECT-MAP.md? (Regla de oro #5)"
+  echo "   Si no cambió nada de rutas/hooks/stores/deuda, ignorá esto."
+  echo ""
+fi
+
 exit 0

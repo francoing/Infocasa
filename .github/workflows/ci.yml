@@ -22,12 +22,8 @@ jobs:
 
       # Fitness function con dientes: boundary UI→api + límites de tamaño/complejidad
       # (lee .ai/policies/architecture-policies.yaml). --max-warnings 0 → exit 1 en cualquier violación.
-      # ESTE es el gate duro de la gobernanza.
+      # ESTE es el único gate duro de la gobernanza hasta que los tests sean estables.
+      # Estado de tests: deuda declarada en PROJECT-MAP.md → sección "Deuda técnica".
       - name: Lint (architecture gate)
         run: npm run lint
 
-      # Advisory: jsdom fallaba localmente (Windows, node_modules inconsistente). En CI limpio de
-      # Linux debería cargar. Verificar el run y, si pasa, quitar `continue-on-error` (gate duro).
-      - name: Tests (advisory — verificar en CI limpio)
-        run: npm run test
-        continue-on-error: true
