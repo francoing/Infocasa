@@ -1,14 +1,6 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/api";
-
-const getQueryClient = () => {
-  try {
-    return useQueryClient();
-  } catch (e) {
-    return new QueryClient();
-  }
-};
+import { queryClient } from "../lib/queryClient";
 
 export const mapProperty = (p) => {
   if (!p) return null;
@@ -89,7 +81,6 @@ export const mapProperty = (p) => {
 };
 
 export const useProperties = (filters = {}) => {
-  const queryClient = getQueryClient();
   const queryKey = ["properties", "search", filters];
 
   const query = useQuery({
@@ -167,7 +158,6 @@ export const fetchPropertyById = async (id) => {
 };
 
 export const getPropertyById = async (id) => {
-  const queryClient = getQueryClient();
   return queryClient.fetchQuery({
     queryKey: ["property", id],
     queryFn: () => fetchPropertyById(id),
@@ -180,7 +170,6 @@ export const getPublisherById = async (userId) => {
 };
 
 export const createProperty = async (propertyData) => {
-  const queryClient = getQueryClient();
   // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.post("/properties", propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -189,7 +178,6 @@ export const createProperty = async (propertyData) => {
 };
 
 export const updateProperty = async (id, propertyData) => {
-  const queryClient = getQueryClient();
   // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.put(`/properties/${id}`, propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -205,7 +193,6 @@ export const updateProperty = async (id, propertyData) => {
  */
 export const uploadPropertyImages = async (propertyId, files) => {
   if (!files || files.length === 0) return [];
-  const queryClient = getQueryClient();
   const fd = new FormData();
   files.forEach(file => fd.append("files[]", file));
   const res = await api.post(`/properties/${propertyId}/images`, fd);
@@ -217,7 +204,6 @@ export const uploadPropertyImages = async (propertyId, files) => {
 
 /** Borra una imagen existente de una propiedad. El backend promueve otra a portada si hacía falta. */
 export const deletePropertyImage = async (propertyId, imageId) => {
-  const queryClient = getQueryClient();
   const res = await api.delete(`/properties/${propertyId}/images/${imageId}`);
   queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
   queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -228,7 +214,6 @@ export const deletePropertyImage = async (propertyId, imageId) => {
 /** Fija el orden de las imágenes; la primera del array queda como portada (`is_cover`). */
 export const updatePropertyImagesOrder = async (propertyId, imageIds) => {
   if (!imageIds || imageIds.length === 0) return null;
-  const queryClient = getQueryClient();
   const res = await api.put(`/properties/${propertyId}/images/order`, { image_ids: imageIds });
   queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
   queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -237,7 +222,6 @@ export const updatePropertyImagesOrder = async (propertyId, imageIds) => {
 };
 
 export const deleteProperty = async (id) => {
-  const queryClient = getQueryClient();
   const res = await api.delete(`/properties/${id}`);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["property", id] });

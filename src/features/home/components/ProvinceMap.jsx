@@ -164,6 +164,13 @@ const formatPrice = (price, currency) => {
 export default function ProvinceMap({ properties, onPropertyClick }) {
   const defaultCenter = [-27.3, -64.8];
 
+  // Handler global para el onclick del popup (Leaflet no admite React events en HTML string).
+  // Va al tope: nunca después de un return condicional (rules-of-hooks).
+  useEffect(() => {
+    window.__mapPropertyClick = onPropertyClick;
+    return () => { delete window.__mapPropertyClick; };
+  }, [onPropertyClick]);
+
   if (!properties || properties.length === 0) return null;
 
   const markers = properties.filter(
@@ -203,12 +210,6 @@ export default function ProvinceMap({ properties, onPropertyClick }) {
       popup: popupHtml,
     };
   });
-
-  // Handler global para el onclick del popup (Leaflet no admite React events en HTML string)
-  useEffect(() => {
-    window.__mapPropertyClick = onPropertyClick;
-    return () => { delete window.__mapPropertyClick; };
-  }, [onPropertyClick]);
 
   return (
     <div className="relative w-full h-[350px] md:h-[420px] rounded-xl overflow-hidden border border-slate-200 shadow-sm">

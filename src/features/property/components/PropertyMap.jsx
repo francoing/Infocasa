@@ -39,11 +39,13 @@ function ZoomControls() {
 }
 
 export default function PropertyMap({ latitude, longitude, showExactAddress, title }) {
+  // Hook primero, siempre — nunca después de un return condicional (rules-of-hooks).
+  const [hovering, setHovering] = useState(false);
+
   if (!latitude || !longitude) return null;
-  
+
   const position = [latitude, longitude];
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-  const [hovering, setHovering] = useState(false);
 
   return (
     <div
