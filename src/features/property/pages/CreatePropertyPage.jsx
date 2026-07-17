@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../../api/api";
 import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
 import { createProperty, uploadPropertyImages } from "../../../hooks/useProperties";
+import { createPublication } from "../../../hooks/usePublications";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 
@@ -42,10 +42,7 @@ export default function CreatePropertyPage() {
       // Crear la publicación con el tipo seleccionado (basic/featured/premium)
       const publicationType = formData.get("publication_type") || "basic";
       try {
-        await api.post("/publications", {
-          property_id: newProperty.id,
-          type: publicationType,
-        });
+        await createPublication({ property_id: newProperty.id, type: publicationType });
       } catch (pubErr) {
         if (pubErr.status === 403) {
           toast.error("Propiedad creada, pero no tienes una suscripción activa para publicarla. Activa un plan desde tu panel.");
