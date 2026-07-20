@@ -51,15 +51,6 @@ const OPERATION_BY_STATUS = {
 
 const toNum = (v) => (v !== null && v !== undefined ? Number(v) : null);
 
-/** Deriva un keyword de búsqueda desde el nombre de la zona (Zona Norte → "norte"). */
-export const getZoneKeyword = (zoneName) => {
-  const name = (zoneName || "").toLowerCase();
-  for (const kw of ["norte", "sur", "este", "oeste", "centro"]) {
-    if (name.includes(kw)) return kw;
-  }
-  return "";
-};
-
 /** Ubicación más cercana (distancia euclídea) a unas coordenadas dentro de la lista. */
 export const findClosestLocation = (lat, lng, locs) => {
   let closest = null;
