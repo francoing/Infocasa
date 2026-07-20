@@ -63,7 +63,7 @@ src/
 Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ...]`, `["me_favorites"]`, `["leads", ...]`, `["sent_leads", ...]`, `["admin_properties"]`, `["admin_users"]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
 
 ## Contrato con backend (`/api/v1`)
-Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoints que el front consume hoy:
+Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
 - **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites` (+ login/register/logout/forgot/reset vía `useAuth`).
 - **Properties:** `properties`, `properties/{id}`, `properties/search`, `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
@@ -105,4 +105,5 @@ La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con de
 - `.ai/` — gobernanza propia del front (`context`, `policies`, `workflows`). Producto = compartido (pointer al backend).
 - Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
 - **Guardia de código muerto: `knip`** (`knip.json`) — gate duro en CI (`npm run knip`). Detecta archivos, exports y dependencias huérfanos (lo que dejó pasar `AdminPage`/`ProfilePage` muertos). Debe quedar **limpio**.
-- Comandos clave: `npm run lint` · `npm run knip` · `npm run test` · `npm run dev`.
+- **Coherencia contrato↔front:** `npm run api:surface` (script `scripts/api-surface.mjs`) + checklist en STEP 3.5 del workflow. Extrae la superficie de API real y la diffea contra el contrato del backend. No es gate de CI (el contrato vive en otro repo); es la ritualización del chequeo que faltaba (causa raíz de los filtros de search ausentes).
+- Comandos clave: `npm run lint` · `npm run knip` · `npm run api:surface` · `npm run test` · `npm run dev`.

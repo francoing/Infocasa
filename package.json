@@ -11,7 +11,8 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run",
-    "knip": "knip"
+    "knip": "knip",
+    "api:surface": "node scripts/api-surface.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.14",
