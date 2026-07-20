@@ -23,7 +23,7 @@ src/
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, useLeads, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
-│                            useGeoapifyPlaces, useUserProvince, useToast
+│                            useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanBadge, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
@@ -89,7 +89,8 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
 - ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
 - ✅ **Filtros avanzados de búsqueda** — el front cablea los filtros que el backend ya soportaba y estaban sin exponer: `province`, `department` (cascada desde `/locations`), `property_type_id` (tipos reales, no hardcode), `rooms_min`, `bedrooms_min`, `parking_spaces_min`, `condition`, `pets_allowed`, `professional_use`. `useProperties` arma la query vía `properties.query.js` (`buildSearchQueryString`, table-driven); UI en `SearchFilters`/`LocationAutocomplete`. Spec `search/advanced_filters`. *(Pendiente 2ª iteración: `features[]` amenities + `neighborhood` + rangos con máximo.)*
-- 🟢 **`ProfilePage` duplicado** — existe en `features/auth/pages/` y `features/profile/pages/`; el router usa el de `profile/`. El de `auth/` es código muerto (candidato a borrar).
+- ✅ **`ProfilePage` duplicado eliminado** — se borró el muerto `features/auth/pages/ProfilePage.jsx` (el router usa el de `profile/`). Spec `quality/governance_enforcement`.
+- ✅ **Boundary de red con dientes + `fetch` de Nominatim movido a hook** — el `fetch` directo de `MapLocationSelector` pasó a `useGeocodeSearch` (capa de datos); el linter ahora prohíbe `fetch(`/`XMLHttpRequest` en `features/**`+`common/**` (`no-restricted-syntax`), no solo el import de `api/api.js`. Spec `quality/governance_enforcement`.
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
 - 🟡 **`npm run test` — gate removido del CI (deuda declarada).** Toolchain de jsdom inestable en Windows (EPERM en node_modules). El CI corre solo `npm run lint` como gate duro. Criterio para volver a meter como gate: cobertura ≥ 80% en hooks críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`) + toolchain estable. Ver `.ai/policies/architecture-policies.yaml` sección `testing`.
 
@@ -102,5 +103,5 @@ La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con de
 
 ## Gobernanza
 - `.ai/` — gobernanza propia del front (`context`, `policies`, `workflows`). Producto = compartido (pointer al backend).
-- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit`.
+- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
 - Comandos clave: `npm run lint` · `npm run test` · `npm run dev`.

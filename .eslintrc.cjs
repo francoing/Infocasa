@@ -31,8 +31,11 @@ const sizeRules = (scope) => ({
   'max-depth': ['error', scope.max_depth],
 });
 
-// Boundary: la capa UI (features/, common/) NO puede importar el cliente HTTP (api/api.js).
-// La capa de datos (hooks/) y el arranque de sesión (store/useAuthStore) sí pueden; los tests lo mockean.
+// Boundary: la capa UI (features/, common/) NO puede tocar la red directamente:
+//  - no importar el cliente HTTP (api/api.js), y
+//  - no hacer `fetch(...)` ni `new XMLHttpRequest()` sueltos.
+// Toda llamada de red va en la capa de datos (hooks/); el arranque de sesión (store/useAuthStore)
+// y api/api.js sí pueden; los tests lo mockean. Ver .ai/context/architecture.md.
 const apiBoundary = {
   'no-restricted-imports': [
     'error',
@@ -44,6 +47,18 @@ const apiBoundary = {
             'El cliente HTTP (api/api.js) solo puede importarse desde src/hooks/** — mové la llamada a un hook (ver .ai/context/architecture.md).',
         },
       ],
+    },
+  ],
+  'no-restricted-syntax': [
+    'error',
+    {
+      selector: "CallExpression[callee.name='fetch']",
+      message:
+        'No hagas fetch directo en la UI — mové la llamada de red a un hook en src/hooks/** (ver .ai/context/architecture.md).',
+    },
+    {
+      selector: "NewExpression[callee.name='XMLHttpRequest']",
+      message: 'No uses XMLHttpRequest en la UI — mové la llamada de red a un hook en src/hooks/**.',
     },
   ],
 };

@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import { Search, Loader2 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
+import { useGeocodeSearch } from '../../../hooks/useGeocodeSearch';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -38,8 +39,7 @@ function LocationMarker({ position, onClick }) {
 
 export default function MapLocationSelector({ latitude, longitude, onChange }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState('');
+  const { geocode, searching, error: searchError } = useGeocodeSearch();
 
   const position = latitude && longitude ? [latitude, longitude] : null;
   const center = position || DEFAULT_CENTER;
@@ -53,33 +53,8 @@ export default function MapLocationSelector({ latitude, longitude, onChange }) {
 
   const handleSearch = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setSearching(true);
-    setSearchError('');
-
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
-      );
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        const firstResult = data[0];
-        const lat = parseFloat(firstResult.lat);
-        const lon = parseFloat(firstResult.lon);
-        onChange({
-          latitude: Number(lat.toFixed(6)),
-          longitude: Number(lon.toFixed(6))
-        });
-      } else {
-        setSearchError('No se encontró ninguna ubicación con ese nombre.');
-      }
-    } catch (error) {
-      setSearchError('Error al conectar con el servicio de mapas.');
-    } finally {
-      setSearching(false);
-    }
+    const coords = await geocode(searchQuery);
+    if (coords) onChange(coords);
   };
 
   return (
