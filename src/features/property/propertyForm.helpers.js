@@ -93,13 +93,13 @@ export const mapInitialToForm = (initialData) => ({
   address: initialData.address || "",
   expenses_amount: initialData.expenses?.amount ?? "",
   expenses_currency: initialData.expenses?.currency || "ARS",
-  parking_spaces: initialData.parking_spaces ?? "",
-  construction_year: initialData.construction_year ?? "",
+  parking_spaces: initialData.parkingSpaces ?? initialData.parking_spaces ?? "",
+  construction_year: initialData.constructionYear ?? initialData.construction_year ?? "",
   condition: initialData.condition || "good",
   disposition: initialData.disposition || "",
   orientation: initialData.orientation || "",
-  pets_allowed: !!initialData.pets_allowed,
-  professional_use: !!initialData.professional_use,
+  pets_allowed: !!(initialData.petsAllowed ?? initialData.pets_allowed),
+  professional_use: !!(initialData.professionalUse ?? initialData.professional_use),
   features: initialData.features?.map((f) => f.name) || [],
   certification_document: initialData.certificationDocumentUrl
     ? { existingUrl: initialData.certificationDocumentUrl, name: "Comprobante ya cargado" }
