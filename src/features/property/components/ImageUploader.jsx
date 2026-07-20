@@ -1,18 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
-
-// Resuelve la URL de preview para los 3 tipos de item de la galería:
-// File nuevo, objeto existente { id, url } o string suelto (compat).
-const previewSrc = (img) => {
-  if (img instanceof File) return URL.createObjectURL(img);
-  if (typeof img === "string") return img;
-  return img?.url || "";
-};
 
 export default function ImageUploader({ images = [], onChange, maxImages = 10 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
+
+  // Cache File → objectURL: se crea una vez por archivo (no en cada render) y se revoca
+  // todo al desmontar, evitando la fuga de blobs. Ver bug-preview-reupload.
+  const urlCache = useRef(new Map());
+  useEffect(() => {
+    const cache = urlCache.current;
+    return () => {
+      for (const url of cache.values()) URL.revokeObjectURL(url);
+      cache.clear();
+    };
+  }, []);
+
+  // Resuelve la URL de preview para los 3 tipos de item de la galería:
+  // File nuevo (cacheado), objeto existente { id, url } o string suelto (compat).
+  const previewSrc = (img) => {
+    if (img instanceof File) {
+      if (!urlCache.current.has(img)) urlCache.current.set(img, URL.createObjectURL(img));
+      return urlCache.current.get(img);
+    }
+    if (typeof img === "string") return img;
+    return img?.url || "";
+  };
 
   const processFiles = (files) => {
     const newImages = [];
@@ -37,6 +51,9 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
   const handleFileInput = (e) => {
     const files = Array.from(e.target.files);
     processFiles(files);
+    // Reset del value: sin esto, re-elegir el MISMO archivo no dispara onChange
+    // (el navegador no emite change si el archivo seleccionado no cambió).
+    e.target.value = "";
   };
 
   const removeImage = (index) => {

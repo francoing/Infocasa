@@ -3,7 +3,6 @@ import { usePropertyFormRefs } from "./usePropertyFormRefs";
 import {
   INITIAL_STATE,
   mapInitialToForm,
-  getZoneKeyword,
   findClosestLocation,
   buildPropertyPayload,
   buildImageOps,
@@ -37,18 +36,17 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     }
   }, [initialData, locations]);
 
-  // Si la ubicación elegida ya no cabe en los filtros → resetear.
+  // Si la ubicación elegida ya no cabe en provincia/departamento → resetear.
+  // (La zona es un campo independiente; NO filtra ubicaciones.)
   useEffect(() => {
     if (locations.length === 0 || !formData.location_id) return;
-    const zoneKw = getZoneKeyword(zones.find((z) => z.id == formData.zone_id)?.name || "");
     const stillExists = locations.some((l) => {
       if (selectedProvince && l.province !== selectedProvince) return false;
       if (selectedDepartment && l.department !== selectedDepartment) return false;
-      if (zoneKw && !l.neighborhood.toLowerCase().includes(zoneKw)) return false;
       return l.id == formData.location_id;
     });
     if (!stillExists) setFormData((prev) => ({ ...prev, location_id: "" }));
-  }, [selectedProvince, selectedDepartment, formData.zone_id, formData.location_id, locations]);
+  }, [selectedProvince, selectedDepartment, formData.location_id, locations]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -120,11 +118,9 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
   const departments = [...new Set(
     locations.filter((l) => !selectedProvince || l.province === selectedProvince).map((l) => l.department),
   )].sort();
-  const zoneKeyword = getZoneKeyword(zones.find((z) => z.id == formData.zone_id)?.name || "");
   const filteredLocations = locations.filter((l) => {
     if (selectedProvince && l.province !== selectedProvince) return false;
     if (selectedDepartment && l.department !== selectedDepartment) return false;
-    if (zoneKeyword && !l.neighborhood.toLowerCase().includes(zoneKeyword)) return false;
     return true;
   });
 
