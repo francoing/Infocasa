@@ -17,7 +17,7 @@ const TabButton = ({ id, activeTab, setActiveTab, children, accent = "blue" }) =
 };
 
 /** Barra de tabs del dashboard, según rol (buyer / seller / admin). */
-export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTab }) {
+export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTab, pendingCertCount = 0 }) {
   const tabProps = { activeTab, setActiveTab };
 
   return (
@@ -35,6 +35,16 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
             <>
               <TabButton id="admin_users" accent="amber" {...tabProps}>Gestión de Usuarios</TabButton>
               <TabButton id="admin_properties" accent="amber" {...tabProps}>Moderación Propiedades</TabButton>
+              <TabButton id="certifications" accent="amber" {...tabProps}>
+                <span className="inline-flex items-center gap-2">
+                  Certificaciones
+                  {pendingCertCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-black">
+                      {pendingCertCount}
+                    </span>
+                  )}
+                </span>
+              </TabButton>
             </>
           )}
         </>

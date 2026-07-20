@@ -18,10 +18,10 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── features/{home,search,explore,property,auth,dashboard,admin,profile,share}/{pages,components}
+├── features/{home,search,explore,property,auth,dashboard,profile,share}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`)
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, useLeads, usePlans,
-│                            useAdminData, useDashboardData, useAuth, useAgencies, usePropertyFormRefs,
+│                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
 │                            useGeoapifyPlaces, useUserProvince, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
@@ -85,7 +85,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **`useFilterStore` eliminado** (era código muerto).
 - ✅ **`sort` por precio ahora funciona** como orden **secundario** (backend `sort=price_asc|price_desc`; destacadas siguen primero). Spec `search/search_coherence`.
 - ✅ **Filtro por inmobiliaria funciona** (`agency_id`; el estado `userId` se renombró a `agencyId`). Spec `search/search_coherence`.
-- ✅ **Moderación de certificación (admin)** — aprobar/rechazar temporarias desde el AdminPage. Spec `admin/certification_moderation`.
+- ✅ **Moderación + revisión de certificación (admin) — en el DashboardPage.** ⚠️ Corrección: la moderación original vivía en `features/admin/AdminPage.jsx`, que era **código muerto** (`/admin` → `Navigate` a `/dashboard`); **nunca fue accesible**. Se eliminó ese código muerto (`features/admin/**` + `useAdminData.js` + import lazy en `AppRouter`) y la feature se cableó en el panel real: nueva pestaña **"Certificaciones"** en `DashboardTabs` (admin, con badge del nº de pendientes) → `CertificationsTab` lista la cola (`pendingCertifications`, derivada en `useDashboardQueries`). Cada fila abre `CertificationReviewModal` con preview del documento (imagen `<img>` / PDF `<iframe>` / fallback link) + aprobar/rechazar (`moderateCertification` en `useDashboardMutations`, `PATCH /admin/properties/{id}/verify`). El dato ya llegaba (`certificationDocumentUrl`, backend `canSeePrivate`). Spec `admin/certification_review`.
 - ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
 - ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
 - ✅ **Filtros avanzados de búsqueda** — el front cablea los filtros que el backend ya soportaba y estaban sin exponer: `province`, `department` (cascada desde `/locations`), `property_type_id` (tipos reales, no hardcode), `rooms_min`, `bedrooms_min`, `parking_spaces_min`, `condition`, `pets_allowed`, `professional_use`. `useProperties` arma la query vía `properties.query.js` (`buildSearchQueryString`, table-driven); UI en `SearchFilters`/`LocationAutocomplete`. Spec `search/advanced_filters`. *(Pendiente 2ª iteración: `features[]` amenities + `neighborhood` + rangos con máximo.)*

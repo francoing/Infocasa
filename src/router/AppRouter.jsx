@@ -12,7 +12,6 @@ const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../features/auth/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../features/auth/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage'));
-const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'));
 const CreatePropertyPage = lazy(() => import('../features/property/pages/CreatePropertyPage'));
 const EditPropertyPage = lazy(() => import('../features/property/pages/EditPropertyPage'));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));

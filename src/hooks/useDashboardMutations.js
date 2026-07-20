@@ -90,6 +90,20 @@ export const useDashboardMutations = ({ reductionCustom, reductionPercent, setRe
     },
   });
 
+  const moderateCertificationMutation = useMutation({
+    mutationFn: ({ id, status }) => api.patch(`/admin/properties/${id}/verify`, { status }),
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin_properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success(
+        variables.status === "approved"
+          ? "Propiedad aprobada y publicada."
+          : "Propiedad rechazada. Se notificó al dueño."
+      );
+    },
+    onError: () => toast.error("No se pudo moderar la certificación."),
+  });
+
   const replyToLeadMutation = useMutation({
     mutationFn: async ({ leadId, body }) => {
       const res = await api.post(`/leads/${leadId}/reply`, { body });
@@ -134,6 +148,8 @@ export const useDashboardMutations = ({ reductionCustom, reductionPercent, setRe
     updateLeadStatus: (leadId, newStatus) => updateLeadStatusMutation.mutate({ leadId, newStatus }),
     replyToLead: (leadId, body) => replyToLeadMutation.mutateAsync({ leadId, body }),
     isReplying: replyToLeadMutation.isPending,
+    moderateCertification: (id, status) => moderateCertificationMutation.mutate({ id, status }),
+    isModerating: moderateCertificationMutation.isPending,
     handleAssignPlan,
   };
 };

@@ -11,6 +11,7 @@ import SentLeadsTab from "../components/SentLeadsTab";
 import PropertiesTab from "../components/PropertiesTab";
 import AdminUsersTab from "../components/AdminUsersTab";
 import AdminPropertiesTab from "../components/AdminPropertiesTab";
+import CertificationsTab from "../components/CertificationsTab";
 import LeadsTab from "../components/LeadsTab";
 import PlanPickerModal from "../components/PlanPickerModal";
 
@@ -18,11 +19,11 @@ export default function DashboardPage() {
   const {
     user, isAdmin, isBuyer,
     favorites, sentLeads, removeFavorite,
-    properties, leads, adminUsers, adminProperties,
+    properties, leads, adminUsers, adminProperties, pendingCertifications,
     userPlan, plansList, loading,
     showCheckout, setShowCheckout,
     reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, handleReducePrice,
-    deleteProperty, updateLeadStatus, replyToLead, isReplying,
+    deleteProperty, updateLeadStatus, replyToLead, isReplying, moderateCertification, isModerating,
     filterStatus, setFilterStatus, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo,
     propSearch, setPropSearch, propStatus, setPropStatus, propOperation, setPropOperation,
     handleAssignPlan, updateUserStatus, deleteUser,
@@ -125,6 +126,10 @@ export default function DashboardPage() {
         ) : null;
       case "admin_properties":
         return isAdmin ? <AdminPropertiesTab adminProperties={adminProperties} onDeleteProperty={confirmModerateProperty} /> : null;
+      case "certifications":
+        return isAdmin ? (
+          <CertificationsTab items={pendingCertifications} onModerate={moderateCertification} disabled={isModerating} />
+        ) : null;
       case "leads":
         return (
           <LeadsTab
@@ -181,7 +186,13 @@ export default function DashboardPage() {
           onUpgrade={() => setShowPlanPicker(true)}
         />
 
-        <DashboardTabs isBuyer={isBuyer} isAdmin={isAdmin} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <DashboardTabs
+          isBuyer={isBuyer}
+          isAdmin={isAdmin}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          pendingCertCount={pendingCertifications.length}
+        />
 
         {loading ? (
           <div className="flex justify-center py-20">

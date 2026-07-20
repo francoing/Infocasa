@@ -87,6 +87,8 @@ export const useDashboardQueries = (user, { isAdmin, isBuyer }, filters) => {
     leads: leadsQuery.data || [],
     adminUsers: adminUsersQuery.data || [],
     adminProperties: adminPropertiesQuery.data || [],
+    // Cola de certificaciones (alquiler temporario) esperando revisión del admin.
+    pendingCertifications: (adminPropertiesQuery.data || []).filter((p) => p.certificationStatus === "pending"),
     userPlan: userPlanQuery.data || null,
     plansList: plansQuery.data || [],
     loading,
