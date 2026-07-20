@@ -1,7 +1,7 @@
 // Helpers puros de la búsqueda: leer/escribir filtros desde la URL y derivar
 // opciones de ubicación en cascada. Sin JSX ni estado (ver .ai/context/architecture.md).
 
-export const DEFAULT_FILTERS = {
+const DEFAULT_FILTERS = {
   location: "",
   province: "",
   department: "",

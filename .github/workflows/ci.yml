@@ -27,3 +27,8 @@ jobs:
       - name: Lint (architecture gate)
         run: npm run lint
 
+      # Guardia de código muerto (gate duro): archivos, exports y dependencias huérfanos.
+      # Tapa el agujero que dejó pasar AdminPage + ProfilePage muertos. Config en knip.json.
+      - name: Dead code (knip)
+        run: npm run knip
+

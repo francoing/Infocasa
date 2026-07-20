@@ -10,7 +10,8 @@
     "build:testing": "vite build --mode testing",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "knip": "knip"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.14",
@@ -39,7 +40,9 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
+    "js-yaml": "^5.2.1",
     "jsdom": "^29.1.1",
+    "knip": "^6.27.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "vite": "^5.2.2",

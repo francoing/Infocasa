@@ -47,10 +47,6 @@ export const getPropertyById = async (id) => {
   });
 };
 
-export const getPublisherById = async (userId) => {
-  return { id: userId, name: "Propietario" };
-};
-
 export const createProperty = async (propertyData) => {
   // propertyData puede ser FormData (multipart) u objeto JSON
   const res = await api.post("/properties", propertyData);
@@ -99,14 +95,6 @@ export const updatePropertyImagesOrder = async (propertyId, imageIds) => {
   const res = await api.put(`/properties/${propertyId}/images/order`, { image_ids: imageIds });
   queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
   queryClient.invalidateQueries({ queryKey: ["properties"] });
-  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
-  return res;
-};
-
-export const deleteProperty = async (id) => {
-  const res = await api.delete(`/properties/${id}`);
-  queryClient.invalidateQueries({ queryKey: ["properties"] });
-  queryClient.invalidateQueries({ queryKey: ["property", id] });
   queryClient.invalidateQueries({ queryKey: ["me_properties"] });
   return res;
 };
