@@ -63,14 +63,11 @@ const apiBoundary = {
   ],
 };
 
-// --- RATCHET: deuda de reconciliación existente al adoptar el linter (NO agregar). ---
-// Cada entrada se elimina cuando el archivo se refactoriza en su spec. Ver PROJECT-MAP.md.
-const LEGACY = {
-  // Capa UI llamando al HTTP directo (boundary) + componentes/páginas gigantes:
-  'src/common/components/PropertyCard.jsx': ['complexity'],
-  'src/features/home/pages/HomePage.jsx': ['max-lines', 'max-lines-per-function'],
-  // Capa de datos (hooks) sobredimensionada / rules-of-hooks:
-};
+// --- RATCHET: deuda de reconciliación existente al adoptar el linter. ---
+// ✅ SALDADO: los 16 archivos con deuda preexistente fueron refactorizados por spec.
+// La lista quedó VACÍA → la fitness function ya no tiene excepciones: todo el código
+// cumple los límites. Regla: NO reintroducir entradas; si algo no entra, refactorizá.
+const LEGACY = {};
 const legacyOverrides = Object.entries(LEGACY).map(([file, rules]) => ({
   files: [file],
   rules: Object.fromEntries(rules.map((r) => [r, 'off'])),
