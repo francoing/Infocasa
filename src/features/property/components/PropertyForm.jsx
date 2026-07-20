@@ -40,7 +40,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
         {/* Columna izquierda: información y detalles técnicos */}
         <div className="space-y-10">
           <MainInfoSection formData={formData} handleChange={handleChange} propertyTypes={form.propertyTypes} />
-          <TechnicalDetailsSection formData={formData} handleChange={handleChange} onFeatureToggle={form.handleFeatureToggle} />
+          <TechnicalDetailsSection formData={formData} handleChange={handleChange} />
           <ConditionSection formData={formData} handleChange={handleChange} />
         </div>
 
