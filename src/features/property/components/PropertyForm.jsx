@@ -68,9 +68,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
               onClearCertDoc={form.clearCertDoc}
             />
           )}
-          {form.availableFeatures.length > 0 && (
-            <AmenitiesSection availableFeatures={form.availableFeatures} features={formData.features} onFeatureToggle={form.handleFeatureToggle} />
-          )}
+          <AmenitiesSection
+            availableFeatures={form.availableFeatures}
+            features={formData.features}
+            onFeatureToggle={form.handleFeatureToggle}
+            loading={form.loadingRefs}
+          />
         </div>
       </div>
 

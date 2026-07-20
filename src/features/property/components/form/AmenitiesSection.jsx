@@ -1,10 +1,10 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 
 const formatLabel = (name) => name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** Sección "Servicios y Amenities": toggles de features disponibles (desde el backend). */
-export default function AmenitiesSection({ availableFeatures, features, onFeatureToggle }) {
+export default function AmenitiesSection({ availableFeatures, features, onFeatureToggle, loading }) {
   return (
     <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
       <div className="flex items-center gap-2 mb-2">
@@ -12,6 +12,13 @@ export default function AmenitiesSection({ availableFeatures, features, onFeatur
         <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Servicios y Amenities</h3>
       </div>
 
+      {loading ? (
+        <div className="flex items-center gap-2 text-slate-400 text-sm font-bold py-4">
+          <Loader2 className="w-4 h-4 animate-spin" /> Cargando servicios...
+        </div>
+      ) : availableFeatures.length === 0 ? (
+        <p className="text-slate-400 text-sm font-medium py-4">No hay servicios disponibles para seleccionar.</p>
+      ) : (
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {availableFeatures.map((feat) => {
           const isChecked = features.includes(feat.name);
@@ -28,6 +35,7 @@ export default function AmenitiesSection({ availableFeatures, features, onFeatur
           );
         })}
       </div>
+      )}
     </section>
   );
 }
