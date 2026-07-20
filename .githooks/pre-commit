@@ -4,9 +4,22 @@
 #
 # Espeja el hook del backend: gate rápido y local. Si falla, el commit se aborta.
 
-echo "→ pre-commit: npm run lint (architecture gate)"
-npm run lint
-status=$?
+echo "→ pre-commit: eslint (architecture gate)"
+
+# Corremos ESLint invocando node directamente sobre el binario local, NO `npm run lint`.
+# Motivo: en Windows el ejecutable `npm` que elige `sh` es un script con shebang
+# `#!/usr/bin/env bash`; si git dispara el hook desde un entorno sin bash en el PATH
+# (VS Code Source Control, PowerShell/CMD con "Git from the command line only"), falla
+# con "/usr/bin/env: 'bash': No such file or directory" — un falso negativo del gate.
+# `node` sí está en el PATH del sistema. Los flags deben espejar el script "lint" de package.json.
+if [ -f node_modules/eslint/bin/eslint.js ]; then
+  node node_modules/eslint/bin/eslint.js . --ext js,jsx --report-unused-disable-directives --max-warnings 0
+  status=$?
+else
+  # Fallback (p. ej. entorno con bash disponible y sin node_modules resueltos aún).
+  npm run lint
+  status=$?
+fi
 
 if [ $status -ne 0 ]; then
   echo ""
@@ -16,4 +29,14 @@ if [ $status -ne 0 ]; then
 fi
 
 echo "✔ Lint OK"
+
+# Recordatorio de PROJECT-MAP (no bloquea).
+# Si tocaste src/, el mapa puede haber quedado desactualizado.
+if git diff --cached --name-only | grep -q "^src/"; then
+  echo ""
+  echo "⚠  Tocaste src/ — ¿actualizaste PROJECT-MAP.md? (Regla de oro #5)"
+  echo "   Si no cambió nada de rutas/hooks/stores/deuda, ignorá esto."
+  echo ""
+fi
+
 exit 0

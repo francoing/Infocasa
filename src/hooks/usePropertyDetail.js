@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { fetchPropertyById, mapProperty } from "./useProperties";
 import { useToast } from "./useToast";
+import { DEFAULT_LEAD_FORM, rankRelatedProperties, optimisticToggleFavorite } from "./usePropertyDetail.helpers";
 
 export const usePropertyDetail = (id) => {
   const toast = useToast();
@@ -11,12 +12,7 @@ export const usePropertyDetail = (id) => {
   const [showGallery, setShowGallery] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
 
-  const [formData, setFormData] = useState({ 
-    name: "", 
-    email: "", 
-    phone: "", 
-    message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
-  });
+  const [formData, setFormData] = useState(DEFAULT_LEAD_FORM);
 
   // 1. Query para el detalle de la propiedad
   const propertyQuery = useQuery({
@@ -45,40 +41,7 @@ export const usePropertyDetail = (id) => {
     queryKey: ["properties", "related", id],
     queryFn: async () => {
       const res = await api.get("/properties");
-      const rawProps = res.data || [];
-      const allProps = rawProps.map(p => mapProperty(p));
-      
-      if (!property) return [];
-
-      const currentType = property.type;
-      const currentLocation = property.location;
-      const currentBedrooms = property.bedrooms;
-      const currentStatus = property.status;
-
-      return allProps
-        .filter(p => p.id !== property.id)
-        .map(p => {
-          let score = 0;
-          if (p.type && currentType && p.type.toLowerCase() === currentType.toLowerCase()) score += 3;
-          if (p.status && currentStatus && p.status.toLowerCase() === currentStatus.toLowerCase()) score += 2;
-          if (p.location && currentLocation) {
-            const pLoc = p.location.toLowerCase();
-            const cLoc = currentLocation.toLowerCase();
-            if (pLoc.includes(cLoc) || cLoc.includes(pLoc)) {
-              score += 3;
-            }
-          }
-          if (p.bedrooms === currentBedrooms) {
-            score += 2;
-          } else if (Math.abs((p.bedrooms || 0) - (currentBedrooms || 0)) <= 1) {
-            score += 1;
-          }
-          return { property: p, score };
-        })
-        .filter(item => item.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map(item => item.property);
+      return rankRelatedProperties((res.data || []).map((p) => mapProperty(p)), property);
     },
     enabled: !!property,
     staleTime: 5 * 60 * 1000
@@ -95,18 +58,7 @@ export const usePropertyDetail = (id) => {
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["property", id] });
-      const previousProperty = queryClient.getQueryData(["property", id]);
-      
-      if (previousProperty) {
-        queryClient.setQueryData(["property", id], {
-          ...previousProperty,
-          isFavorited: !previousProperty.isFavorited,
-          favoritesCount: previousProperty.isFavorited
-            ? Math.max(0, (previousProperty.favoritesCount || 0) - 1)
-            : (previousProperty.favoritesCount || 0) + 1
-        });
-      }
-      return { previousProperty };
+      return { previousProperty: optimisticToggleFavorite(queryClient, id) };
     },
     onError: (err, variables, context) => {
       if (context?.previousProperty) {
@@ -138,12 +90,7 @@ export const usePropertyDetail = (id) => {
       return api.post("/leads", leadData);
     },
     onSuccess: () => {
-      setFormData({ 
-        name: "", 
-        email: "", 
-        phone: "", 
-        message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información." 
-      });
+      setFormData(DEFAULT_LEAD_FORM);
       toast.success("Consulta enviada con éxito. La inmobiliaria te contactará a la brevedad.");
       queryClient.invalidateQueries({ queryKey: ["leads"] });
     },

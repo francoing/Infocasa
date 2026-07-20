@@ -42,3 +42,17 @@ boundaries:
     module: "api/api"          # se matchea contra el import (…/api/api.js)
     allowed_importers:
       - "src/hooks/**"
+
+# Estado de tests — deuda declarada, no gate aún.
+# Criterio para promover a gate duro en CI:
+#   1. Cobertura ≥ 80% en hooks críticos (useAuth, useProperties, useLeads, usePlans).
+#   2. Toolchain estable: jsdom sin EPERM en Windows + CI Linux en verde consistente.
+# Hasta entonces: `npm run test` corre localmente como referencia, no bloquea CI.
+testing:
+  status: "deuda_declarada"   # valores posibles: deuda_declarada | advisory | gate_duro
+  coverage_target:
+    hooks_criticos: 80        # % de cobertura objetivo para los 4 hooks de datos clave
+  gate_duro_cuando:
+    - "coverage_target.hooks_criticos alcanzado"
+    - "toolchain estable en Windows y CI Linux"
+

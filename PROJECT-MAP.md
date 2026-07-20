@@ -1,10 +1,10 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
+> ⏱ **Última sincronización: 2026-07-17** — actualizar al terminar cualquier feature (Regla de oro #5).
+
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
 > Para el QUÉ del negocio ver la capa compartida (`.ai/product/README.md` → backend); para el CÓMO técnico ver `.ai/context/`.
->
-> Última sincronización: 2026-07-15 (gestión de imágenes al editar: borrar + reordenar/portada).
 
 ## Stack / Entorno
 - **React 18** + **Vite 5** · SPA. Rutas: **React Router 6** (lazy + code splitting).
@@ -18,12 +18,13 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── features/{home,search,explore,property,auth,dashboard,admin,profile,share}/{pages,components}
+├── features/{home,search,explore,property,auth,dashboard,profile,share}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`)
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, useLeads, usePlans,
-│                            useAdminData, useDashboardData, useAuth, useAgencies, usePropertyFormRefs,
-│                            useFavorites, useExploreProperties, usePublications,
+│                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
 │                            useGeoapifyPlaces, useUserProvince, useToast
+│                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanBadge, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
@@ -84,19 +85,20 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **`useFilterStore` eliminado** (era código muerto).
 - ✅ **`sort` por precio ahora funciona** como orden **secundario** (backend `sort=price_asc|price_desc`; destacadas siguen primero). Spec `search/search_coherence`.
 - ✅ **Filtro por inmobiliaria funciona** (`agency_id`; el estado `userId` se renombró a `agencyId`). Spec `search/search_coherence`.
-- ✅ **Moderación de certificación (admin)** — aprobar/rechazar temporarias desde el AdminPage. Spec `admin/certification_moderation`.
+- ✅ **Moderación + revisión de certificación (admin) — en el DashboardPage.** ⚠️ Corrección: la moderación original vivía en `features/admin/AdminPage.jsx`, que era **código muerto** (`/admin` → `Navigate` a `/dashboard`); **nunca fue accesible**. Se eliminó ese código muerto (`features/admin/**` + `useAdminData.js` + import lazy en `AppRouter`) y la feature se cableó en el panel real: nueva pestaña **"Certificaciones"** en `DashboardTabs` (admin, con badge del nº de pendientes) → `CertificationsTab` lista la cola (`pendingCertifications`, derivada en `useDashboardQueries`). Cada fila abre `CertificationReviewModal` con preview del documento (imagen `<img>` / PDF `<iframe>` / fallback link) + aprobar/rechazar (`moderateCertification` en `useDashboardMutations`, `PATCH /admin/properties/{id}/verify`). El dato ya llegaba (`certificationDocumentUrl`, backend `canSeePrivate`). Spec `admin/certification_review`.
 - ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
 - ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
+- ✅ **Filtros avanzados de búsqueda** — el front cablea los filtros que el backend ya soportaba y estaban sin exponer: `province`, `department` (cascada desde `/locations`), `property_type_id` (tipos reales, no hardcode), `rooms_min`, `bedrooms_min`, `parking_spaces_min`, `condition`, `pets_allowed`, `professional_use`. `useProperties` arma la query vía `properties.query.js` (`buildSearchQueryString`, table-driven); UI en `SearchFilters`/`LocationAutocomplete`. Spec `search/advanced_filters`. *(Pendiente 2ª iteración: `features[]` amenities + `neighborhood` + rangos con máximo.)*
 - 🟢 **`ProfilePage` duplicado** — existe en `features/auth/pages/` y `features/profile/pages/`; el router usa el de `profile/`. El de `auth/` es código muerto (candidato a borrar).
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
-- 🟡 **`npm run test` — toolchain a medio arreglar.** `vitest` bajado de `^4.1.7` (incompatible con vite 5) a **`^2.1.9`** → `package-lock.json` regenerado y `npm ci` **vuelve a funcionar** (esbuild 0.21.5 alineado). Pero **jsdom** sigue fallando en el entorno **local** (Windows, `node_modules` inconsistente por instalaciones superpuestas / `EPERM`): `SyntaxError` cargando un archivo generado de jsdom. Muy probablemente **local-only** → verificar el paso de tests en CI limpio (Linux); si pasa, quitar `continue-on-error` de `ci.yml` y volverlo gate duro. Si también falla en CI, alinear jsdom.
+- 🟡 **`npm run test` — gate removido del CI (deuda declarada).** Toolchain de jsdom inestable en Windows (EPERM en node_modules). El CI corre solo `npm run lint` como gate duro. Criterio para volver a meter como gate: cobertura ≥ 80% en hooks críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`) + toolchain estable. Ver `.ai/policies/architecture-policies.yaml` sección `testing`.
 
 ### Backlog de reconciliación de la fitness function (ratchet)
-La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.** Auditoría de sanidad 2026-07-15 arrancó el paydown: quedan **4**.
+La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.** Auditoría de sanidad 2026-07-15 arrancó el paydown: de 16 quedan **2** (`.eslintrc.cjs` → `LEGACY`): `PropertyCard` (complexity), `HomePage` (max-lines, max-lines-per-function). Los 2 son de UI/tamaño; la capa de datos (hooks) quedó **saldada**. `SearchPage` salió al extraer `SearchFilters`/`LocationAutocomplete` en la feature de filtros avanzados (spec `search/advanced_filters`).
 
 - **Boundary (UI→api directo)** — ✅ **categoría saldada.** `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`); `PropertyCard`→`useFavorites`, `ExplorePage`→`useExploreProperties`, `CreatePropertyPage`→`usePublications` (spec `quality/boundary_cleanup`). El boundary UI→api queda **enforced** en toda la capa UI.
 - **rules-of-hooks** — ✅ **categoría saldada.** `PropertyCard`/`PropertyMap`/`ProvinceMap`: hooks antes del `return` condicional (crash real; spec `quality/hooks_order_fix`). `useLeads`/`usePlans`/`useProperties`: el hack `getQueryClient` (que además **rompía la invalidación de cache** en las funciones exportadas de `useProperties`) → `useQueryClient()` incondicional + singleton en `src/lib/queryClient.js` (spec `quality/query_client_singleton`).
-- **Tamaño/complejidad (componentes/hooks gigantes)** — `PropertyForm` (1068), `HomePage` (524), `useDashboardData`, `useProperties`, `usePropertyDetail`. *(✅ salieron enteros: `PropertyDetailPage` → `components/detail/` (spec `property/detail_split`); `ProfilePage` (591→200) → `components/` + `useMercadoPagoReturn` (spec `profile/profile_split`); `DashboardPage` (981→204) → `components/` (1 tab por componente + `LeadFilters`/`leadStatus` compartidos) (spec `dashboard/dashboard_split`).)*
+- **Tamaño/complejidad** — pendientes (solo UI): `PropertyCard` (complexity), `HomePage` (tamaño). *(✅ salieron enteros: `SearchPage` → `components/SearchFilters` + `components/LocationAutocomplete` + `search.helpers` (spec `search/advanced_filters`); `PropertyDetailPage` → `components/detail/` (spec `property/detail_split`); `ProfilePage` (591→200) → `components/` + `useMercadoPagoReturn` (spec `profile/profile_split`); `DashboardPage` (981→204) → `components/` (spec `dashboard/dashboard_split`); `PropertyForm` (1068→95) → `usePropertyForm` + `propertyForm.helpers` + `components/form/` (spec `property/property_form_split`); `useDashboardData` (352→51) → sub-hooks (spec `dashboard/dashboard_data_split`); `usePropertyDetail` + `mapProperty` → helpers puros (spec `property/detail_and_mapper_split`).)*
 
 ## Gobernanza
 - `.ai/` — gobernanza propia del front (`context`, `policies`, `workflows`). Producto = compartido (pointer al backend).

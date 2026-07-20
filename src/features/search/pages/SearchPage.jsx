@@ -1,316 +1,111 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
-import { Search as SearchIcon, MapPin, SlidersHorizontal, ChevronLeft, ChevronRight, Loader2, X, Filter } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { Search as SearchIcon, ChevronLeft, ChevronRight, Loader2, Filter } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
 import { useAgencies } from "../../../hooks/useAgencies";
-import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
+import { usePropertyFormRefs } from "../../../hooks/usePropertyFormRefs";
+import SearchFilters from "../components/SearchFilters";
+import { readFilters, filtersToUrlParams } from "../search.helpers";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Local filter states
-  const [location, setLocation] = useState(searchParams.get("location") || "");
-  const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
-  const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
-  const [currency, setCurrency] = useState(searchParams.get("currency") || "");
-  const [selectedType, setSelectedType] = useState(searchParams.get("type") || "Todos");
-  const [agencyId, setAgencyId] = useState(searchParams.get("agencyId") || "");
-  const [operation, setOperation] = useState(searchParams.get("operation") || "");
-  const [sort, setSort] = useState(searchParams.get("sort") || "recent");
-  const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
+  const [form, setForm] = useState(() => readFilters(searchParams));
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
   const { agencies } = useAgencies();
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  const [focusedIdx, setFocusedIdx] = useState(-1);
-  const inputRef = useRef(null);
+  const { propertyTypes, locations } = usePropertyFormRefs();
 
-  const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
+  const setField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
-  const selectSuggestion = (suggestion) => {
-    setLocation(suggestion.city || suggestion.state || suggestion.value);
-    setShowLocationSuggestions(false);
-    setFocusedIdx(-1);
-    clearSuggestions();
-  };
-
-  const handleLocationKeyDown = (e) => {
-    if (showLocationSuggestions && suggestions.length > 0) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setFocusedIdx((prev) => Math.min(prev + 1, suggestions.length - 1));
-        return;
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setFocusedIdx((prev) => Math.max(prev - 1, 0));
-        return;
-      }
-      if (e.key === "Enter" && focusedIdx >= 0) {
-        e.preventDefault();
-        selectSuggestion(suggestions[focusedIdx]);
-        return;
-      }
-      if (e.key === "Escape") {
-        setShowLocationSuggestions(false);
-        setFocusedIdx(-1);
-        return;
-      }
-    }
-  };
-
-  // Update local states when search parameters change (e.g. from reset or back navigation)
+  // Sincroniza el draft cuando cambian los params (reset, navegación atrás).
   useEffect(() => {
-    setLocation(searchParams.get("location") || "");
-    setMinPrice(searchParams.get("minPrice") || "");
-    setMaxPrice(searchParams.get("maxPrice") || "");
-    setCurrency(searchParams.get("currency") || "");
-    setSelectedType(searchParams.get("type") || "Todos");
-    setAgencyId(searchParams.get("agencyId") || "");
-    setOperation(searchParams.get("operation") || "");
-    setSort(searchParams.get("sort") || "recent");
-    setPage(parseInt(searchParams.get("page")) || 1);
+    setForm(readFilters(searchParams));
   }, [searchParams]);
 
-  // Memoize filters to avoid unnecessary re-renders in useProperties
-  const currentFilters = useMemo(() => ({
-    location: searchParams.get("location"),
-    minPrice: searchParams.get("minPrice"),
-    maxPrice: searchParams.get("maxPrice"),
-    currency: searchParams.get("currency"),
-    type: searchParams.get("type"),
-    agencyId: searchParams.get("agencyId"),
-    operation: searchParams.get("operation"),
-    sort: searchParams.get("sort") || "recent",
-    page: parseInt(searchParams.get("page")) || 1
-  }), [searchParams]);
+  // Filtros aplicados (committed) que alimentan la query.
+  // `type` es passthrough de compat: enlaces viejos (HomePage) navegan con `?type=Casa`.
+  const currentFilters = useMemo(() => {
+    const f = readFilters(searchParams);
+    return {
+      ...f,
+      type: searchParams.get("type") || "",
+      page: parseInt(searchParams.get("page")) || 1,
+    };
+  }, [searchParams]);
 
+  const page = currentFilters.page;
   const { data: properties, loading, error } = useProperties(currentFilters);
 
   const handleApplyFilters = () => {
-    const params = {};
-    if (location) params.location = location;
-    if (minPrice) params.minPrice = minPrice;
-    if (maxPrice) params.maxPrice = maxPrice;
-    if (currency) params.currency = currency;
-    if (selectedType !== "Todos") params.type = selectedType;
-    if (agencyId) params.agencyId = agencyId;
-    if (operation) params.operation = operation;
-    params.sort = sort;
-    params.page = 1;
-    setSearchParams(params);
+    setSearchParams(filtersToUrlParams({ ...form, page: 1 }));
     setShowMobileFilters(false);
   };
 
   const handleReset = () => {
-    setLocation("");
-    setMinPrice("");
-    setMaxPrice("");
-    setCurrency("");
-    setSelectedType("Todos");
-    setAgencyId("");
-    setSort("recent");
     setSearchParams({});
     setShowMobileFilters(false);
+  };
+
+  const handleSortChange = (value) => {
+    setField("sort", value);
+    const nextParams = Object.fromEntries(searchParams.entries());
+    nextParams.sort = value;
+    setSearchParams(nextParams);
   };
 
   const handlePageChange = (newPage) => {
     const nextParams = Object.fromEntries(searchParams.entries());
     nextParams.page = newPage;
     setSearchParams(nextParams);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row gap-12 py-12">
-        {/* Sidebar Filters */}
-        <aside className={`fixed inset-y-0 left-0 z-[100] w-full md:w-80 bg-white shadow-2xl transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-auto ${showMobileFilters ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="h-full flex flex-col p-6 overflow-y-auto lg:sticky lg:top-28 lg:overflow-visible bg-slate-50 lg:bg-transparent rounded-none lg:border-0 lg:p-0">
-            <div className="flex justify-between items-center lg:hidden mb-6">
-               <h2 className="text-2xl font-bold text-slate-900">Filtros</h2>
-               <button onClick={() => setShowMobileFilters(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><X className="w-6 h-6" /></button>
-            </div>
-            <div>
-              <div className="hidden lg:flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Filtros</h2>
-                <button 
-                  onClick={handleReset}
-                  className="text-xs font-bold text-blue-600 hover:underline"
-                >
-                  Restablecer todo
-                </button>
-              </div>
-              <div className="lg:hidden mb-6">
-                 <button onClick={handleReset} className="text-sm font-bold text-blue-600 hover:underline w-full text-left">Restablecer filtros</button>
-              </div>
-              <div className="space-y-8">
-                {/* Location */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-500 block">Ciudad / Ubicación</label>
-                  <div className="relative">
-                    <input
-                      ref={inputRef}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none"
-                      placeholder="Ej: Tigre"
-                      type="text"
-                      value={location}
-                      onChange={(e) => {
-                        setLocation(e.target.value);
-                        setQuery(e.target.value);
-                        setShowLocationSuggestions(e.target.value.trim().length >= 2);
-                      }}
-                      onFocus={() => setShowLocationSuggestions(suggestions.length > 0)}
-                      onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
-                      onKeyDown={handleLocationKeyDown}
-                      autoComplete="off"
-                    />
-                    <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                    {/* Dropdown Geoapify */}
-                    {showLocationSuggestions && suggestions.length > 0 && (
-                      <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-48 sm:max-h-64 overflow-y-auto">
-                        {suggestions.map((s, i) => (
-                          <li key={i}>
-                            <button
-                              type="button"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                selectSuggestion(s);
-                              }}
-                              onMouseEnter={() => setFocusedIdx(i)}
-                              className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
-                                i === focusedIdx
-                                  ? "bg-blue-50 text-blue-700"
-                                  : "text-slate-700 hover:bg-slate-50"
-                              }`}
-                            >
-                              <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                              <span className="font-medium">{s.value}</span>
-                            </button>
-                          </li>
-                        ))}
-                        {geoLoading && (
-                          <li className="px-4 py-2 text-xs text-slate-400 flex items-center gap-2">
-                            <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Price */}
-                <div className="space-y-4">
-                  <label className="text-sm font-semibold text-slate-500 block">Rango de Precio</label>
-                  {/* Moneda nativa (sin conversión). "Automática" deja que el backend decida por operación. */}
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 focus:border-blue-600 outline-none cursor-pointer"
-                  >
-                    <option value="">Moneda: automática</option>
-                    <option value="USD">USD (dólares)</option>
-                    <option value="ARS">ARS (pesos)</option>
-                  </select>
-                  <div className="flex gap-4 items-center">
-                    <input
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-600 outline-none"
-                      placeholder="Mín"
-                      type="number"
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
-                    />
-                    <span className="text-slate-400">—</span>
-                    <input
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-600 outline-none"
-                      placeholder="Máx"
-                      type="number"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Property Type */}
-                <div className="space-y-4">
-                  <label className="text-sm font-semibold text-slate-500 block">Tipo de Propiedad</label>
-                  <div className="space-y-3">
-                    {['Todos', 'Casa', 'Departamento'].map((type) => (
-                      <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                        <input 
-                          type="radio" 
-                          name="propType"
-                          checked={selectedType === type}
-                          onChange={() => setSelectedType(type)}
-                          className="w-5 h-5 border-slate-300 text-blue-600 focus:ring-blue-600" 
-                        />
-                        <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Inmobiliaria Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-500 block">Inmobiliaria</label>
-                  <select 
-                    value={agencyId}
-                    onChange={(e) => setAgencyId(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none cursor-pointer"
-                  >
-                    <option value="">Todas las inmobiliarias</option>
-                    {agencies.map((agency) => (
-                      <option key={agency.id} value={agency.id}>
-                        {agency.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button 
-                  onClick={handleApplyFilters}
-                  className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/10"
-                >
-                  Aplicar Filtros
-                </button>
-              </div>
-            </div>
-          </div>
+        <aside
+          className={`fixed inset-y-0 left-0 z-[100] w-full md:w-80 bg-white shadow-2xl transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-auto ${
+            showMobileFilters ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <SearchFilters
+            form={form}
+            setField={setField}
+            onApply={handleApplyFilters}
+            onReset={handleReset}
+            onClose={() => setShowMobileFilters(false)}
+            agencies={agencies}
+            propertyTypes={propertyTypes}
+            locations={locations}
+          />
         </aside>
 
-        {/* Main Grid */}
         <section className="flex-1">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
             <div>
               <h1 className="text-4xl font-bold text-slate-900">Propiedades Disponibles</h1>
-              <p className="text-slate-500 mt-2">
-                {loading ? "Buscando..." : `Mostrando página ${page}`}
-              </p>
+              <p className="text-slate-500 mt-2">{loading ? "Buscando..." : `Mostrando página ${page}`}</p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
-              <button 
+              <button
                 onClick={() => setShowMobileFilters(true)}
                 className="lg:hidden flex-1 flex justify-center items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
               >
                 <Filter className="w-4 h-4" /> Filtros
               </button>
               <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start gap-4 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-              <span className="text-sm font-medium text-slate-500">Ordenar por:</span>
-              <select 
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  const nextParams = Object.fromEntries(searchParams.entries());
-                  nextParams.sort = e.target.value;
-                  setSearchParams(nextParams);
-                }}
-                className="bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
-              >
-                <option value="recent">Más recientes</option>
-                <option value="price_asc">Precio: Menor a Mayor</option>
-                <option value="price_desc">Precio: Mayor a Menor</option>
-              </select>
+                <span className="text-sm font-medium text-slate-500">Ordenar por:</span>
+                <select
+                  value={currentFilters.sort}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className="bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
+                >
+                  <option value="recent">Más recientes</option>
+                  <option value="price_asc">Precio: Menor a Mayor</option>
+                  <option value="price_desc">Precio: Mayor a Menor</option>
+                </select>
               </div>
             </div>
           </div>
@@ -328,19 +123,14 @@ export default function SearchPage() {
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {properties.length > 0 ? (
-                properties.map((prop) => (
-                  <PropertyCard key={prop.id} property={prop} />
-                ))
+                properties.map((prop) => <PropertyCard key={prop.id} property={prop} />)
               ) : (
                 <div className="col-span-full py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
                   <div className="max-w-xs mx-auto">
                     <SearchIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-bold text-slate-900 mb-2">No encontramos resultados</h3>
                     <p className="text-slate-500 text-sm">Intenta ajustar tus filtros o restablecer la búsqueda.</p>
-                    <button 
-                      onClick={handleReset}
-                      className="mt-6 text-blue-600 font-bold hover:underline"
-                    >
+                    <button onClick={handleReset} className="mt-6 text-blue-600 font-bold hover:underline">
                       Restablecer búsqueda
                     </button>
                   </div>
@@ -349,10 +139,9 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* Pagination (Simplified) */}
           {!loading && properties.length > 0 && (
             <div className="mt-20 flex justify-center items-center gap-2">
-              <button 
+              <button
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page <= 1}
                 className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
@@ -360,7 +149,7 @@ export default function SearchPage() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button className="w-10 h-10 rounded-lg bg-blue-600 text-white font-bold text-sm cursor-default">{page}</button>
-              <button 
+              <button
                 onClick={() => handlePageChange(page + 1)}
                 disabled={properties.length < 6}
                 className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
