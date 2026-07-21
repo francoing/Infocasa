@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Search, Loader2 } from 'lucide-react';
+import { geocodeAddress } from '../../../hooks/geocodeAddress';
 import 'leaflet/dist/leaflet.css';
 
 const customIcon = new L.Icon({
@@ -64,24 +65,13 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
     setSearchError('');
 
     try {
-      // Sesgar la búsqueda por provincia/departamento seleccionados y restringir a Argentina,
-      // para que la calle se ubique en esa zona y no en cualquier parte del mundo.
-      const q = [searchQuery.trim(), department, province, 'Argentina'].filter(Boolean).join(', ');
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${encodeURIComponent(q)}`
-      );
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        const firstResult = data[0];
-        const lat = parseFloat(firstResult.lat);
-        const lon = parseFloat(firstResult.lon);
-        onChange({
-          latitude: Number(lat.toFixed(6)),
-          longitude: Number(lon.toFixed(6))
-        });
+      // Geocodifica sesgando por provincia/departamento; usa altura+calle estructuradas
+      // (Geoapify) para ubicar el número, con Nominatim como fallback.
+      const coords = await geocodeAddress(searchQuery, { province, department });
+      if (coords) {
+        onChange(coords);
       } else {
-        setSearchError('No se encontró ninguna ubicación con ese nombre.');
+        setSearchError('No se encontró la dirección. Probá con "Calle 1234".');
       }
     } catch (error) {
       setSearchError('Error al conectar con el servicio de mapas.');
