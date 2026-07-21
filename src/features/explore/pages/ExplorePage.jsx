@@ -9,6 +9,7 @@ import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
 const OPERATION_MAP = {
   Comprar: { api: "sale", label: "Comprá", searchOp: "Venta" },
   Alquilar: { api: "rent", label: "Alquilá", searchOp: "Alquiler" },
+  Temporario: { api: "temporary_rent", label: "Alquilá temporario", searchOp: "temporary_rent" },
 };
 
 export default function ExplorePage() {
