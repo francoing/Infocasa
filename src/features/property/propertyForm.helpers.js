@@ -87,8 +87,9 @@ export const mapInitialToForm = (initialData) => ({
   // Imágenes existentes: preservar { id, url } para poder borrar/reordenar (spec property/image_management).
   gallery: initialData.images?.map((img) => ({ id: img.id, url: img.url, is_cover: img.is_cover })) || [],
   featured: !!initialData.featured,
-  latitude: toNum(initialData.locationDetails?.latitude ?? initialData.latitude),
-  longitude: toNum(initialData.locationDetails?.longitude ?? initialData.longitude),
+  // Coordenadas propias de la propiedad primero (marca exacta); el centroide del barrio es fallback.
+  latitude: toNum(initialData.latitude ?? initialData.locationDetails?.latitude),
+  longitude: toNum(initialData.longitude ?? initialData.locationDetails?.longitude),
   showExactAddress: initialData.showExactAddress !== undefined ? !!initialData.showExactAddress : true,
   address: initialData.address || "",
   expenses_amount: initialData.expenses?.amount ?? "",

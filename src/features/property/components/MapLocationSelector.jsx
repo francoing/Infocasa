@@ -36,10 +36,15 @@ function LocationMarker({ position, onClick }) {
   );
 }
 
-export default function MapLocationSelector({ latitude, longitude, onChange }) {
-  const [searchQuery, setSearchQuery] = useState('');
+export default function MapLocationSelector({ latitude, longitude, address = '', onChange }) {
+  const [searchQuery, setSearchQuery] = useState(address);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+
+  // Al editar, la dirección guardada llega async: reflejarla en el buscador del mapa.
+  useEffect(() => {
+    if (address) setSearchQuery(address);
+  }, [address]);
 
   const position = latitude && longitude ? [latitude, longitude] : null;
   const center = position || DEFAULT_CENTER;
