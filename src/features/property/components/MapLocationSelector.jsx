@@ -16,7 +16,7 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const DEFAULT_CENTER = [-34.6037, -58.3816]; // Buenos Aires
+const DEFAULT_CENTER = [-26.8083, -65.2176]; // San Miguel de Tucumán
 
 function LocationMarker({ position, onClick }) {
   useMapEvents({
