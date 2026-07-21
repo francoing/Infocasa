@@ -60,6 +60,13 @@ export const deriveLocationOptions = (locations = [], province = "") => {
   return { provinces, departments };
 };
 
+export const OPERATION_OPTIONS = [
+  { value: "", label: "Todas las operaciones" },
+  { value: "sale", label: "Comprar" },
+  { value: "rent", label: "Alquilar" },
+  { value: "temporary_rent", label: "Alquiler temporario" },
+];
+
 export const CONDITION_OPTIONS = [
   { value: "", label: "Cualquier condición" },
   { value: "new", label: "A estrenar" },

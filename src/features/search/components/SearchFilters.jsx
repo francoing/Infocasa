@@ -1,7 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import LocationAutocomplete from "./LocationAutocomplete";
-import { deriveLocationOptions, CONDITION_OPTIONS } from "../search.helpers";
+import { deriveLocationOptions, CONDITION_OPTIONS, OPERATION_OPTIONS } from "../search.helpers";
 
 const selectCls =
   "w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-blue-600 outline-none cursor-pointer";
@@ -88,6 +88,20 @@ export default function SearchFilters({
         </div>
 
         <div className="space-y-8">
+          <Field label="Operación">
+            <select
+              value={form.operation}
+              onChange={(e) => setField("operation", e.target.value)}
+              className={selectCls}
+            >
+              {OPERATION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <LocationAutocomplete value={form.location} onChange={(v) => setField("location", v)} />
 
           {provinces.length > 0 && (
