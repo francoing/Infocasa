@@ -78,7 +78,14 @@ export default function LocationSection({
             </span>
           )}
         </div>
-        <MapLocationSelector latitude={formData.latitude} longitude={formData.longitude} address={formData.address} onChange={onMapLocationChange} />
+        <MapLocationSelector
+          latitude={formData.latitude}
+          longitude={formData.longitude}
+          address={formData.address}
+          province={selectedProvince}
+          department={selectedDepartment}
+          onChange={onMapLocationChange}
+        />
         <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
       </div>
 

@@ -36,7 +36,7 @@ function LocationMarker({ position, onClick }) {
   );
 }
 
-export default function MapLocationSelector({ latitude, longitude, address = '', onChange }) {
+export default function MapLocationSelector({ latitude, longitude, address = '', province = '', department = '', onChange }) {
   const [searchQuery, setSearchQuery] = useState(address);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -64,8 +64,11 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
     setSearchError('');
 
     try {
+      // Sesgar la búsqueda por provincia/departamento seleccionados y restringir a Argentina,
+      // para que la calle se ubique en esa zona y no en cualquier parte del mundo.
+      const q = [searchQuery.trim(), department, province, 'Argentina'].filter(Boolean).join(', ');
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${encodeURIComponent(q)}`
       );
       const data = await response.json();
 
