@@ -53,15 +53,19 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
+  // Cambiar de área invalida la ubicación previa: se limpia el pin y la dirección
+  // para reencuadrar el mapa en la nueva zona; el pin vuelve al elegir una dirección.
+  const resetLocation = { location_id: "", latitude: null, longitude: null, address: "" };
+
   const handleProvinceChange = (e) => {
     setSelectedProvince(e.target.value);
     setSelectedDepartment("");
-    setFormData((prev) => ({ ...prev, location_id: "" }));
+    setFormData((prev) => ({ ...prev, ...resetLocation }));
   };
 
   const handleDepartmentChange = (e) => {
     setSelectedDepartment(e.target.value);
-    setFormData((prev) => ({ ...prev, location_id: "" }));
+    setFormData((prev) => ({ ...prev, ...resetLocation }));
   };
 
   const handleMapLocationChange = ({ latitude, longitude, address }) => {

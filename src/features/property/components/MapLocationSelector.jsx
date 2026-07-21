@@ -54,9 +54,10 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
   const [resolving, setResolving] = useState(false);
   const { suggestions, loading, error, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
 
-  // Al editar, la dirección guardada llega async: reflejarla en el buscador del mapa.
+  // Reflejar la dirección del form en el buscador: se puebla al editar (llega async)
+  // y se limpia al cambiar de provincia/departamento (se resetea la ubicación).
   useEffect(() => {
-    if (address) setInput(address);
+    setInput(address);
   }, [address]);
 
   const position = latitude && longitude ? [latitude, longitude] : null;
