@@ -1,14 +1,20 @@
 // Geocodificación puntual (una llamada al hacer clic en "Buscar" del mapa).
 // Vive en hooks/ para mantener el fetch fuera de componentes (boundary de datos).
 //
-// Estrategia: las direcciones argentinas con altura ("Av. Perón 1500") no se
-// resuelven bien por texto libre — el geocoder cae al centroide de la localidad.
-// Geoapify estructurado (housenumber + street + city/state) sí ubica la altura.
-// Fallback: Nominatim texto libre (al menos acierta la calle).
+// Las direcciones argentinas con altura ("Av. Perón 1500") no se resuelven por
+// texto libre: el geocoder cae al centroide de la localidad. Además, la geocodificación
+// estructurada exige el nombre CANÓNICO de la calle ("Avenida Juan Domingo Perón"),
+// que el usuario nunca tipea. Por eso el flujo es en dos pasos:
+//   1) Autocomplete (fuzzy) resuelve "Av Peron" → nombre oficial de la calle.
+//   2) Geocode estructurado (housenumber + calle oficial + city/state) ubica la altura.
+// Fallback: Nominatim texto libre (nivel calle) si Geoapify no tiene el dato.
 
 const GEOAPIFY_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
+const GEOAPIFY = "https://api.geoapify.com/v1/geocode";
 
 const round6 = (n) => Number(Number(n).toFixed(6));
+const coordsOf = (p) => ({ latitude: round6(p.lat), longitude: round6(p.lon) });
+const isAreaLevel = (type) => type === "city" || type === "state" || type === "county";
 
 /** Separa "Avenida Perón al 1500" → { housenumber: "1500", street: "Avenida Perón" }.
  *  Solo mira lo previo a la primera coma: provincia/departamento vienen de los selects. */
@@ -21,27 +27,40 @@ export const parseAddress = (raw) => {
   return { housenumber, street: street || cleaned };
 };
 
-async function geocodeStructured(housenumber, street, province, department) {
+/** Paso 1: resuelve el nombre canónico de la calle (y su punto) vía autocomplete fuzzy. */
+async function resolveStreet(street, province, department) {
+  const params = new URLSearchParams({
+    text: [street, department, province].filter(Boolean).join(" "),
+    filter: "countrycode:ar",
+    limit: "1",
+    lang: "es",
+    apiKey: GEOAPIFY_KEY,
+  });
+  const res = await fetch(`${GEOAPIFY}/autocomplete?${params}`);
+  if (!res.ok) return null;
+  return (await res.json()).features?.[0]?.properties || null;
+}
+
+/** Paso 2: geocodifica la altura con el nombre canónico de la calle. */
+async function geocodeStructured(housenumber, street, city, state) {
   const params = new URLSearchParams({
     housenumber,
     street,
-    city: department || "",
-    state: province || "",
+    city: city || "",
+    state: state || "",
     country: "Argentina",
     lang: "es",
     limit: "1",
     apiKey: GEOAPIFY_KEY,
   });
-  const res = await fetch(`https://api.geoapify.com/v1/geocode/search?${params}`);
+  const res = await fetch(`${GEOAPIFY}/search?${params}`);
   if (!res.ok) return null;
-  const feat = (await res.json()).features?.[0];
-  if (!feat) return null;
-  // Rechazar resultados que degradaron a localidad/provincia (no ubican la altura).
-  const type = feat.properties.result_type;
-  if (type === "city" || type === "state" || type === "county") return null;
-  return { latitude: round6(feat.properties.lat), longitude: round6(feat.properties.lon) };
+  const p = (await res.json()).features?.[0]?.properties;
+  if (!p || isAreaLevel(p.result_type)) return null;
+  return coordsOf(p);
 }
 
+/** Fallback: Nominatim texto libre, sesgado por provincia/departamento. */
 async function geocodeFreeText(raw, province, department) {
   const q = [raw, department, province, "Argentina"].filter(Boolean).join(", ");
   const res = await fetch(
@@ -49,8 +68,7 @@ async function geocodeFreeText(raw, province, department) {
   );
   if (!res.ok) return null;
   const first = (await res.json())?.[0];
-  if (!first) return null;
-  return { latitude: round6(first.lat), longitude: round6(first.lon) };
+  return first ? coordsOf({ lat: first.lat, lon: first.lon }) : null;
 }
 
 /**
@@ -62,9 +80,22 @@ export async function geocodeAddress(raw, { province = "", department = "" } = {
   if (!query) return null;
 
   const { housenumber, street } = parseAddress(query);
-  if (GEOAPIFY_KEY && housenumber && street) {
-    const structured = await geocodeStructured(housenumber, street, province, department);
-    if (structured) return structured;
+
+  if (GEOAPIFY_KEY && street) {
+    const canonical = await resolveStreet(street, province, department);
+    if (canonical?.street) {
+      if (housenumber) {
+        const precise = await geocodeStructured(
+          housenumber,
+          canonical.street,
+          canonical.city || department,
+          canonical.state || province,
+        );
+        if (precise) return precise;
+      }
+      if (canonical.lat != null && canonical.lon != null) return coordsOf(canonical);
+    }
   }
+
   return geocodeFreeText(query, province, department);
 }
