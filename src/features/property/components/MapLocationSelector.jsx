@@ -24,21 +24,31 @@ function LocationMarker({ position, onClick }) {
       onClick(e.latlng);
     }
   });
-  
-  const map = useMap();
-  
-  useEffect(() => {
-    if (position) {
-      map.setView(position, map.getZoom());
-    }
-  }, [position, map]);
 
   return position === null ? null : (
     <Marker position={position} icon={customIcon} />
   );
 }
 
-export default function MapLocationSelector({ latitude, longitude, address = '', province = '', department = '', onChange }) {
+// Reencuadra el mapa: si hay marcador, centra en él (zoom cercano); si no,
+// centra en el área de provincia/departamento seleccionada. Depende de primitivas
+// para no reencuadrar en cada render (dejaría al usuario sin poder navegar).
+function MapController({ markerLat, markerLng, focusLat, focusLng }) {
+  const map = useMap();
+  const hasMarker = markerLat != null && markerLng != null;
+
+  useEffect(() => {
+    if (hasMarker) map.setView([markerLat, markerLng], Math.max(map.getZoom(), 15));
+  }, [markerLat, markerLng, hasMarker, map]);
+
+  useEffect(() => {
+    if (!hasMarker && focusLat != null && focusLng != null) map.setView([focusLat, focusLng], 13);
+  }, [focusLat, focusLng, hasMarker, map]);
+
+  return null;
+}
+
+export default function MapLocationSelector({ latitude, longitude, address = '', province = '', department = '', focusLat = null, focusLng = null, onChange }) {
   const [input, setInput] = useState(address);
   const [open, setOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -136,6 +146,12 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <LocationMarker position={position} onClick={handleMapClick} />
+          <MapController
+            markerLat={position ? latitude : null}
+            markerLng={position ? longitude : null}
+            focusLat={focusLat}
+            focusLng={focusLng}
+          />
         </MapContainer>
       </div>
     </div>
