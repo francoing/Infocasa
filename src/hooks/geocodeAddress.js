@@ -71,6 +71,24 @@ async function geocodeFreeText(raw, province, department) {
   return first ? coordsOf({ lat: first.lat, lon: first.lon }) : null;
 }
 
+/** Geocodificación inversa: coords → dirección legible (calle + altura). Para el pin manual. */
+export async function reverseGeocode(latitude, longitude) {
+  if (!GEOAPIFY_KEY) return null;
+  const params = new URLSearchParams({
+    lat: String(latitude),
+    lon: String(longitude),
+    lang: "es",
+    limit: "1",
+    apiKey: GEOAPIFY_KEY,
+  });
+  const res = await fetch(`${GEOAPIFY}/reverse?${params}`);
+  if (!res.ok) return null;
+  const p = (await res.json()).features?.[0]?.properties;
+  if (!p) return null;
+  const street = [p.street, p.housenumber].filter(Boolean).join(" ");
+  return street || p.address_line1 || p.formatted || null;
+}
+
 /**
  * Geocodifica una dirección sesgada por provincia/departamento.
  * @returns {Promise<{latitude:number, longitude:number}|null>}

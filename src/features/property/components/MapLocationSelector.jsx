@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import { Search, Loader2, MapPin } from 'lucide-react';
 import { useGeoapifyAutocomplete } from '../../../hooks/useGeoapifyPlaces';
-import { geocodeStructured } from '../../../hooks/geocodeAddress';
+import { geocodeStructured, reverseGeocode } from '../../../hooks/geocodeAddress';
 import 'leaflet/dist/leaflet.css';
 
 const customIcon = new L.Icon({
@@ -63,11 +63,17 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
   const position = latitude && longitude ? [latitude, longitude] : null;
   const center = position || DEFAULT_CENTER;
 
-  const handleMapClick = (latlng) => {
-    onChange({
-      latitude: Number(latlng.lat.toFixed(6)),
-      longitude: Number(latlng.lng.toFixed(6))
-    });
+  const handleMapClick = async (latlng) => {
+    const latitude = Number(latlng.lat.toFixed(6));
+    const longitude = Number(latlng.lng.toFixed(6));
+    onChange({ latitude, longitude }); // pin inmediato
+    // Autocompletar la dirección (escrita + buscador del mapa) desde el punto marcado.
+    setResolving(true);
+    try {
+      const addr = await reverseGeocode(latitude, longitude);
+      if (addr) onChange({ latitude, longitude, address: addr });
+    } catch { /* deja el pin sin dirección */ }
+    finally { setResolving(false); }
   };
 
   const handleInputChange = (e) => {
