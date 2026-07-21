@@ -23,9 +23,11 @@ const BATHROOMS = ["1", "2", "3+"];
 
 /* ---------- Helpers ---------- */
 
+// Etiqueta de la UI → enum de operación del backend (sale|rent|temporary_rent).
 const mapOperationToApi = (op) => {
-  if (op === "Alquilar" || op === "Temporario") return "Alquiler";
-  return "Venta"; // Comprar / Vender / Temporario -> "Venta" / "Alquiler"
+  if (op === "Alquilar") return "rent";
+  if (op === "Temporario") return "temporary_rent";
+  return "sale"; // Comprar / Vender
 };
 
 /* ---------- Componente SelectGroup ---------- */

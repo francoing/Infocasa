@@ -27,6 +27,8 @@ function PropertyFilters({ localSearch, setLocalSearch, localOperation, setLocal
             <option value="">Todas</option>
             <option value="sale">Venta</option>
             <option value="rent">Alquiler</option>
+            <option value="temporary_rent">Temporario</option>
+            <option value="development">Desarrollo</option>
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
