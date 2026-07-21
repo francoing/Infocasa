@@ -66,14 +66,19 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
 
   const handleMapLocationChange = ({ latitude, longitude }) => {
     setFormData((prev) => ({ ...prev, latitude, longitude }));
-    if (latitude != null && longitude != null && locations.length > 0) {
-      const closest = findClosestLocation(latitude, longitude, locations);
-      if (closest) {
-        setSelectedProvince(closest.province);
-        setSelectedDepartment(closest.department);
-        setFormData((prev) => ({ ...prev, location_id: closest.id }));
-      }
-    }
+    if (latitude == null || longitude == null || locations.length === 0) return;
+    // Respetar provincia/departamento ya elegidos: buscar la ubicación más cercana dentro de ese ámbito.
+    const scoped = locations.filter(
+      (l) =>
+        (!selectedProvince || l.province === selectedProvince) &&
+        (!selectedDepartment || l.department === selectedDepartment),
+    );
+    const closest = findClosestLocation(latitude, longitude, scoped.length > 0 ? scoped : locations);
+    if (!closest) return;
+    // Solo autocompletar los selects que el usuario aún no fijó (no pisar su elección).
+    if (!selectedProvince) setSelectedProvince(closest.province);
+    if (!selectedDepartment) setSelectedDepartment(closest.department);
+    setFormData((prev) => ({ ...prev, location_id: closest.id }));
   };
 
   const handleImagesChange = (images) => {
