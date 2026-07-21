@@ -64,8 +64,8 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     setFormData((prev) => ({ ...prev, location_id: "" }));
   };
 
-  const handleMapLocationChange = ({ latitude, longitude }) => {
-    setFormData((prev) => ({ ...prev, latitude, longitude }));
+  const handleMapLocationChange = ({ latitude, longitude, address }) => {
+    setFormData((prev) => ({ ...prev, latitude, longitude, ...(address != null ? { address } : {}) }));
     if (latitude == null || longitude == null || locations.length === 0) return;
     // Respetar provincia/departamento ya elegidos: buscar la ubicación más cercana dentro de ese ámbito.
     const scoped = locations.filter(

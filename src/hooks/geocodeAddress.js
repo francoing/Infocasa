@@ -42,7 +42,7 @@ async function resolveStreet(street, province, department) {
 }
 
 /** Paso 2: geocodifica la altura con el nombre canónico de la calle. */
-async function geocodeStructured(housenumber, street, city, state) {
+export async function geocodeStructured(housenumber, street, city, state) {
   const params = new URLSearchParams({
     housenumber,
     street,
