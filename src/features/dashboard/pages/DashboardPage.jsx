@@ -32,8 +32,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("properties");
 
   useEffect(() => {
-    setActiveTab(isBuyer ? "favorites" : "properties");
-  }, [isBuyer]);
+    // El admin no tiene "Mis Propiedades": arranca en moderación de propiedades.
+    setActiveTab(isBuyer ? "favorites" : isAdmin ? "admin_properties" : "properties");
+  }, [isBuyer, isAdmin]);
 
   const [expandedId, setExpandedId] = useState(null);
   const [replyingLeadId, setReplyingLeadId] = useState(null);
@@ -106,7 +107,7 @@ export default function DashboardPage() {
           />
         );
       case "properties":
-        return (
+        return isAdmin ? null : (
           <PropertiesTab
             properties={properties}
             filters={{

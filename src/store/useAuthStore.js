@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "../api/api";
+import { queryClient } from "../lib/queryClient";
 
 const enrichUser = (userData) => {
   if (!userData) return null;
@@ -54,7 +55,8 @@ export const useAuthStore = create((set, get) => ({
       console.error("Token invalid, logging out", err);
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
-      set({ 
+      queryClient.clear(); // Descarta datos cacheados del usuario anterior.
+      set({
         user: null, 
         token: null, 
         loading: false,
@@ -73,9 +75,10 @@ export const useAuthStore = create((set, get) => ({
         const enriched = enrichUser(res.user);
         localStorage.setItem("auth_token", res.access_token);
         localStorage.setItem("auth_user", JSON.stringify(enriched));
-        
-        set({ 
-          user: enriched, 
+        queryClient.clear(); // Cache limpio para el nuevo usuario (evita fugas entre cuentas).
+
+        set({
+          user: enriched,
           token: res.access_token,
           ...getAuthDerivations(enriched, res.access_token)
         });
@@ -143,8 +146,9 @@ export const useAuthStore = create((set, get) => ({
     } finally {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
-      set({ 
-        user: null, 
+      queryClient.clear(); // Descarta el cache del usuario que cierra sesión.
+      set({
+        user: null,
         token: null,
         isAuthenticated: false,
         isAdmin: false,
