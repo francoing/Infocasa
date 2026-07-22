@@ -12,8 +12,11 @@ const StatCard = ({ icon, iconClass, label, value }) => (
   </div>
 );
 
-/** Fila de stats del dashboard: variante comprador (favoritos/consultas) vs vendedor (plan + totales). */
-export default function DashboardStats({ isBuyer, favorites, sentLeads, userPlan, properties, leads, onUpgrade }) {
+/** Fila de stats del dashboard: variante comprador (favoritos/consultas) vs vendedor (plan + totales).
+ *  El admin no publica ni gestiona planes → no ve esta fila (plan/publicación no aplican). */
+export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads, userPlan, properties, leads, onUpgrade }) {
+  if (isAdmin) return null;
+
   if (isBuyer) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
