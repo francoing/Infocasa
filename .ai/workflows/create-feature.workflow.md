@@ -37,6 +37,13 @@ Jerarquía ante conflicto: **Código > PROJECT-MAP > api-contract (backend) > sp
 ## STEP 3 — FITNESS FUNCTION
 - `npm run lint` — aplica los límites de `architecture-policies.yaml` + el boundary (api solo en hooks). Si falla, corregir antes de seguir. NO bajar reglas para "pasar".
 
+## STEP 3.5 — COHERENCIA CON EL CONTRATO
+Si consumís una ruta nueva o tocaste el shape/params de una existente:
+- `npm run api:surface -- --contract ../Backend-Inmobiliaria/.ai/contracts/api-contract.md` (ajustá la ruta al repo del backend).
+- **"FRONT llama pero el contrato NO documenta" debe quedar en 0.** Si aparece algo, el contrato driftó → avisar para corregirlo en el backend (no inventar el front).
+- Revisá **"CONTRATO ofrece pero el front NO consume"**: descartá lo backend-only (webhooks, landings de verificación); lo demás puede ser una **feature/filtro faltante** (fue la causa raíz de los filtros de search que faltaban).
+- El script matchea por **endpoint**. Para **query params** (filtros), comprobá a mano la sección del endpoint en el contrato: el front debe exponer lo que el backend acepta.
+
 ## STEP 4 — TESTS
 - `npm run test` (Vitest). Deben pasar.
 

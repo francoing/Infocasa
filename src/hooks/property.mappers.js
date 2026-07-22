@@ -4,7 +4,7 @@
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6";
 const OPERATION_LABEL = { sale: "Venta", rent: "Alquiler", development: "Desarrollo", temporary_rent: "Temporario" };
 
-export const mapImageUrl = (item) => {
+const mapImageUrl = (item) => {
   if (item.images && item.images.length > 0) {
     const cover = item.images.find((img) => img.is_cover) || item.images[0];
     return cover.url;
@@ -12,7 +12,7 @@ export const mapImageUrl = (item) => {
   return FALLBACK_IMAGE;
 };
 
-export const mapLocationStr = (item) => {
+const mapLocationStr = (item) => {
   const loc = item.location;
   if (!loc) return "Ubicación no especificada";
   if (typeof loc === "string") return loc;

@@ -20,18 +20,17 @@ src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
 ├── features/{home,search,explore,property,auth,dashboard,profile,share}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`)
 ├── store/                ← Zustand: useAuthStore · useToastStore
-├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, useLeads, usePlans,
+├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
-│                            useGeoapifyPlaces, useUserProvince, useToast
+│                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
-├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanBadge, PlanStatusCard, ToastContainer,
+├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
 ├── data/provincias.json  ← datos estáticos de provincias
 ├── mock/                 ← mockApi + handlers/searchProperties + data (switch por VITE_USE_MOCK)
-├── theme/                ← tema
 └── test/                 ← Vitest (components, hooks, store, setup)
 ```
 
@@ -64,7 +63,7 @@ src/
 Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ...]`, `["me_favorites"]`, `["leads", ...]`, `["sent_leads", ...]`, `["admin_properties"]`, `["admin_users"]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
 
 ## Contrato con backend (`/api/v1`)
-Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoints que el front consume hoy:
+Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
 - **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites` (+ login/register/logout/forgot/reset vía `useAuth`).
 - **Properties:** `properties`, `properties/{id}`, `properties/search`, `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
@@ -89,18 +88,22 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
 - ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
 - ✅ **Filtros avanzados de búsqueda** — el front cablea los filtros que el backend ya soportaba y estaban sin exponer: `province`, `department` (cascada desde `/locations`), `property_type_id` (tipos reales, no hardcode), `rooms_min`, `bedrooms_min`, `parking_spaces_min`, `condition`, `pets_allowed`, `professional_use`. `useProperties` arma la query vía `properties.query.js` (`buildSearchQueryString`, table-driven); UI en `SearchFilters`/`LocationAutocomplete`. Spec `search/advanced_filters`. *(Pendiente 2ª iteración: `features[]` amenities + `neighborhood` + rangos con máximo.)*
-- 🟢 **`ProfilePage` duplicado** — existe en `features/auth/pages/` y `features/profile/pages/`; el router usa el de `profile/`. El de `auth/` es código muerto (candidato a borrar).
+- ✅ **`ProfilePage` duplicado eliminado** — se borró el muerto `features/auth/pages/ProfilePage.jsx` (el router usa el de `profile/`). Spec `quality/governance_enforcement`.
+- ✅ **Boundary de red con dientes + `fetch` de Nominatim movido a hook** — el `fetch` directo de `MapLocationSelector` pasó a `useGeocodeSearch` (capa de datos); el linter ahora prohíbe `fetch(`/`XMLHttpRequest` en `features/**`+`common/**` (`no-restricted-syntax`), no solo el import de `api/api.js`. Spec `quality/governance_enforcement`.
+- ✅ **Código muerto barrido + guardia `knip`** — se sumó `knip` como gate de CI y en su primera corrida detectó y se eliminaron: 5 archivos huérfanos (`PlanBadge`, `hooks/index.js` barrel, `useLeads`, `mock/data/cities.js`, `theme/aceTheme.js`), 2 exports muertos (`getPublisherById`, `deleteProperty` en `useProperties`) y 3 exports innecesarios de-exportados. Se declaró `js-yaml` (usaba `.eslintrc.cjs` sin estar en `package.json`). Spec `quality/deadcode_guard`.
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
 - 🟡 **`npm run test` — gate removido del CI (deuda declarada).** Toolchain de jsdom inestable en Windows (EPERM en node_modules). El CI corre solo `npm run lint` como gate duro. Criterio para volver a meter como gate: cobertura ≥ 80% en hooks críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`) + toolchain estable. Ver `.ai/policies/architecture-policies.yaml` sección `testing`.
 
 ### Backlog de reconciliación de la fitness function (ratchet)
-La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.** Auditoría de sanidad 2026-07-15 arrancó el paydown: de 16 quedan **2** (`.eslintrc.cjs` → `LEGACY`): `PropertyCard` (complexity), `HomePage` (max-lines, max-lines-per-function). Los 2 son de UI/tamaño; la capa de datos (hooks) quedó **saldada**. `SearchPage` salió al extraer `SearchFilters`/`LocationAutocomplete` en la feature de filtros avanzados (spec `search/advanced_filters`).
+La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **✅ RATCHET SALDADO (0):** los 16 se refactorizaron; `LEGACY = {}` está **vacío** → la fitness function ya **no tiene excepciones**, todo el código cumple los límites. Los 2 últimos: `PropertyCard` (complexity) → helpers `conditionBadge`/`locationText` + sub-componentes `CardMedia`/`CardPrice`/`CardTags`/`CardFeatures`; `HomePage` (524 líneas) → `useHomeSearch` (hook) + `HomeHero`/`HomeSearchBox`/`FeaturedProperties`/`HomeBenefits`/`HomeCTA` (spec `home/homepage_split`). Regla: **no reintroducir entradas** a `LEGACY`.
 
 - **Boundary (UI→api directo)** — ✅ **categoría saldada.** `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`); `PropertyCard`→`useFavorites`, `ExplorePage`→`useExploreProperties`, `CreatePropertyPage`→`usePublications` (spec `quality/boundary_cleanup`). El boundary UI→api queda **enforced** en toda la capa UI.
 - **rules-of-hooks** — ✅ **categoría saldada.** `PropertyCard`/`PropertyMap`/`ProvinceMap`: hooks antes del `return` condicional (crash real; spec `quality/hooks_order_fix`). `useLeads`/`usePlans`/`useProperties`: el hack `getQueryClient` (que además **rompía la invalidación de cache** en las funciones exportadas de `useProperties`) → `useQueryClient()` incondicional + singleton en `src/lib/queryClient.js` (spec `quality/query_client_singleton`).
-- **Tamaño/complejidad** — pendientes (solo UI): `PropertyCard` (complexity), `HomePage` (tamaño). *(✅ salieron enteros: `SearchPage` → `components/SearchFilters` + `components/LocationAutocomplete` + `search.helpers` (spec `search/advanced_filters`); `PropertyDetailPage` → `components/detail/` (spec `property/detail_split`); `ProfilePage` (591→200) → `components/` + `useMercadoPagoReturn` (spec `profile/profile_split`); `DashboardPage` (981→204) → `components/` (spec `dashboard/dashboard_split`); `PropertyForm` (1068→95) → `usePropertyForm` + `propertyForm.helpers` + `components/form/` (spec `property/property_form_split`); `useDashboardData` (352→51) → sub-hooks (spec `dashboard/dashboard_data_split`); `usePropertyDetail` + `mapProperty` → helpers puros (spec `property/detail_and_mapper_split`).)*
+- **Tamaño/complejidad** — ✅ **categoría saldada (ratchet en 0).** *(salieron enteros: `PropertyCard` → helpers + sub-componentes y `HomePage` → `useHomeSearch` + secciones (spec `home/homepage_split`); `SearchPage` → `components/SearchFilters` + `components/LocationAutocomplete` + `search.helpers` (spec `search/advanced_filters`); `PropertyDetailPage` → `components/detail/` (spec `property/detail_split`); `ProfilePage` (591→200) → `components/` + `useMercadoPagoReturn` (spec `profile/profile_split`); `DashboardPage` (981→204) → `components/` (spec `dashboard/dashboard_split`); `PropertyForm` (1068→95) → `usePropertyForm` + `propertyForm.helpers` + `components/form/` (spec `property/property_form_split`); `useDashboardData` (352→51) → sub-hooks (spec `dashboard/dashboard_data_split`); `usePropertyDetail` + `mapProperty` → helpers puros (spec `property/detail_and_mapper_split`).)*
 
 ## Gobernanza
 - `.ai/` — gobernanza propia del front (`context`, `policies`, `workflows`). Producto = compartido (pointer al backend).
-- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit`.
-- Comandos clave: `npm run lint` · `npm run test` · `npm run dev`.
+- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
+- **Guardia de código muerto: `knip`** (`knip.json`) — gate duro en CI (`npm run knip`). Detecta archivos, exports y dependencias huérfanos (lo que dejó pasar `AdminPage`/`ProfilePage` muertos). Debe quedar **limpio**.
+- **Coherencia contrato↔front:** `npm run api:surface` (script `scripts/api-surface.mjs`) + checklist en STEP 3.5 del workflow. Extrae la superficie de API real y la diffea contra el contrato del backend. No es gate de CI (el contrato vive en otro repo); es la ritualización del chequeo que faltaba (causa raíz de los filtros de search ausentes).
+- Comandos clave: `npm run lint` · `npm run knip` · `npm run api:surface` · `npm run test` · `npm run dev`.
