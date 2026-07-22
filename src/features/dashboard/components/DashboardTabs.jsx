@@ -29,7 +29,8 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
         </>
       ) : (
         <>
-          <TabButton id="properties" {...tabProps}>Mis Propiedades</TabButton>
+          {/* El admin no publica → no tiene "Mis Propiedades". */}
+          {!isAdmin && <TabButton id="properties" {...tabProps}>Mis Propiedades</TabButton>}
           <TabButton id="leads" {...tabProps}>Consultas Recibidas</TabButton>
           {isAdmin && (
             <>

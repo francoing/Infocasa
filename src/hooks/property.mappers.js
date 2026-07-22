@@ -2,7 +2,7 @@
 // función quede bajo complejidad 20 (mapProperty tenía ~50 por los fallbacks por campo).
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6";
-const OPERATION_LABEL = { sale: "Venta", rent: "Alquiler", development: "Desarrollo" };
+const OPERATION_LABEL = { sale: "Venta", rent: "Alquiler", development: "Desarrollo", temporary_rent: "Temporario" };
 
 const mapImageUrl = (item) => {
   if (item.images && item.images.length > 0) {

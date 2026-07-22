@@ -129,6 +129,8 @@ export const usePropertyDetail = (id) => {
     setFormData,
     isSubmitting: submitLeadMutation.isPending,
     submitSuccess: submitLeadMutation.isSuccess,
+    // "Enviar otro mensaje": resetea la mutación → isSuccess vuelve a false y reaparece el form.
+    setSubmitSuccess: submitLeadMutation.reset,
     submitError: submitLeadMutation.error?.message || null,
     handleSubmitLead,
     toggleFavorite,

@@ -75,6 +75,8 @@ export function useGeoapifyAutocomplete() {
           lon: f.properties.lon,
           city: f.properties.city || f.properties.county || "",
           state: f.properties.state || "",
+          street: f.properties.street || "",
+          housenumber: f.properties.housenumber || "",
           formatted: f.properties.formatted,
         }));
 

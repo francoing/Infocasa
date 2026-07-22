@@ -1,9 +1,17 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { MapPin } from "lucide-react";
 import MapLocationSelector from "../MapLocationSelector";
 
 const LABEL = "text-xs font-black text-slate-400 uppercase tracking-widest ml-1";
 const SELECT = "w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white";
+
+/** Centroide de las ubicaciones del área elegida, para reencuadrar el mapa. */
+const areaCenter = (locs) => {
+  const pts = locs.filter((l) => l.latitude != null && l.longitude != null);
+  if (pts.length === 0) return { lat: null, lng: null };
+  const sum = pts.reduce((a, l) => ({ lat: a.lat + parseFloat(l.latitude), lng: a.lng + parseFloat(l.longitude) }), { lat: 0, lng: 0 });
+  return { lat: sum.lat / pts.length, lng: sum.lng / pts.length };
+};
 
 /** Sección "Ubicación y Dirección": cascada provincia→depto→ubicación/zona, dirección y mapa. */
 export default function LocationSection({
@@ -14,6 +22,12 @@ export default function LocationSection({
   const hasCoords =
     formData.latitude !== null && formData.latitude !== undefined &&
     formData.longitude !== null && formData.longitude !== undefined;
+
+  // Reencuadrar el mapa al área elegida solo cuando hay provincia + departamento.
+  const focus = useMemo(
+    () => (selectedProvince && selectedDepartment ? areaCenter(filteredLocations) : { lat: null, lng: null }),
+    [selectedProvince, selectedDepartment, filteredLocations],
+  );
 
   return (
     <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
@@ -78,7 +92,16 @@ export default function LocationSection({
             </span>
           )}
         </div>
-        <MapLocationSelector latitude={formData.latitude} longitude={formData.longitude} onChange={onMapLocationChange} />
+        <MapLocationSelector
+          latitude={formData.latitude}
+          longitude={formData.longitude}
+          address={formData.address}
+          province={selectedProvince}
+          department={selectedDepartment}
+          focusLat={focus.lat}
+          focusLng={focus.lng}
+          onChange={onMapLocationChange}
+        />
         <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
       </div>
 

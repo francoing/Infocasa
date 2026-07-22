@@ -20,7 +20,7 @@ export const usePropertyFormRefs = () => {
         locations: locRes.data || [],
         propertyTypes: typeRes.data || [],
         zones: zoneRes.data || [],
-        availableFeatures: featRes.data?.data || [],
+        availableFeatures: featRes.data || [],
       };
     },
     staleTime: 10 * 60 * 1000,

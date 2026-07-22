@@ -3,7 +3,6 @@ import { usePropertyFormRefs } from "./usePropertyFormRefs";
 import {
   INITIAL_STATE,
   mapInitialToForm,
-  getZoneKeyword,
   findClosestLocation,
   buildPropertyPayload,
   buildImageOps,
@@ -37,45 +36,53 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     }
   }, [initialData, locations]);
 
-  // Si la ubicación elegida ya no cabe en los filtros → resetear.
+  // Si la ubicación elegida ya no cabe en provincia/departamento → resetear.
+  // (La zona es un campo independiente; NO filtra ubicaciones.)
   useEffect(() => {
     if (locations.length === 0 || !formData.location_id) return;
-    const zoneKw = getZoneKeyword(zones.find((z) => z.id == formData.zone_id)?.name || "");
     const stillExists = locations.some((l) => {
       if (selectedProvince && l.province !== selectedProvince) return false;
       if (selectedDepartment && l.department !== selectedDepartment) return false;
-      if (zoneKw && !l.neighborhood.toLowerCase().includes(zoneKw)) return false;
       return l.id == formData.location_id;
     });
     if (!stillExists) setFormData((prev) => ({ ...prev, location_id: "" }));
-  }, [selectedProvince, selectedDepartment, formData.zone_id, formData.location_id, locations]);
+  }, [selectedProvince, selectedDepartment, formData.location_id, locations]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
+  // Cambiar de área invalida la ubicación previa: se limpia el pin y la dirección
+  // para reencuadrar el mapa en la nueva zona; el pin vuelve al elegir una dirección.
+  const resetLocation = { location_id: "", latitude: null, longitude: null, address: "" };
+
   const handleProvinceChange = (e) => {
     setSelectedProvince(e.target.value);
     setSelectedDepartment("");
-    setFormData((prev) => ({ ...prev, location_id: "" }));
+    setFormData((prev) => ({ ...prev, ...resetLocation }));
   };
 
   const handleDepartmentChange = (e) => {
     setSelectedDepartment(e.target.value);
-    setFormData((prev) => ({ ...prev, location_id: "" }));
+    setFormData((prev) => ({ ...prev, ...resetLocation }));
   };
 
-  const handleMapLocationChange = ({ latitude, longitude }) => {
-    setFormData((prev) => ({ ...prev, latitude, longitude }));
-    if (latitude != null && longitude != null && locations.length > 0) {
-      const closest = findClosestLocation(latitude, longitude, locations);
-      if (closest) {
-        setSelectedProvince(closest.province);
-        setSelectedDepartment(closest.department);
-        setFormData((prev) => ({ ...prev, location_id: closest.id }));
-      }
-    }
+  const handleMapLocationChange = ({ latitude, longitude, address }) => {
+    setFormData((prev) => ({ ...prev, latitude, longitude, ...(address != null ? { address } : {}) }));
+    if (latitude == null || longitude == null || locations.length === 0) return;
+    // Respetar provincia/departamento ya elegidos: buscar la ubicación más cercana dentro de ese ámbito.
+    const scoped = locations.filter(
+      (l) =>
+        (!selectedProvince || l.province === selectedProvince) &&
+        (!selectedDepartment || l.department === selectedDepartment),
+    );
+    const closest = findClosestLocation(latitude, longitude, scoped.length > 0 ? scoped : locations);
+    if (!closest) return;
+    // Solo autocompletar los selects que el usuario aún no fijó (no pisar su elección).
+    if (!selectedProvince) setSelectedProvince(closest.province);
+    if (!selectedDepartment) setSelectedDepartment(closest.department);
+    setFormData((prev) => ({ ...prev, location_id: closest.id }));
   };
 
   const handleImagesChange = (images) => {
@@ -120,11 +127,9 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
   const departments = [...new Set(
     locations.filter((l) => !selectedProvince || l.province === selectedProvince).map((l) => l.department),
   )].sort();
-  const zoneKeyword = getZoneKeyword(zones.find((z) => z.id == formData.zone_id)?.name || "");
   const filteredLocations = locations.filter((l) => {
     if (selectedProvince && l.province !== selectedProvince) return false;
     if (selectedDepartment && l.department !== selectedDepartment) return false;
-    if (zoneKeyword && !l.neighborhood.toLowerCase().includes(zoneKeyword)) return false;
     return true;
   });
 

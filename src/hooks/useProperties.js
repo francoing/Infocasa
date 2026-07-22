@@ -56,8 +56,14 @@ export const createProperty = async (propertyData) => {
 };
 
 export const updateProperty = async (id, propertyData) => {
-  // propertyData puede ser FormData (multipart) u objeto JSON
-  const res = await api.put(`/properties/${id}`, propertyData);
+  // propertyData puede ser FormData (multipart) u objeto JSON.
+  // PHP/Laravel NO parsea cuerpos multipart en PUT/PATCH → usar POST con method
+  // spoofing (_method=PUT): la ruta se resuelve como update y el body sí se lee.
+  const isForm = propertyData instanceof FormData;
+  if (isForm) propertyData.append("_method", "PUT");
+  const res = isForm
+    ? await api.post(`/properties/${id}`, propertyData)
+    : await api.put(`/properties/${id}`, propertyData);
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["property", id] });
   queryClient.invalidateQueries({ queryKey: ["me_properties"] });
