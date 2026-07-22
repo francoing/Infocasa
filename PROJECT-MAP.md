@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-07-17** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-07-22** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -23,8 +23,8 @@ src/
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
-│                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
-│                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
+│                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useToast
+│                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers, geocodeAddress)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
@@ -89,7 +89,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
 - ✅ **Filtros avanzados de búsqueda** — el front cablea los filtros que el backend ya soportaba y estaban sin exponer: `province`, `department` (cascada desde `/locations`), `property_type_id` (tipos reales, no hardcode), `rooms_min`, `bedrooms_min`, `parking_spaces_min`, `condition`, `pets_allowed`, `professional_use`. `useProperties` arma la query vía `properties.query.js` (`buildSearchQueryString`, table-driven); UI en `SearchFilters`/`LocationAutocomplete`. Spec `search/advanced_filters`. *(Pendiente 2ª iteración: `features[]` amenities + `neighborhood` + rangos con máximo.)*
 - ✅ **`ProfilePage` duplicado eliminado** — se borró el muerto `features/auth/pages/ProfilePage.jsx` (el router usa el de `profile/`). Spec `quality/governance_enforcement`.
-- ✅ **Boundary de red con dientes + `fetch` de Nominatim movido a hook** — el `fetch` directo de `MapLocationSelector` pasó a `useGeocodeSearch` (capa de datos); el linter ahora prohíbe `fetch(`/`XMLHttpRequest` en `features/**`+`common/**` (`no-restricted-syntax`), no solo el import de `api/api.js`. Spec `quality/governance_enforcement`.
+- ✅ **Boundary de red con dientes + geocoding fuera de componentes** — `MapLocationSelector` no hace `fetch` directo: la resolución de direcciones vive en hooks/módulos de datos (`useGeoapifyPlaces` para el autocomplete, `geocodeAddress` para geocode estructurado + reverse). El linter prohíbe `fetch(`/`XMLHttpRequest` en `features/**`+`common/**` (`no-restricted-syntax`), no solo el import de `api/api.js`. Spec `quality/governance_enforcement`. *(Al integrar la versión Geoapify del mapa se retiró el hook intermedio `useGeocodeSearch`, que quedó huérfano.)*
 - ✅ **Código muerto barrido + guardia `knip`** — se sumó `knip` como gate de CI y en su primera corrida detectó y se eliminaron: 5 archivos huérfanos (`PlanBadge`, `hooks/index.js` barrel, `useLeads`, `mock/data/cities.js`, `theme/aceTheme.js`), 2 exports muertos (`getPublisherById`, `deleteProperty` en `useProperties`) y 3 exports innecesarios de-exportados. Se declaró `js-yaml` (usaba `.eslintrc.cjs` sin estar en `package.json`). Spec `quality/deadcode_guard`.
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
 - 🟡 **`npm run test` — gate removido del CI (deuda declarada).** Toolchain de jsdom inestable en Windows (EPERM en node_modules). El CI corre solo `npm run lint` como gate duro. Criterio para volver a meter como gate: cobertura ≥ 80% en hooks críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`) + toolchain estable. Ver `.ai/policies/architecture-policies.yaml` sección `testing`.
