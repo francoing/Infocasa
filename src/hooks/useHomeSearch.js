@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useGeoapifyAutocomplete } from "./useGeoapifyPlaces";
 import { useUserProvince } from "./useUserProvince";
 
+// Etiqueta de la UI → enum de operación del backend (sale|rent|temporary_rent).
 const mapOperationToApi = (op) => {
-  if (op === "Alquilar" || op === "Temporario") return "Alquiler";
-  return "Venta";
+  if (op === "Alquilar") return "rent";
+  if (op === "Temporario") return "temporary_rent";
+  return "sale"; // Comprar / Vender
 };
 
 const buildSearchUrl = ({ operation, inputValue, propertyTypes, maxPrice }) => {
