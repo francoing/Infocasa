@@ -160,7 +160,8 @@ export default function DashboardPage() {
                 : `Bienvenido, ${user?.name}. Gestiona tus publicaciones y contactos.`}
             </p>
           </div>
-          {!isBuyer && (
+          {/* El admin no publica propiedades ni gestiona planes. */}
+          {!isBuyer && !isAdmin && (
             userPlan ? (
               <Link
                 to="/dashboard/properties/create"
@@ -178,6 +179,7 @@ export default function DashboardPage() {
 
         <DashboardStats
           isBuyer={isBuyer}
+          isAdmin={isAdmin}
           favorites={favorites}
           sentLeads={sentLeads}
           userPlan={userPlan}
