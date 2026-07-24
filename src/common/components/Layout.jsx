@@ -1,11 +1,11 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Heart, User, LogOut, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
 import Logo from "./Logo";
 import FooterLogo from "./FooterLogo";
 import AdminLayout from "./AdminLayout";
+import UserMenu from "./UserMenu";
 import WhatsAppButton from "./WhatsAppButton";
 import EmailVerificationBanner from "./EmailVerificationBanner";
 
@@ -32,21 +32,12 @@ export default function Layout({ children }) {
 
 function Header() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout, isAdmin, isPublisher } = useAuth();
+  const { user } = useAuth();
 
   const navItems = [
     { name: 'Inicio', path: '/' },
     { name: 'Buscar', path: '/search' },
   ];
-
-  const handleLogout = async () => {
-    logout();
-    navigate('/');
-  };
-
-  // Determinar la ruta del tablero según el rol
-  const dashboardPath = '/dashboard';
 
   return (
     <header className="bg-[#edd446] fixed top-0 w-full z-50 border-b border-[#cca425] shadow-sm">
@@ -72,18 +63,7 @@ function Header() {
         </nav>
         <div className="flex items-center space-x-6">
           {user ? (
-            <div className="flex items-center gap-4">
-              <Link to={dashboardPath} className="text-[#1a1a1a]/85 hover:text-[#1a1a1a] transition-colors flex items-center gap-2 font-bold text-sm">
-                <LayoutDashboard className="w-5 h-5" /> Tablero
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-[#1a1a1a]/60 hover:text-red-600 transition-colors p-2"
-                title="Cerrar sesión"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+            <UserMenu />
           ) : (
             <>
               <Link to="/login" className="text-sm font-bold text-[#1a1a1a]/80 hover:text-black transition-all">
