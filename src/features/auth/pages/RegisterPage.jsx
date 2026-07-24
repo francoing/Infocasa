@@ -4,6 +4,7 @@ import { User, Mail, Lock, CheckCircle2, Chrome, Loader2, Phone } from "lucide-r
 import { motion } from "framer-motion";
 import { useAuth } from "../../../hooks/useAuth";
 import Layout from "../../../common/components/Layout";
+import PasswordInput from "../../../common/components/PasswordInput";
 import { formatCuit } from "../../../lib/utils";
 
 export default function RegisterPage() {
@@ -183,18 +184,15 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-900 ml-1">Contraseña</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400" 
-                  placeholder="Mínimo 8 caracteres"
-                  required
-                  minLength={8}
-                />
-              </div>
+              <PasswordInput
+                leftIcon={<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-12 pr-12 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400"
+                placeholder="Mínimo 8 caracteres"
+                required
+                minLength={8}
+              />
             </div>
 
             {role === "agent" && (

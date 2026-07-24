@@ -1,5 +1,6 @@
 import React from "react";
 import { Lock, Loader2, Save } from "lucide-react";
+import PasswordInput from "../../../common/components/PasswordInput";
 
 /** Formulario de cambio de contraseña. */
 export default function PasswordForm({ form, setForm, loading, onSubmit }) {
@@ -16,35 +17,32 @@ export default function PasswordForm({ form, setForm, loading, onSubmit }) {
       <form onSubmit={onSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Contraseña Actual</label>
-          <input
-            type="password"
+          <PasswordInput
             required
             value={form.current_password}
             onChange={set("current_password")}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all"
+            className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all"
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Nueva Contraseña</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={form.password}
               onChange={set("password")}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all"
+              className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all"
             />
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Confirmar Nueva Contraseña</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={form.password_confirmation}
               onChange={set("password_confirmation")}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all"
+              className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all"
             />
           </div>
         </div>
