@@ -60,7 +60,7 @@ export default function AdminLayout({ children }) {
           active={location.pathname === '/admin' || location.pathname === '/dashboard'}
           onClick={() => setSidebarOpen(false)}
         />
-        {(isAdmin || isPublisher) && (
+        {isPublisher && (
           userPlan ? (
             <SidebarLink 
               to="/dashboard/properties/create" 
