@@ -4,6 +4,7 @@ import { User, Mail, Lock, CheckCircle2, Chrome, Loader2, Phone } from "lucide-r
 import { motion } from "framer-motion";
 import { useAuth } from "../../../hooks/useAuth";
 import Layout from "../../../common/components/Layout";
+import { formatCuit } from "../../../lib/utils";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -14,10 +15,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("buyer");
   
-  // Estados para inmobiliaria
+  // Estados para inmobiliaria (cuit guarda SOLO dígitos; se muestra formateado)
   const [agencyName, setAgencyName] = useState("");
   const [cuit, setCuit] = useState("");
-  const [fantasyName, setFantasyName] = useState("");
   const [taxCondition, setTaxCondition] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [agencyAddress, setAgencyAddress] = useState("");
@@ -41,8 +41,7 @@ export default function RegisterPage() {
         avatar: "",
         role: role,
         agency_name: agencyName,
-        cuit,
-        fantasy_name: fantasyName,
+        cuit, // solo dígitos
         tax_condition: taxCondition,
         business_name: businessName,
         agency_address: agencyAddress,
@@ -213,59 +212,46 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-900 ml-1">Nombre Comercial de la Inmobiliaria</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={agencyName}
                       onChange={(e) => setAgencyName(e.target.value)}
-                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium"
                       placeholder="Ej: RE/MAX Premium"
                       required={role === "agent"}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-900 ml-1">Nombre de Fantasía</label>
-                    <input 
-                      type="text" 
-                      value={fantasyName}
-                      onChange={(e) => setFantasyName(e.target.value)}
-                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
-                      placeholder="Ej: Inmobiliaria Pérez"
-                      required={role === "agent"}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-900 ml-1">Razón Social</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium"
                       placeholder="Ej: Pérez Propiedades S.A."
                       required={role === "agent"}
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-900 ml-1">CUIT</label>
-                    <input 
-                      type="text" 
-                      value={cuit}
-                      onChange={(e) => setCuit(e.target.value)}
-                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-bold" 
-                      placeholder="Ej: 30-12345678-9"
-                      required={role === "agent"}
-                    />
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">CUIT</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatCuit(cuit)}
+                      onChange={(e) => setCuit(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-bold"
+                      placeholder="Ej: 30-12345678-9"
+                      required={role === "agent"}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-900 ml-1">Condición Fiscal</label>
-                    <select 
+                    <select
                       value={taxCondition}
                       onChange={(e) => setTaxCondition(e.target.value)}
                       className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all font-medium appearance-none"
@@ -278,17 +264,17 @@ export default function RegisterPage() {
                       <option value="Consumidor Final">Consumidor Final</option>
                     </select>
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-900 ml-1">Dirección Comercial (Opcional)</label>
-                    <input 
-                      type="text" 
-                      value={agencyAddress}
-                      onChange={(e) => setAgencyAddress(e.target.value)}
-                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
-                      placeholder="Ej: Av. Siempreviva 742"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-900 ml-1">Dirección Comercial (Opcional)</label>
+                  <input
+                    type="text"
+                    value={agencyAddress}
+                    onChange={(e) => setAgencyAddress(e.target.value)}
+                    className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium"
+                    placeholder="Ej: Av. Siempreviva 742"
+                  />
                 </div>
               </motion.div>
             )}

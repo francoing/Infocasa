@@ -109,7 +109,6 @@ export const useAuthStore = create((set, get) => ({
       if (userData.role === 'agent') {
         payload.agency_name = userData.agency_name;
         payload.cuit = userData.cuit;
-        payload.fantasy_name = userData.fantasy_name;
         payload.tax_condition = userData.tax_condition;
         payload.business_name = userData.business_name;
         payload.agency_address = userData.agency_address;
