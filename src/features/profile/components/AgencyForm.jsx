@@ -1,5 +1,6 @@
 import React from "react";
 import { Building, Loader2, Save } from "lucide-react";
+import { formatCuit } from "../../../lib/utils";
 
 const TAX_CONDITIONS = ["Responsable Inscripto", "Monotributista", "Exento", "Consumidor Final"];
 
@@ -28,19 +29,6 @@ export default function AgencyForm({ form, setForm, loading, onSubmit }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Nombre de Fantasía</label>
-            <input
-              type="text"
-              required
-              value={form.fantasy_name}
-              onChange={set("fantasy_name")}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Razón Social</label>
             <input
               type="text"
@@ -50,19 +38,20 @@ export default function AgencyForm({ form, setForm, loading, onSubmit }) {
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">CUIT</label>
             <input
               type="text"
+              inputMode="numeric"
               required
-              value={form.cuit}
-              onChange={set("cuit")}
+              value={formatCuit(form.cuit)}
+              onChange={(e) => setForm({ ...form, cuit: e.target.value.replace(/\D/g, "").slice(0, 11) })}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-bold"
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Condición Fiscal</label>
             <select
@@ -77,15 +66,16 @@ export default function AgencyForm({ form, setForm, loading, onSubmit }) {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Dirección Comercial</label>
-            <input
-              type="text"
-              value={form.address}
-              onChange={set("address")}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
-            />
-          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-2">Dirección Comercial</label>
+          <input
+            type="text"
+            value={form.address}
+            onChange={set("address")}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 outline-none transition-all font-medium"
+          />
         </div>
 
         <div className="pt-4 flex justify-end">

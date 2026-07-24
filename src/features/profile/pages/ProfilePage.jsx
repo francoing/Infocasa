@@ -47,7 +47,6 @@ export default function ProfilePage() {
   const [agencyForm, setAgencyForm] = useState({
     name: user?.agency?.name || '',
     cuit: user?.agency?.cuit || '',
-    fantasy_name: user?.agency?.fantasy_name || '',
     tax_condition: user?.agency?.tax_condition || '',
     business_name: user?.agency?.business_name || '',
     address: user?.agency?.address || '',
@@ -64,7 +63,6 @@ export default function ProfilePage() {
       setAgencyForm({
         name: user.agency.name || '',
         cuit: user.agency.cuit || '',
-        fantasy_name: user.agency.fantasy_name || '',
         tax_condition: user.agency.tax_condition || '',
         business_name: user.agency.business_name || '',
         address: user.agency.address || '',
