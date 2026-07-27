@@ -37,3 +37,28 @@
 
 - No agregar dependencias sin necesidad clara. El stack base (React Router, TanStack Query, Zustand, Tailwind, Leaflet) cubre la mayoría de los casos.
 - No migrar a TypeScript ni cambiar el bundler sin aprobación.
+
+---
+
+## Criterio para armar PR (REGLA FUNCIONAL)
+
+Objetivo: menos fricción. No todo cambio necesita PR; los triviales van directo.
+
+**Directo a `QA`** (commit + push, sin PR ni rama) cuando el cambio cumple **las dos**:
+- toca **≤ 3 archivos**, y
+- queda dentro de **un solo módulo** (`src/features/{X}`, o una sola capa transversal: `hooks/`, `store/`, `api/`, `common/`, `lib/`).
+
+**PR obligatorio** (rama `feat|fix|chore/*` → `QA`) cuando el cambio:
+- toca **más de 3 archivos**, **o**
+- cruza **más de un módulo**.
+
+**Siempre PR** (aunque sea 1 archivo), si toca cualquiera de estos:
+- **Contrato de API** (endpoints/params/shapes que se consumen — ver `api-contract.md`).
+- **Seguridad / auth** (`useAuthStore`, token, `ProtectedRoute`, roles, visibilidad de datos privados).
+- **Deploy / infra** (`vite.config`, CI, hooks, `.env*`, config de Vercel).
+- *(Las migraciones de BD viven en el backend; acá no aplican.)*
+
+Reglas duras:
+- La rama **`production` NUNCA** recibe commit directo: solo avanza por **promoción** vía PR (`QA` → `production`).
+- Un commit directo **igual pasa los gates locales** antes de pushear (`npm run lint` + `npm run knip` + `npm run build`). El umbral baja la ceremonia del PR, no la calidad.
+- Contar = archivos de código/config tocados. **Ante la duda, PR.**
