@@ -99,6 +99,12 @@ export const usePropertyDetail = (id) => {
     }
   });
 
+  // Al cambiar de propiedad, resetear la mutación de lead: si no, el estado
+  // "consulta enviada" (isSuccess) de una propiedad se muestra en todas las demás.
+  useEffect(() => {
+    submitLeadMutation.reset();
+  }, [id]);
+
   const handleSubmitLead = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
