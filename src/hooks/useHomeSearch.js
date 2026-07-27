@@ -34,25 +34,27 @@ export const useHomeSearch = () => {
 
   const { status: gateStatus, province: userProvince, error: gateError, checkProvince, reset: resetGate } = useUserProvince();
   const [gateOpen, setGateOpen] = useState(false);
+  // Acción disparada tras pasar el gate: "list" (listado /search) o "map" (/explore).
+  const [pendingAction, setPendingAction] = useState("list");
   const [locationVerified, setLocationVerified] = useState(
     () => sessionStorage.getItem("infocasa_location_verified") === "true"
   );
 
-  const goToResults = () => {
-    if (inputValue.trim()) navigate(buildSearchUrl({ operation, inputValue, propertyTypes, maxPrice }));
-    else navigate(`/explore/${operation}`);
+  const runAction = (action) => {
+    if (action === "map") navigate(`/explore/${operation || "Comprar"}`);
+    else navigate(buildSearchUrl({ operation, inputValue, propertyTypes, maxPrice }));
   };
 
-  // Cuando el gate se resuelve "allowed", recordamos y ejecutamos la búsqueda pendiente.
+  // Cuando el gate se resuelve "allowed", recordamos y ejecutamos la acción pendiente.
   useEffect(() => {
     if (gateStatus === "allowed" && gateOpen) {
       setGateOpen(false);
       setLocationVerified(true);
       sessionStorage.setItem("infocasa_location_verified", "true");
-      goToResults();
+      runAction(pendingAction);
       resetGate();
     }
-  }, [gateStatus, operation, inputValue, propertyTypes, maxPrice, gateOpen]);
+  }, [gateStatus, operation, inputValue, propertyTypes, maxPrice, gateOpen, pendingAction]);
 
   const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
   const [focusedIdx, setFocusedIdx] = useState(-1);
@@ -82,19 +84,25 @@ export const useHomeSearch = () => {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  // Dispara una acción ("list" | "map"); si falta verificar ubicación, abre el
+  // gate y la deja pendiente para ejecutarla al resolverse.
+  const trigger = (action) => {
     if (!locationVerified) {
+      setPendingAction(action);
       setGateOpen(true);
       return;
     }
-    goToResults();
+    runAction(action);
   };
 
-  const handleMapExplore = () => {
-    if (locationVerified) navigate(`/explore/${operation || "Comprar"}`);
-    else setGateOpen(true);
+  // Submit / Enter y botón "Listado de propiedades": van al listado /search.
+  const handleSearch = (e) => {
+    e.preventDefault();
+    trigger("list");
   };
+
+  // Botón "Buscar en Mapa": va al explorador de mapa /explore.
+  const handleMapExplore = () => trigger("map");
 
   const handleGateAccept = () => checkProvince();
 

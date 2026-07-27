@@ -3,12 +3,6 @@ import { motion } from "framer-motion";
 import { MapPin, Loader2, ChevronDown } from "lucide-react";
 
 const PROPERTY_TYPES = ["Departamento", "Casa", "PH", "Terreno"];
-const PRICE_OPTIONS = [
-  { value: "10000000", label: "Hasta $10M" },
-  { value: "30000000", label: "Hasta $30M" },
-  { value: "50000000", label: "Hasta $50M" },
-  { value: "100000000", label: "Hasta $100M" },
-];
 const TABS = ["Comprar", "Alquilar", "Temporario"];
 
 /** Caja de búsqueda del hero. Recibe toda la API de `useHomeSearch` vía `s`. */
@@ -89,49 +83,39 @@ export default function HomeSearchBox({ s }) {
         </div>
       </div>
 
-      {/* Tipo y Precio */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-xs uppercase tracking-widest font-black text-blue-600 block">Tipo</label>
-          <div className="relative">
-            <select
-              value={s.propertyTypes}
-              onChange={(e) => s.setPropertyTypes(e.target.value)}
-              className="w-full appearance-none px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 cursor-pointer shadow-sm outline-none"
-            >
-              <option value="">Todos</option>
-              {PROPERTY_TYPES.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs uppercase tracking-widest font-black text-blue-600 block">Precio</label>
-          <div className="relative">
-            <select
-              value={s.maxPrice}
-              onChange={(e) => s.setMaxPrice(e.target.value)}
-              className="w-full appearance-none px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 cursor-pointer shadow-sm outline-none"
-            >
-              <option value="">Sin límite</option>
-              {PRICE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+      {/* Tipo */}
+      <div className="space-y-1.5">
+        <label className="text-xs uppercase tracking-widest font-black text-blue-600 block">Tipo</label>
+        <div className="relative">
+          <select
+            value={s.propertyTypes}
+            onChange={(e) => s.setPropertyTypes(e.target.value)}
+            className="w-full appearance-none px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 cursor-pointer shadow-sm outline-none"
+          >
+            <option value="">Todos</option>
+            {PROPERTY_TYPES.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="w-full py-4 bg-blue-600 text-white rounded-xl font-extrabold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 mt-4"
-      >
-        Buscar en Mapa
-      </button>
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <button
+          type="button"
+          onClick={s.handleMapExplore}
+          className="w-full py-4 bg-slate-900 text-white rounded-xl font-extrabold text-sm uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2"
+        >
+          Buscar en Mapa
+        </button>
+        <button
+          type="submit"
+          className="w-full py-4 bg-blue-600 text-white rounded-xl font-extrabold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+        >
+          Listado de propiedades
+        </button>
+      </div>
     </motion.form>
   );
 }
