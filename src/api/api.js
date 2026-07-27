@@ -17,6 +17,23 @@ const getHeaders = (isMultipart = false) => {
   return headers;
 };
 
+// Serializa params estilo axios (`api.get(url, { params: {...} })`) al query string,
+// respetando un `?` ya presente en el endpoint y omitiendo valores vacíos/null/undefined.
+// Sin esto, el 2º argumento se ignoraba y los filtros (ej: status/date_from/date_to
+// de Consultas) nunca llegaban al backend.
+const appendParams = (endpoint, params) => {
+  if (!params || typeof params !== "object") return endpoint;
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      qs.append(key, value);
+    }
+  }
+  const str = qs.toString();
+  if (!str) return endpoint;
+  return endpoint + (endpoint.includes("?") ? "&" : "?") + str;
+};
+
 const handleResponse = async (res) => {
   if (!res.ok) {
     let errorData = null;
@@ -39,8 +56,8 @@ const handleResponse = async (res) => {
 };
 
 const realApi = {
-  get: async (endpoint) => {
-    const res = await fetch(`${API_URL}${endpoint}`, {
+  get: async (endpoint, { params } = {}) => {
+    const res = await fetch(`${API_URL}${appendParams(endpoint, params)}`, {
       headers: getHeaders()
     });
     return handleResponse(res);
