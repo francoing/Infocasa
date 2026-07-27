@@ -19,11 +19,13 @@ export default function BackButton({ className = "" }) {
       onClick={() => navigate(canGoBack ? -1 : "/")}
       aria-label="Volver a la página anterior"
       className={cn(
-        "inline-flex items-center gap-1.5 px-3 py-2 -ml-1 rounded-lg text-sm font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-100 active:scale-95 transition-all",
+        "inline-flex items-center gap-2 min-h-[44px] rounded-full border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm backdrop-blur",
+        "hover:border-slate-300 hover:bg-white hover:text-blue-600 active:scale-95 transition-all",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
         className
       )}
     >
-      <ArrowLeft className="w-4 h-4" />
+      <ArrowLeft className="w-[18px] h-[18px]" />
       Volver
     </button>
   );
