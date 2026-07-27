@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGeoapifyAutocomplete } from "./useGeoapifyPlaces";
 import { useUserProvince } from "./useUserProvince";
+import { usePropertyFormRefs } from "./usePropertyFormRefs";
 
 // Etiqueta de la UI → enum de operación del backend (sale|rent|temporary_rent).
 const mapOperationToApi = (op) => {
@@ -10,11 +11,13 @@ const mapOperationToApi = (op) => {
   return "sale"; // Comprar / Vender
 };
 
-const buildSearchUrl = ({ operation, inputValue, propertyTypes, maxPrice }) => {
+// Emite propertyTypeId (id real del tipo), la misma clave que lee el panel de
+// filtros (readFilters) → el tipo elegido en el home queda seleccionado allá.
+const buildSearchUrl = ({ operation, inputValue, propertyTypeId, maxPrice }) => {
   const params = new URLSearchParams();
   params.set("operation", mapOperationToApi(operation));
   params.set("location", inputValue.trim());
-  if (propertyTypes) params.set("type", propertyTypes);
+  if (propertyTypeId) params.set("propertyTypeId", propertyTypeId);
   if (maxPrice) params.set("maxPrice", maxPrice);
   return `/search?${params.toString()}`;
 };
@@ -29,8 +32,12 @@ export const useHomeSearch = () => {
 
   const [operation, setOperation] = useState("Comprar");
   const [inputValue, setInputValue] = useState("");
-  const [propertyTypes, setPropertyTypes] = useState("");
+  const [propertyTypeId, setPropertyTypeId] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+
+  // Tipos reales (id + nombre) para que el select del home use los mismos ids
+  // que el panel de filtros.
+  const { propertyTypes: propertyTypeOptions } = usePropertyFormRefs();
 
   const { status: gateStatus, province: userProvince, error: gateError, checkProvince, reset: resetGate } = useUserProvince();
   const [gateOpen, setGateOpen] = useState(false);
@@ -42,7 +49,7 @@ export const useHomeSearch = () => {
 
   const runAction = (action) => {
     if (action === "map") navigate(`/explore/${operation || "Comprar"}`);
-    else navigate(buildSearchUrl({ operation, inputValue, propertyTypes, maxPrice }));
+    else navigate(buildSearchUrl({ operation, inputValue, propertyTypeId, maxPrice }));
   };
 
   // Cuando el gate se resuelve "allowed", recordamos y ejecutamos la acción pendiente.
@@ -54,7 +61,7 @@ export const useHomeSearch = () => {
       runAction(pendingAction);
       resetGate();
     }
-  }, [gateStatus, operation, inputValue, propertyTypes, maxPrice, gateOpen, pendingAction]);
+  }, [gateStatus, operation, inputValue, propertyTypeId, maxPrice, gateOpen, pendingAction]);
 
   const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
   const [focusedIdx, setFocusedIdx] = useState(-1);
@@ -116,7 +123,7 @@ export const useHomeSearch = () => {
     inputRef,
     operation, setOperation,
     inputValue, setInputValue,
-    propertyTypes, setPropertyTypes,
+    propertyTypeId, setPropertyTypeId, propertyTypeOptions,
     maxPrice, setMaxPrice,
     suggestions, geoLoading, setQuery,
     focusedIdx, setFocusedIdx,

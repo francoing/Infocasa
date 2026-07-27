@@ -2,7 +2,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { MapPin, Loader2, ChevronDown } from "lucide-react";
 
-const PROPERTY_TYPES = ["Departamento", "Casa", "PH", "Terreno"];
 const TABS = ["Comprar", "Alquilar", "Temporario"];
 
 /** Caja de búsqueda del hero. Recibe toda la API de `useHomeSearch` vía `s`. */
@@ -88,13 +87,13 @@ export default function HomeSearchBox({ s }) {
         <label className="text-xs uppercase tracking-widest font-black text-blue-600 block">Tipo</label>
         <div className="relative">
           <select
-            value={s.propertyTypes}
-            onChange={(e) => s.setPropertyTypes(e.target.value)}
+            value={s.propertyTypeId}
+            onChange={(e) => s.setPropertyTypeId(e.target.value)}
             className="w-full appearance-none px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10 cursor-pointer shadow-sm outline-none"
           >
             <option value="">Todos</option>
-            {PROPERTY_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
+            {s.propertyTypeOptions.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
