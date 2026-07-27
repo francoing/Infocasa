@@ -62,3 +62,4 @@ Código real  >  PROJECT-MAP.md  >  api-contract.md (backend)  >  specs/{feature
 4. **Datos solo por `hooks/`.** Ningún componente/página llama a `api/api.js` ni hace `fetch` directo (ver `.ai/context/architecture.md`).
 5. **Actualizá `PROJECT-MAP.md`** al terminar (es lo primero que driftea; el pre-commit te lo recuerda).
 6. Antes de finalizar: `npm run lint` (fitness function — el gate duro). Tests: deuda declarada, no gate aún (ver PROJECT-MAP.md).
+7. **Armá PR según el criterio** (ver [conventions.md](.ai/context/conventions.md) → "Criterio para armar PR"): directo a `QA` si el cambio es ≤3 archivos y 1 módulo; **PR** si es más grande, cruza módulos, o toca contrato de API / seguridad-auth / deploy-infra. **`production` solo por promoción vía PR.**
