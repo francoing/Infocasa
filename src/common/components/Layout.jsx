@@ -6,12 +6,14 @@ import Logo from "./Logo";
 import FooterLogo from "./FooterLogo";
 import AdminLayout from "./AdminLayout";
 import UserMenu from "./UserMenu";
+import BackButton from "./BackButton";
 import WhatsAppButton from "./WhatsAppButton";
 import EmailVerificationBanner from "./EmailVerificationBanner";
 
 export default function Layout({ children }) {
   const location = useLocation();
   const isDashboardPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard');
+  const isHome = location.pathname === "/";
 
   if (isDashboardPath) {
     return <AdminLayout>{children}</AdminLayout>;
@@ -22,6 +24,11 @@ export default function Layout({ children }) {
       <Header />
       <main className="flex-grow pt-20">
         <EmailVerificationBanner />
+        {!isHome && (
+          <div className="max-w-7xl mx-auto w-full px-6 lg:px-12 pt-4">
+            <BackButton />
+          </div>
+        )}
         {children}
       </main>
       <Footer />

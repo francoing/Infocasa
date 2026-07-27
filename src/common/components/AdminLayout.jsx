@@ -5,6 +5,7 @@ import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
 import { usePlans } from "../../hooks/usePlans";
 import Logo from "./Logo";
+import BackButton from "./BackButton";
 import WhatsAppButton from "./WhatsAppButton";
 import EmailVerificationBanner from "./EmailVerificationBanner";
 
@@ -131,6 +132,9 @@ export default function AdminLayout({ children }) {
 
       <main className="flex-1 min-w-0 pt-16 lg:pt-0">
         <EmailVerificationBanner />
+        <div className="px-6 lg:px-10 pt-4 lg:pt-6">
+          <BackButton />
+        </div>
         {children}
       </main>
       <WhatsAppButton />
