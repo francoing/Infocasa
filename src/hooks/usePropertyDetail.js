@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { fetchPropertyById, mapProperty } from "./useProperties";
+import { buildSearchQueryString } from "./properties.query";
 import { useToast } from "./useToast";
-import { DEFAULT_LEAD_FORM, rankRelatedProperties, optimisticToggleFavorite } from "./usePropertyDetail.helpers";
+import { DEFAULT_LEAD_FORM, buildRelatedFilters, rankRelatedProperties, optimisticToggleFavorite } from "./usePropertyDetail.helpers";
 
 export const usePropertyDetail = (id) => {
   const toast = useToast();
@@ -36,11 +37,14 @@ export const usePropertyDetail = (id) => {
     }
   }, [id]);
 
-  // 3. Query para propiedades relacionadas
+  // 3. Query para propiedades relacionadas: el pool se acota a la misma
+  // operación y provincia de la propiedad vista (buildRelatedFilters); luego se
+  // rankea por afinidad (tipo/ubicación/dormitorios). Ver usePropertyDetail.helpers.
   const relatedPropertiesQuery = useQuery({
-    queryKey: ["properties", "related", id],
+    queryKey: ["properties", "related", id, property?.operationRaw, property?.locationDetails?.province],
     queryFn: async () => {
-      const res = await api.get("/properties");
+      const queryString = buildSearchQueryString(buildRelatedFilters(property));
+      const res = await api.get(`/properties/search${queryString}`);
       return rankRelatedProperties((res.data || []).map((p) => mapProperty(p)), property);
     },
     enabled: !!property,

@@ -22,13 +22,32 @@ const scoreRelated = (p, base) => {
   return score;
 };
 
-/** Ranking de propiedades relacionadas (mismas características/ubicación), top 3. */
+/**
+ * Filtros del pool de sugeridas: acota a la misma operación y provincia que la
+ * propiedad que se está viendo. Así las sugeridas quedan relacionadas con esa
+ * propiedad (un temporario en una provincia sugiere temporarios de esa provincia,
+ * nunca ventas de otra zona). Ver api-contract.md.
+ */
+export const buildRelatedFilters = (base) => {
+  if (!base) return {};
+  const filters = {};
+  if (base.operationRaw) filters.operation = base.operationRaw;
+  const province = base.locationDetails?.province;
+  if (province) filters.province = province;
+  return filters;
+};
+
+/**
+ * Ranking de propiedades relacionadas, top 3. El pool ya viene acotado por
+ * operación+provincia (buildRelatedFilters), así que acá solo ordenamos por
+ * afinidad (tipo, ubicación, dormitorios) sin descartar por score: todo lo que
+ * llega ya es relevante a la búsqueda.
+ */
 export const rankRelatedProperties = (allProps, base) => {
   if (!base) return [];
   return allProps
     .filter((p) => p.id !== base.id)
     .map((p) => ({ property: p, score: scoreRelated(p, base) }))
-    .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map((item) => item.property);
