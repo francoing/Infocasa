@@ -128,13 +128,11 @@ export default function AdminLayout({ children }) {
           <Menu className="w-6 h-6" />
         </button>
         <Logo size="text-xl" />
+        <BackButton className="ml-auto" />
       </div>
 
       <main className="flex-1 min-w-0 pt-16 lg:pt-0">
         <EmailVerificationBanner />
-        <div className="px-6 lg:px-10 pt-4 lg:pt-6">
-          <BackButton />
-        </div>
         {children}
       </main>
       <WhatsAppButton />

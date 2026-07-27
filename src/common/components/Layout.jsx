@@ -21,14 +21,9 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header isHome={isHome} />
       <main className="flex-grow pt-20">
         <EmailVerificationBanner />
-        {!isHome && (
-          <div className="max-w-7xl mx-auto w-full px-6 lg:px-12 pt-4">
-            <BackButton />
-          </div>
-        )}
         {children}
       </main>
       <Footer />
@@ -37,7 +32,7 @@ export default function Layout({ children }) {
   );
 }
 
-function Header() {
+function Header({ isHome = false }) {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -48,9 +43,12 @@ function Header() {
   return (
     <header className="bg-[#edd446] fixed top-0 w-full z-50 border-b border-[#cca425] shadow-sm">
       <div className="flex justify-between items-center px-6 lg:px-12 h-20 max-w-7xl mx-auto w-full">
-        <Link to="/" className="flex items-center">
-          <Logo size="text-2xl" />
-        </Link>
+        <div className="flex items-center gap-1 sm:gap-3">
+          {!isHome && <BackButton className="text-[#1a1a1a] -ml-2" />}
+          <Link to="/" className="flex items-center">
+            <Logo size="text-2xl" />
+          </Link>
+        </div>
         <nav className="hidden md:flex items-center space-x-10">
           {navItems.map((item) => (
             <Link
