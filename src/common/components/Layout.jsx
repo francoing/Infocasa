@@ -36,7 +36,7 @@ function Header() {
 
   const navItems = [
     { name: 'Inicio', path: '/' },
-    { name: 'Buscar', path: '/search' },
+    { name: 'Todas las Propiedades', path: '/search' },
   ];
 
   return (

@@ -28,9 +28,8 @@ export default function HomeSearchBox({ s }) {
             key={op}
             type="button"
             onClick={() => s.setOperation(op)}
-            className={`flex-1 text-center py-2 rounded-full font-bold text-sm transition-all duration-300 ${
-              s.operation === op ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-800"
-            }`}
+            className={`flex-1 text-center py-2 rounded-full font-bold text-sm transition-all duration-300 ${s.operation === op ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-800"
+              }`}
           >
             {op}
           </button>
@@ -72,9 +71,8 @@ export default function HomeSearchBox({ s }) {
                       s.selectSuggestion(sug);
                     }}
                     onMouseEnter={() => s.setFocusedIdx(i)}
-                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${
-                      i === s.focusedIdx ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${i === s.focusedIdx ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
+                      }`}
                   >
                     <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
                     <span className="font-semibold">{sug.value}</span>
@@ -132,7 +130,7 @@ export default function HomeSearchBox({ s }) {
         type="submit"
         className="w-full py-4 bg-blue-600 text-white rounded-xl font-extrabold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 mt-4"
       >
-        Buscar propiedades
+        Buscar en Mapa
       </button>
     </motion.form>
   );
