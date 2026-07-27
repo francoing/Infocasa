@@ -62,11 +62,11 @@ export default function AdminLayout({ children }) {
         />
         {isPublisher && (
           userPlan ? (
-            <SidebarLink 
-              to="/dashboard/properties/create" 
-              icon={<PlusCircle />} 
-              label="Publicar" 
-              active={location.pathname === '/dashboard/properties/create'} 
+            <SidebarLink
+              to="/dashboard/properties/create"
+              icon={<PlusCircle />}
+              label="Publicar"
+              active={location.pathname === '/dashboard/properties/create'}
               onClick={() => setSidebarOpen(false)}
             />
           ) : (
@@ -74,7 +74,7 @@ export default function AdminLayout({ children }) {
           )
         )}
 
-        <SidebarLink to="/search" icon={<Search />} label="Marketplace" onClick={() => setSidebarOpen(false)} />
+        {/* <SidebarLink to="/search" icon={<Search />} label="Marketplace" onClick={() => setSidebarOpen(false)} /> */}
         <SidebarLink to="/profile" icon={<User />} label="Mi Perfil" active={location.pathname === '/profile'} onClick={() => setSidebarOpen(false)} />
       </nav>
       <div className="px-6 pt-6 border-t border-slate-100 mt-auto">
@@ -112,9 +112,8 @@ export default function AdminLayout({ children }) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 shadow-2xl transition-transform duration-300 lg:hidden ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 shadow-2xl transition-transform duration-300 lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {sidebarContent}
       </aside>
