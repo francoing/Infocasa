@@ -95,12 +95,12 @@ export default function SearchPage() {
               >
                 <Filter className="w-4 h-4" /> Filtros
               </button>
-              <div className="flex-1 md:flex-none flex items-center gap-2 md:gap-3 bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
+              <div className="flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 md:gap-3 bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
                 <span className="hidden sm:inline text-sm font-medium text-slate-500 flex-shrink-0">Ordenar por:</span>
                 <select
                   value={currentFilters.sort}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="flex-1 md:flex-none bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
+                  className="bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
                 >
                   <option value="recent">Más recientes</option>
                   <option value="price_asc">Precio: Menor a Mayor</option>
