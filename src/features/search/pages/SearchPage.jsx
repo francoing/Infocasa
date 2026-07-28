@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Search as SearchIcon, ChevronLeft, ChevronRight, Loader2, Filter } from "lucide-react";
+import { Search as SearchIcon, ChevronLeft, ChevronRight, ChevronDown, Loader2, Filter } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
@@ -95,17 +95,20 @@ export default function SearchPage() {
               >
                 <Filter className="w-4 h-4" /> Filtros
               </button>
-              <div className="flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 md:gap-3 bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
+              <div className="flex-1 md:flex-none flex items-center gap-2 md:gap-3 bg-white px-3 md:px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
                 <span className="hidden sm:inline text-sm font-medium text-slate-500 flex-shrink-0">Ordenar por:</span>
-                <select
-                  value={currentFilters.sort}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
-                >
-                  <option value="recent">Más recientes</option>
-                  <option value="price_asc">Precio: Menor a Mayor</option>
-                  <option value="price_desc">Precio: Mayor a Menor</option>
-                </select>
+                <div className="relative flex-1 md:flex-none">
+                  <select
+                    value={currentFilters.sort}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="appearance-none w-full bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer py-0 pl-1 pr-6 outline-none text-center sm:text-left"
+                  >
+                    <option value="recent">Más recientes</option>
+                    <option value="price_asc">Precio: Menor a Mayor</option>
+                    <option value="price_desc">Precio: Mayor a Menor</option>
+                  </select>
+                  <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-600 pointer-events-none" />
+                </div>
               </div>
             </div>
           </div>
