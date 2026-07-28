@@ -132,36 +132,34 @@ function MarkerCluster({ markers }) {
   return null;
 }
 
-/* ================================================================
-   AUTO FIT BOUNDS
-   ================================================================ */
-
-function FitBounds({ items }) {
+// Encuadre del mapa: si viene `focus` (zona buscada en el autocomplete del home) hace
+// zoom a su bbox/centro; si no, ajusta a todos los markers. El focus tiene prioridad
+// para que el mapa quede en la búsqueda y no en todo el país.
+function MapView({ items, focus }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!items || items.length === 0) return;
-    const bounds = L.latLngBounds(items.map((item) => [item.lat, item.lng]));
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-  }, [items, map]);
+    if (focus && Array.isArray(focus.bbox) && focus.bbox.length === 4) {
+      const [minLon, minLat, maxLon, maxLat] = focus.bbox;
+      map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [40, 40], maxZoom: 14 });
+    } else if (focus && focus.lat != null && focus.lng != null) {
+      map.setView([focus.lat, focus.lng], 13);
+    } else if (items && items.length > 0) {
+      map.fitBounds(L.latLngBounds(items.map((i) => [i.lat, i.lng])), { padding: [50, 50], maxZoom: 12 });
+    }
+  }, [items, focus, map]);
 
   return null;
 }
 
-/* ================================================================
-   FORMATOS
-   ================================================================ */
-
+// Formatos
 const formatPrice = (price, currency) => {
   const symbol = currency === "USD" ? "U$D" : "$";
   return `${symbol} ${Number(price).toLocaleString("es-AR")}`;
 };
 
-/* ================================================================
-   PROVINCE MAP
-   ================================================================ */
-
-export default function ProvinceMap({ properties, onPropertyClick }) {
+// Province map
+export default function ProvinceMap({ properties, focus = null, onPropertyClick }) {
   const defaultCenter = [-27.3, -64.8];
 
   // Handler global para el onclick del popup (Leaflet no admite React events en HTML string).
@@ -334,7 +332,7 @@ export default function ProvinceMap({ properties, onPropertyClick }) {
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
 
-        <FitBounds items={markers.map((p) => ({ lat: p.latitude, lng: p.longitude }))} />
+        <MapView items={markers.map((p) => ({ lat: p.latitude, lng: p.longitude }))} focus={focus} />
         <ProvinceBoundaries />
         <MarkerCluster markers={clusterMarkers} />
       </MapContainer>
