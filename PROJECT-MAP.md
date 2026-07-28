@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-07-17** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-07-28** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -26,7 +26,7 @@ src/
 │                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
-│                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
+│                            WhatsAppButton, Loader, Logo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
 ├── data/provincias.json  ← datos estáticos de provincias
@@ -80,6 +80,17 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 `components/CheckoutModal`, `components/PlanStatusCard`, `hooks/usePlans`, `store/useAuthStore`, `setup.js`. Cobertura fina (a ampliar).
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-07-28 (UX + mobile + mapa)
+- ✅ **Navegación: botón "Volver" global** — `common/components/BackButton.jsx` (vuelve a la página anterior; si no hay historial, va al home). En `Layout` (todas las rutas menos home, dentro del header) y en el header mobile de `AdminLayout`. Se **quitó el enlace "Todas las Propiedades"** del header; su función pasó al buscador del home.
+- ✅ **Home: buscador con dos salidas** — "Listado de propiedades" (submit/Enter → `/search` con filtros) y "Buscar en Mapa" (→ `/explore`). `useHomeSearch` separa acciones `list`/`map` (respeta el gate de ubicación). Se **quitó el select "Precio"**. El **Tipo** ahora usa `property_type_id` real (mismos ids que el panel de filtros) → queda seleccionado al llegar a `/search`.
+- ✅ **Mapa (`/explore`) centrado en la búsqueda** — el home y el buscador del propio mapa pasan `lat/lng/bbox` (Geoapify; `useGeoapifyPlaces` ahora expone `bbox`) por la URL; `ExplorePage` arma un `focus` y `ProvinceMap` (componente `MapView`) hace **zoom al bbox/centro** en vez de a todo el país. El buscador del mapa **hace zoom** (ya no navega a `/search`) y viene **precargado** con lo buscado en el home.
+- ✅ **Sugeridas relacionadas con la propiedad vista** — el pool se acota a **misma operación + provincia** (`buildRelatedFilters`) vía `/properties/search` y se rankea por afinidad, en vez de traer `/properties` sin filtros (antes un temporario sugería ventas de otra zona).
+- ✅ **Consulta (lead) precargada con el usuario logueado** — `usePropertyDetail` + `leadFormForUser` completan nombre/email/teléfono si hay sesión (solo campos vacíos; se re-precarga tras enviar).
+- ✅ **`certification_document_url` = URL firmada temporal** — el backend endureció el archivo (disco privado + ruta `signed`); el front lo consume igual en `<img>`/`<iframe>` (la firma va en la query). Si expira, recargar el detalle.
+- ✅ **Ajustes mobile-first** — overflow horizontal del detalle (breadcrumb que empujaba el ancho), flechas del lightbox visibles en touch (antes `opacity-0 group-hover`), y control de orden del listado (etiqueta oculta + flecha propia centrada) en mobile.
+
+### Histórico
 - ✅ **Moneda nativa / `price_usd` retirado** (spec `search/currency_native`). La búsqueda filtra por `currency` (`SearchPage` → `useProperties`, default por operación en el backend); creación/edición/reducción mandan solo `price_amount`/`price_currency`. Se eliminó la conversión inventada (`ARS/1000`).
 - ✅ **`useFilterStore` eliminado** (era código muerto).
 - ✅ **`sort` por precio ahora funciona** como orden **secundario** (backend `sort=price_asc|price_desc`; destacadas siguen primero). Spec `search/search_coherence`.
