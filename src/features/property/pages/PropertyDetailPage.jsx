@@ -63,12 +63,12 @@ export default function PropertyDetailPage() {
 
         {/* Breadcrumbs & Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-400">
-            <Link to="/" className="hover:text-blue-600 transition-colors">Inicio</Link>
-            <ChevronRight className="w-4 h-4" />
-            <Link to="/search" className="hover:text-blue-600 transition-colors">Propiedades</Link>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-slate-600 truncate max-w-xs">{property.title}</span>
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-400 min-w-0 w-full md:w-auto">
+            <Link to="/" className="hidden sm:inline hover:text-blue-600 transition-colors flex-shrink-0">Inicio</Link>
+            <ChevronRight className="hidden sm:block w-4 h-4 flex-shrink-0" />
+            <Link to="/search" className="hover:text-blue-600 transition-colors flex-shrink-0">Propiedades</Link>
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            <span className="text-slate-600 truncate min-w-0">{property.title}</span>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <button
