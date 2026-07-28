@@ -7,6 +7,14 @@ export const DEFAULT_LEAD_FORM = {
   message: "Hola, vi esta propiedad en InfoCasa y me gustaría tener más información.",
 };
 
+/** Form de consulta precargado con los datos del usuario logueado (o vacío si no hay sesión). */
+export const leadFormForUser = (user) => ({
+  ...DEFAULT_LEAD_FORM,
+  name: user?.name || "",
+  email: user?.email || "",
+  phone: [user?.phone_area, user?.phone_number].filter(Boolean).join(" "),
+});
+
 // Puntúa qué tan parecida es una propiedad a la base (tipo, operación, ubicación, dormitorios).
 const scoreRelated = (p, base) => {
   let score = 0;

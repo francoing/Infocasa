@@ -4,16 +4,31 @@ import { api } from "../api/api";
 import { fetchPropertyById, mapProperty } from "./useProperties";
 import { buildSearchQueryString } from "./properties.query";
 import { useToast } from "./useToast";
-import { DEFAULT_LEAD_FORM, buildRelatedFilters, rankRelatedProperties, optimisticToggleFavorite } from "./usePropertyDetail.helpers";
+import { useAuthStore } from "../store/useAuthStore";
+import { DEFAULT_LEAD_FORM, leadFormForUser, buildRelatedFilters, rankRelatedProperties, optimisticToggleFavorite } from "./usePropertyDetail.helpers";
 
 export const usePropertyDetail = (id) => {
   const toast = useToast();
   const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
 
   const [showGallery, setShowGallery] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
 
   const [formData, setFormData] = useState(DEFAULT_LEAD_FORM);
+
+  // Si hay sesión, precarga el form de consulta con los datos del usuario (solo los
+  // campos vacíos, para no pisar lo que ya haya escrito). Ver leadFormForUser.
+  useEffect(() => {
+    if (!user) return;
+    const filled = leadFormForUser(user);
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name || filled.name,
+      email: prev.email || filled.email,
+      phone: prev.phone || filled.phone,
+    }));
+  }, [user?.id]);
 
   // 1. Query para el detalle de la propiedad
   const propertyQuery = useQuery({
@@ -94,7 +109,8 @@ export const usePropertyDetail = (id) => {
       return api.post("/leads", leadData);
     },
     onSuccess: () => {
-      setFormData(DEFAULT_LEAD_FORM);
+      // Reset: si hay sesión, vuelve a quedar precargado con los datos del usuario.
+      setFormData(user ? leadFormForUser(user) : DEFAULT_LEAD_FORM);
       toast.success("Consulta enviada con éxito. La inmobiliaria te contactará a la brevedad.");
       queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
