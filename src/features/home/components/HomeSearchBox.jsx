@@ -112,7 +112,7 @@ export default function HomeSearchBox({ s }) {
           type="submit"
           className="w-full py-4 bg-blue-600 text-white rounded-xl font-extrabold text-sm uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
         >
-          Listado de propiedades
+          Buscar
         </button>
       </div>
     </motion.form>
