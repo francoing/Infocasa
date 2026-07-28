@@ -85,22 +85,22 @@ export default function SearchPage() {
         <section className="flex-1">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-slate-900">Propiedades Disponibles</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900">Propiedades Disponibles</h1>
               <p className="text-slate-500 mt-2">{loading ? "Buscando..." : `Mostrando página ${page}`}</p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <button
                 onClick={() => setShowMobileFilters(true)}
-                className="lg:hidden flex-1 flex justify-center items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
+                className="lg:hidden flex-1 flex justify-center items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm"
               >
                 <Filter className="w-4 h-4" /> Filtros
               </button>
-              <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start gap-4 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-                <span className="text-sm font-medium text-slate-500">Ordenar por:</span>
+              <div className="flex-1 md:flex-none flex items-center gap-2 md:gap-3 bg-white px-4 py-2.5 rounded-lg border border-slate-200 shadow-sm">
+                <span className="hidden sm:inline text-sm font-medium text-slate-500 flex-shrink-0">Ordenar por:</span>
                 <select
                   value={currentFilters.sort}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
+                  className="flex-1 md:flex-none bg-transparent border-none text-sm font-bold text-blue-600 focus:ring-0 cursor-pointer p-0 pr-6 outline-none"
                 >
                   <option value="recent">Más recientes</option>
                   <option value="price_asc">Precio: Menor a Mayor</option>
