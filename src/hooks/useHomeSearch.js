@@ -48,8 +48,14 @@ export const useHomeSearch = () => {
   );
 
   const runAction = (action) => {
-    if (action === "map") navigate(`/explore/${operation || "Comprar"}`);
-    else navigate(buildSearchUrl({ operation, inputValue, propertyTypeId, maxPrice }));
+    if (action === "map") {
+      // Pasa la ubicación tipeada para que el mapa se centre/filtre en esa zona.
+      const loc = inputValue.trim();
+      const base = `/explore/${operation || "Comprar"}`;
+      navigate(loc ? `${base}?location=${encodeURIComponent(loc)}` : base);
+    } else {
+      navigate(buildSearchUrl({ operation, inputValue, propertyTypeId, maxPrice }));
+    }
   };
 
   // Cuando el gate se resuelve "allowed", recordamos y ejecutamos la acción pendiente.

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, MapPin, Search } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
@@ -12,10 +12,27 @@ const OPERATION_MAP = {
   Temporario: { api: "temporary_rent", label: "Alquilá temporario", searchOp: "temporary_rent" },
 };
 
+// Normaliza texto para comparar ubicaciones (sin acentos, minúsculas).
+const norm = (s) => (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
+// ¿La propiedad cae en la zona buscada? Matchea contra barrio/ciudad/departamento/provincia.
+const matchesLocation = (property, query) => {
+  const q = norm(query);
+  if (!q) return true;
+  const loc = property.locationDetails || {};
+  return [loc.neighborhood, loc.city, loc.department, loc.province]
+    .map(norm)
+    .some((f) => f && (f.includes(q) || q.includes(f)));
+};
+
 export default function ExplorePage() {
   const { operation } = useParams();
   const navigate = useNavigate();
   const opConfig = OPERATION_MAP[operation];
+
+  // Ubicación buscada (viene del home): filtra y centra el mapa en esa zona.
+  const [searchParams] = useSearchParams();
+  const locationQuery = searchParams.get("location") || "";
 
   // Capa de datos: react-query (loading/error/cancelación). No fetchea si la operación es inválida.
   const {
@@ -24,9 +41,15 @@ export default function ExplorePage() {
     error: explorationError,
   } = useExploreProperties(opConfig?.api);
 
+  // Propiedades a mostrar en el mapa: si hay ubicación buscada, se acota a esa zona.
+  const mapProperties = useMemo(
+    () => (locationQuery ? explorationProperties.filter((p) => matchesLocation(p, locationQuery)) : explorationProperties),
+    [explorationProperties, locationQuery]
+  );
+
   // — Geoapify autocomplete para el buscador
   const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState(locationQuery);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState(-1);
 
@@ -181,16 +204,18 @@ export default function ExplorePage() {
                 Reintentar
               </button>
             </div>
-          ) : explorationProperties.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200">
+          ) : mapProperties.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200 text-center px-6">
               <MapPin className="w-8 h-8 text-slate-300 mb-2" />
               <p className="text-sm text-slate-400 font-medium">
-                No hay propiedades disponibles para {operation.toLowerCase()} en este momento.
+                {locationQuery
+                  ? `No encontramos propiedades para ${operation.toLowerCase()} en ${locationQuery}.`
+                  : `No hay propiedades disponibles para ${operation.toLowerCase()} en este momento.`}
               </p>
             </div>
           ) : (
             <ProvinceMap
-              properties={explorationProperties}
+              properties={mapProperties}
               onPropertyClick={handlePropertyClick}
             />
           )}
