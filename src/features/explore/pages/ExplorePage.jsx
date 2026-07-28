@@ -29,8 +29,8 @@ export default function ExplorePage() {
   const navigate = useNavigate();
   const opConfig = OPERATION_MAP[operation];
 
-  // Ubicación buscada (viene del home): se usa para precargar el buscador y centrar el mapa.
-  const [searchParams] = useSearchParams();
+  // Ubicación buscada (viene del home o del buscador de esta página): centra el mapa.
+  const [searchParams, setSearchParams] = useSearchParams();
   const locationQuery = searchParams.get("location") || "";
   const focus = useMemo(() => readFocus(searchParams), [searchParams]);
 
@@ -52,14 +52,24 @@ export default function ExplorePage() {
     navigate(`/property/${propertyId}`);
   };
 
-  // Selección de sugerencia Geoapify → navegar a search
+  // Selección de sugerencia → escribe coords/bbox en la URL: recalcula `focus` y el
+  // mapa hace zoom a esa zona, sin salir de esta vista.
   const selectSuggestion = (suggestion) => {
     const value = suggestion.city || suggestion.state || suggestion.value;
-    const params = new URLSearchParams();
-    params.set("location", value);
-    params.set("operation", opConfig.searchOp);
-    navigate(`/search?${params.toString()}`);
+    setSearchValue(value);
+    setShowSuggestions(false);
+    setFocusedIdx(-1);
     clearSuggestions();
+    const params = new URLSearchParams(searchParams);
+    params.set("location", value);
+    if (suggestion.lat != null) params.set("lat", suggestion.lat);
+    if (suggestion.lon != null) params.set("lng", suggestion.lon);
+    if (Array.isArray(suggestion.bbox) && suggestion.bbox.length === 4) {
+      params.set("bbox", suggestion.bbox.join(","));
+    } else {
+      params.delete("bbox");
+    }
+    setSearchParams(params);
   };
 
   const handleSearchKeyDown = (e) => {
@@ -85,12 +95,9 @@ export default function ExplorePage() {
         return;
       }
     }
-    if (e.key === "Enter" && searchValue.trim()) {
+    if (e.key === "Enter" && searchValue.trim() && suggestions.length > 0) {
       e.preventDefault();
-      const params = new URLSearchParams();
-      params.set("location", searchValue.trim());
-      params.set("operation", opConfig.searchOp);
-      navigate(`/search?${params.toString()}`);
+      selectSuggestion(suggestions[0]);
     }
   };
 
