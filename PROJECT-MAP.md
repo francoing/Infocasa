@@ -26,7 +26,7 @@ src/
 │                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
-│                            WhatsAppButton, Loader, Logo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
+│                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
 ├── data/provincias.json  ← datos estáticos de provincias
@@ -117,4 +117,5 @@ La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con de
 - Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
 - **Guardia de código muerto: `knip`** (`knip.json`) — gate duro en CI (`npm run knip`). Detecta archivos, exports y dependencias huérfanos (lo que dejó pasar `AdminPage`/`ProfilePage` muertos). Debe quedar **limpio**.
 - **Coherencia contrato↔front:** `npm run api:surface` (script `scripts/api-surface.mjs`) + checklist en STEP 3.5 del workflow. Extrae la superficie de API real y la diffea contra el contrato del backend. No es gate de CI (el contrato vive en otro repo); es la ritualización del chequeo que faltaba (causa raíz de los filtros de search ausentes).
-- Comandos clave: `npm run lint` · `npm run knip` · `npm run api:surface` · `npm run test` · `npm run dev`.
+- **Exactitud del PROJECT-MAP con dientes: `npm run map:check`** (`scripts/project-map-check.mjs`) — **gate duro** en CI y pre-commit. Deriva del código rutas/hooks/stores/componentes comunes y **falla si alguno no figura en este archivo**. Chequea PRESENCIA por nombre (no un touch → no se gamea bumpeando la fecha; no valida la descripción, eso sigue siendo criterio humano). Nace de que el mapa driftó (`BackButton`/`FooterLogo` quedaron fuera).
+- Comandos clave: `npm run lint` · `npm run knip` · `npm run map:check` · `npm run api:surface` · `npm run test` · `npm run dev`.
