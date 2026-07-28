@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, MapPin, Search } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
@@ -12,10 +12,27 @@ const OPERATION_MAP = {
   Temporario: { api: "temporary_rent", label: "Alquilá temporario", searchOp: "temporary_rent" },
 };
 
+// Arma el foco del mapa (centro/bbox) desde los params que manda el home al elegir un
+// lugar en el autocomplete. Con coords el mapa hace zoom a la zona, sin depender de
+// que el nombre coincida con los datos de la propiedad.
+const readFocus = (searchParams) => {
+  const lat = parseFloat(searchParams.get("lat"));
+  const lng = parseFloat(searchParams.get("lng"));
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  const bboxRaw = (searchParams.get("bbox") || "").split(",").map(Number);
+  const bbox = bboxRaw.length === 4 && bboxRaw.every((n) => !Number.isNaN(n)) ? bboxRaw : null;
+  return { lat, lng, bbox };
+};
+
 export default function ExplorePage() {
   const { operation } = useParams();
   const navigate = useNavigate();
   const opConfig = OPERATION_MAP[operation];
+
+  // Ubicación buscada (viene del home o del buscador de esta página): centra el mapa.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const locationQuery = searchParams.get("location") || "";
+  const focus = useMemo(() => readFocus(searchParams), [searchParams]);
 
   // Capa de datos: react-query (loading/error/cancelación). No fetchea si la operación es inválida.
   const {
@@ -26,7 +43,7 @@ export default function ExplorePage() {
 
   // — Geoapify autocomplete para el buscador
   const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState(locationQuery);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState(-1);
 
@@ -35,14 +52,24 @@ export default function ExplorePage() {
     navigate(`/property/${propertyId}`);
   };
 
-  // Selección de sugerencia Geoapify → navegar a search
+  // Selección de sugerencia → escribe coords/bbox en la URL: recalcula `focus` y el
+  // mapa hace zoom a esa zona, sin salir de esta vista.
   const selectSuggestion = (suggestion) => {
     const value = suggestion.city || suggestion.state || suggestion.value;
-    const params = new URLSearchParams();
-    params.set("location", value);
-    params.set("operation", opConfig.searchOp);
-    navigate(`/search?${params.toString()}`);
+    setSearchValue(value);
+    setShowSuggestions(false);
+    setFocusedIdx(-1);
     clearSuggestions();
+    const params = new URLSearchParams(searchParams);
+    params.set("location", value);
+    if (suggestion.lat != null) params.set("lat", suggestion.lat);
+    if (suggestion.lon != null) params.set("lng", suggestion.lon);
+    if (Array.isArray(suggestion.bbox) && suggestion.bbox.length === 4) {
+      params.set("bbox", suggestion.bbox.join(","));
+    } else {
+      params.delete("bbox");
+    }
+    setSearchParams(params);
   };
 
   const handleSearchKeyDown = (e) => {
@@ -68,12 +95,9 @@ export default function ExplorePage() {
         return;
       }
     }
-    if (e.key === "Enter" && searchValue.trim()) {
+    if (e.key === "Enter" && searchValue.trim() && suggestions.length > 0) {
       e.preventDefault();
-      const params = new URLSearchParams();
-      params.set("location", searchValue.trim());
-      params.set("operation", opConfig.searchOp);
-      navigate(`/search?${params.toString()}`);
+      selectSuggestion(suggestions[0]);
     }
   };
 
@@ -182,7 +206,7 @@ export default function ExplorePage() {
               </button>
             </div>
           ) : explorationProperties.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex flex-col items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200 text-center px-6">
               <MapPin className="w-8 h-8 text-slate-300 mb-2" />
               <p className="text-sm text-slate-400 font-medium">
                 No hay propiedades disponibles para {operation.toLowerCase()} en este momento.
@@ -191,6 +215,7 @@ export default function ExplorePage() {
           ) : (
             <ProvinceMap
               properties={explorationProperties}
+              focus={focus}
               onPropertyClick={handlePropertyClick}
             />
           )}

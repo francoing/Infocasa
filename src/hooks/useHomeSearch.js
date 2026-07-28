@@ -34,6 +34,8 @@ export const useHomeSearch = () => {
   const [inputValue, setInputValue] = useState("");
   const [propertyTypeId, setPropertyTypeId] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  // Lugar elegido del autocomplete (con coords/bbox) → para centrar el mapa en esa zona.
+  const [selectedPlace, setSelectedPlace] = useState(null);
 
   // Tipos reales (id + nombre) para que el select del home use los mismos ids
   // que el panel de filtros.
@@ -48,8 +50,24 @@ export const useHomeSearch = () => {
   );
 
   const runAction = (action) => {
-    if (action === "map") navigate(`/explore/${operation || "Comprar"}`);
-    else navigate(buildSearchUrl({ operation, inputValue, propertyTypeId, maxPrice }));
+    if (action !== "map") {
+      navigate(buildSearchUrl({ operation, inputValue, propertyTypeId, maxPrice }));
+      return;
+    }
+    // Mapa: si el usuario eligió un lugar del autocomplete (y no editó el texto luego),
+    // pasamos coords + bbox para que el mapa haga zoom a esa zona. Ver ExplorePage/ProvinceMap.
+    const loc = inputValue.trim();
+    const base = `/explore/${operation || "Comprar"}`;
+    const place = selectedPlace && selectedPlace.value === loc ? selectedPlace : null;
+    const params = new URLSearchParams();
+    if (loc) params.set("location", loc);
+    if (place && place.lat != null && place.lon != null) {
+      params.set("lat", place.lat);
+      params.set("lng", place.lon);
+      if (Array.isArray(place.bbox) && place.bbox.length === 4) params.set("bbox", place.bbox.join(","));
+    }
+    const qs = params.toString();
+    navigate(qs ? `${base}?${qs}` : base);
   };
 
   // Cuando el gate se resuelve "allowed", recordamos y ejecutamos la acción pendiente.
@@ -68,7 +86,9 @@ export const useHomeSearch = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const selectSuggestion = (suggestion) => {
-    setInputValue(suggestion.city || suggestion.state || suggestion.value);
+    const value = suggestion.city || suggestion.state || suggestion.value;
+    setInputValue(value);
+    setSelectedPlace({ value, lat: suggestion.lat, lon: suggestion.lon, bbox: suggestion.bbox });
     setShowSuggestions(false);
     setFocusedIdx(-1);
     clearSuggestions();
