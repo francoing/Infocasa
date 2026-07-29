@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "knip": "knip",
-    "api:surface": "node scripts/api-surface.mjs"
+    "api:surface": "node scripts/api-surface.mjs",
+    "map:check": "node scripts/project-map-check.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.14",
@@ -41,8 +42,8 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
+    "happy-dom": "^20.11.1",
     "js-yaml": "^5.2.1",
-    "jsdom": "^29.1.1",
     "knip": "^6.27.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",

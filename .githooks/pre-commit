@@ -30,13 +30,19 @@ fi
 
 echo "✔ Lint OK"
 
-# Recordatorio de PROJECT-MAP (no bloquea).
-# Si tocaste src/, el mapa puede haber quedado desactualizado.
-if git diff --cached --name-only | grep -q "^src/"; then
+# Exactitud del PROJECT-MAP (gate duro, con dientes): rutas/hooks/stores/componentes
+# del código deben figurar en PROJECT-MAP.md. Chequea PRESENCIA por nombre, no un touch
+# (no se puede gamear bumpeando la fecha). Se corre con `node` directo (como eslint) para
+# no depender de bash/npm en el PATH del hook en Windows.
+echo "→ pre-commit: project-map (exactitud)"
+node scripts/project-map-check.mjs
+if [ $? -ne 0 ]; then
   echo ""
-  echo "⚠  Tocaste src/ — ¿actualizaste PROJECT-MAP.md? (Regla de oro #5)"
-  echo "   Si no cambió nada de rutas/hooks/stores/deuda, ignorá esto."
-  echo ""
+  echo "✖ PROJECT-MAP desactualizado. Agregá lo que falta (arriba) antes de commitear."
+  exit 1
 fi
+
+# Nota: el gate valida presencia, NO la descripción. Si cambió comportamiento/deuda,
+# actualizá también la prosa del PROJECT-MAP (Regla de oro #5).
 
 exit 0

@@ -32,3 +32,14 @@ jobs:
       - name: Dead code (knip)
         run: npm run knip
 
+      # Exactitud del PROJECT-MAP (gate duro): rutas/hooks/stores/componentes derivados
+      # del código deben figurar en PROJECT-MAP.md. Chequea presencia, no "¿lo tocaste?".
+      # Mata el drift que dejó BackButton/FooterLogo fuera del mapa.
+      - name: PROJECT-MAP al día (map:check)
+        run: npm run map:check
+
+      # Tests (gate duro): Vitest sobre happy-dom (sin binario nativo → estable en CI,
+      # a diferencia de jsdom que dio EPERM en Windows y por eso se había sacado).
+      - name: Tests (vitest + happy-dom)
+        run: npm run test
+

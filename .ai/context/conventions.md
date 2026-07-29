@@ -18,7 +18,8 @@
 - Viven en `features/{area}/pages/`, sufijo `Page` (ej. `SearchPage.jsx`).
 
 ### 5. Tests
-- `src/test/**`, sufijo `.test.js(x)` (ej. `usePlans.test.js`, `CheckoutModal.test.jsx`). Vitest + Testing Library.
+- `src/test/**`, sufijo `.test.js(x)` (ej. `usePlans.test.js`, `CheckoutModal.test.jsx`). **Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`; no usar `jsdom` — daba EPERM intermitente en Windows).
+- **`npm run test` es gate duro** (corre en CI). Una feature/fix con lógica nueva **suma o ajusta al menos un test**; no se baja ni se saca el gate para "pasar" (si algo es flaky, se arregla la causa). Ver `.ai/policies/architecture-policies.yaml` → `testing`.
 
 ---
 

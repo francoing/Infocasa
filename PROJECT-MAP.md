@@ -26,7 +26,7 @@ src/
 │                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
-│                            WhatsAppButton, Loader, Logo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
+│                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
 ├── data/provincias.json  ← datos estáticos de provincias
@@ -77,7 +77,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-`components/CheckoutModal`, `components/PlanStatusCard`, `hooks/usePlans`, `store/useAuthStore`, `setup.js`. Cobertura fina (a ampliar).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `hooks/usePlans`, `store/useAuthStore`, `setup.js` (36 tests). Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
 
@@ -103,7 +103,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Boundary de red con dientes + `fetch` de Nominatim movido a hook** — el `fetch` directo de `MapLocationSelector` pasó a `useGeocodeSearch` (capa de datos); el linter ahora prohíbe `fetch(`/`XMLHttpRequest` en `features/**`+`common/**` (`no-restricted-syntax`), no solo el import de `api/api.js`. Spec `quality/governance_enforcement`.
 - ✅ **Código muerto barrido + guardia `knip`** — se sumó `knip` como gate de CI y en su primera corrida detectó y se eliminaron: 5 archivos huérfanos (`PlanBadge`, `hooks/index.js` barrel, `useLeads`, `mock/data/cities.js`, `theme/aceTheme.js`), 2 exports muertos (`getPublisherById`, `deleteProperty` en `useProperties`) y 3 exports innecesarios de-exportados. Se declaró `js-yaml` (usaba `.eslintrc.cjs` sin estar en `package.json`). Spec `quality/deadcode_guard`.
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
-- 🟡 **`npm run test` — gate removido del CI (deuda declarada).** Toolchain de jsdom inestable en Windows (EPERM en node_modules). El CI corre solo `npm run lint` como gate duro. Criterio para volver a meter como gate: cobertura ≥ 80% en hooks críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`) + toolchain estable. Ver `.ai/policies/architecture-policies.yaml` sección `testing`.
+- ✅ **`npm run test` — VUELTO a ser gate duro (CI).** Se migró el entorno de `jsdom` → **`happy-dom`** (sin binario nativo → sin el EPERM intermitente de Windows que lo había sacado del CI). La suite (36 tests) corre estable local y en CI. Sigue vigente el objetivo de **ampliar cobertura** en los hooks de datos críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`); ver `.ai/policies/architecture-policies.yaml` sección `testing`. **Nuevo test → parte del trabajo, no opcional.**
 
 ### Backlog de reconciliación de la fitness function (ratchet)
 La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **✅ RATCHET SALDADO (0):** los 16 se refactorizaron; `LEGACY = {}` está **vacío** → la fitness function ya **no tiene excepciones**, todo el código cumple los límites. Los 2 últimos: `PropertyCard` (complexity) → helpers `conditionBadge`/`locationText` + sub-componentes `CardMedia`/`CardPrice`/`CardTags`/`CardFeatures`; `HomePage` (524 líneas) → `useHomeSearch` (hook) + `HomeHero`/`HomeSearchBox`/`FeaturedProperties`/`HomeBenefits`/`HomeCTA` (spec `home/homepage_split`). Regla: **no reintroducir entradas** a `LEGACY`.
@@ -117,4 +117,5 @@ La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con de
 - Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
 - **Guardia de código muerto: `knip`** (`knip.json`) — gate duro en CI (`npm run knip`). Detecta archivos, exports y dependencias huérfanos (lo que dejó pasar `AdminPage`/`ProfilePage` muertos). Debe quedar **limpio**.
 - **Coherencia contrato↔front:** `npm run api:surface` (script `scripts/api-surface.mjs`) + checklist en STEP 3.5 del workflow. Extrae la superficie de API real y la diffea contra el contrato del backend. No es gate de CI (el contrato vive en otro repo); es la ritualización del chequeo que faltaba (causa raíz de los filtros de search ausentes).
-- Comandos clave: `npm run lint` · `npm run knip` · `npm run api:surface` · `npm run test` · `npm run dev`.
+- **Exactitud del PROJECT-MAP con dientes: `npm run map:check`** (`scripts/project-map-check.mjs`) — **gate duro** en CI y pre-commit. Deriva del código rutas/hooks/stores/componentes comunes y **falla si alguno no figura en este archivo**. Chequea PRESENCIA por nombre (no un touch → no se gamea bumpeando la fecha; no valida la descripción, eso sigue siendo criterio humano). Nace de que el mapa driftó (`BackButton`/`FooterLogo` quedaron fuera).
+- Comandos clave: `npm run lint` · `npm run knip` · `npm run map:check` · `npm run api:surface` · `npm run test` · `npm run dev`.
