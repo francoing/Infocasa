@@ -77,7 +77,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `setup.js` (47 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `setup.js` (50 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
 
@@ -91,7 +91,8 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Ajustes mobile-first** — overflow horizontal del detalle (breadcrumb que empujaba el ancho), flechas del lightbox visibles en touch (antes `opacity-0 group-hover`), y control de orden del listado (etiqueta oculta + flecha propia centrada) en mobile.
 
 ### Ciclo 2026-07-29 (cruce mapa ↔ listado)
-- ✅ **Navegación cruzada mapa ↔ listado** — botón **"Ver propiedades en listado"** debajo del mapa (`ExplorePage` → `/search` con operación+ubicación vía `exploreToSearchUrl`) y botón **"Ver en el mapa"** en el panel de filtros, bajo el título "Filtros" antes de "Restablecer" (`SearchFilters`/`SearchPage` → `/explore/:op` vía `searchToExploreUrl`). Helpers puros nuevos: `features/explore/explore.helpers.js`, `searchToExploreUrl` en `search.helpers`. Ambos con test (`test/helpers/crossNav`, `test/components/SearchFilters`). Limitación conocida: listado→mapa no lleva coords (sin zoom fino hasta reseleccionar).
+- ✅ **Navegación cruzada mapa ↔ listado** — botón **"Ver propiedades en listado"** debajo del mapa (`ExplorePage` → `/search` con operación+ubicación vía `exploreToSearchUrl`) y botón **"Ver en el mapa"** en el panel de filtros, bajo el título "Filtros" antes de "Restablecer" (`SearchFilters`/`SearchPage` → `/explore/:op` vía `searchToExploreUrl`). Helpers puros nuevos: `features/explore/explore.helpers.js`, `searchToExploreUrl` en `search.helpers`. Ambos con test (`test/helpers/crossNav`, `test/components/SearchFilters`).
+- ✅ **Ubicación del filtro → zoom en el mapa** — el autocomplete del filtro (`LocationAutocomplete`) ahora expone `onPick` con las coords de la sugerencia; `SearchFilters` las guarda y el botón "Ver en el mapa" arma un intent con `lat/lng/bbox` (solo si el texto sigue coincidiendo con lo elegido). `searchToExploreUrl` emite esas coords → el mapa hace zoom (mismo shape de URL que el home). Sin elegir sugerencia (texto suelto) → sin zoom fino, como antes (sin regresión).
 - ✅ **Fix gate de ubicación por acentos** — Geoapify devuelve la provincia sin acento ("Tucuman") y la comparación exacta marcaba **fuera de zona** a usuarios de Tucumán. `useUserProvince.helpers.js` (nuevo: `normalizeProvince`/`isAllowedProvince`, con test) normaliza acentos/casing y tolera prefijo "Provincia de …"; `useUserProvince` usa el helper.
 
 ### Histórico

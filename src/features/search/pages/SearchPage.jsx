@@ -77,7 +77,7 @@ export default function SearchPage() {
             onApply={handleApplyFilters}
             onReset={handleReset}
             onClose={() => setShowMobileFilters(false)}
-            onGoToMap={() => navigate(searchToExploreUrl(currentFilters))}
+            onGoToMap={(intent) => navigate(searchToExploreUrl(intent))}
             agencies={agencies}
             propertyTypes={propertyTypes}
             locations={locations}

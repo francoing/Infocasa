@@ -66,14 +66,23 @@ const EXPLORE_OPERATION = { sale: "Comprar", rent: "Alquilar", temporary_rent: "
 
 /**
  * Arma la URL del mapa (/explore/:operation) desde los filtros del listado.
- * El listado guarda la ubicación como texto (sin coords): el mapa abre con la
- * operación correcta y el buscador precargado, pero sin zoom fino hasta reseleccionar.
+ * Si el filtro trae coords de una sugerencia elegida (`lat`/`lng`/`bbox`), las emite
+ * para que el mapa haga zoom a esa zona (mismo shape de URL que produce el home).
+ * Sin coords, pasa solo la ubicación como texto: el mapa abre con la operación correcta
+ * y el buscador precargado, pero sin zoom fino hasta reseleccionar.
  */
 export const searchToExploreUrl = (filters = {}) => {
   const op = EXPLORE_OPERATION[filters.operation] || "Comprar";
   const params = new URLSearchParams();
   const location = filters.location || filters.department || filters.province;
   if (location) params.set("location", location);
+  if (filters.lat != null && filters.lng != null) {
+    params.set("lat", filters.lat);
+    params.set("lng", filters.lng);
+  }
+  if (Array.isArray(filters.bbox) && filters.bbox.length === 4) {
+    params.set("bbox", filters.bbox.join(","));
+  }
   const qs = params.toString();
   return `/explore/${op}${qs ? `?${qs}` : ""}`;
 };

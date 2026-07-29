@@ -5,8 +5,10 @@ import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
 /**
  * Input de ciudad/ubicación con autocompletado Geoapify (capa de datos vía hook).
  * `value` es el texto actual; `onChange(cityString)` se llama al tipear o elegir sugerencia.
+ * `onPick(sugerencia)` (opcional) se llama SOLO al elegir una sugerencia: incluye
+ * `lat`/`lon`/`bbox` para que el consumidor pueda, por ejemplo, hacer zoom en el mapa.
  */
-export default function LocationAutocomplete({ value, onChange }) {
+export default function LocationAutocomplete({ value, onChange, onPick }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState(-1);
   const inputRef = useRef(null);
@@ -14,6 +16,7 @@ export default function LocationAutocomplete({ value, onChange }) {
 
   const pick = (s) => {
     onChange(s.city || s.state || s.value);
+    onPick?.(s);
     setShowSuggestions(false);
     setFocusedIdx(-1);
     clearSuggestions();
