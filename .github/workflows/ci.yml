@@ -32,3 +32,9 @@ jobs:
       - name: Dead code (knip)
         run: npm run knip
 
+      # Exactitud del PROJECT-MAP (gate duro): rutas/hooks/stores/componentes derivados
+      # del código deben figurar en PROJECT-MAP.md. Chequea presencia, no "¿lo tocaste?".
+      # Mata el drift que dejó BackButton/FooterLogo fuera del mapa.
+      - name: PROJECT-MAP al día (map:check)
+        run: npm run map:check
+
