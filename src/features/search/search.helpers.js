@@ -60,6 +60,24 @@ export const deriveLocationOptions = (locations = [], province = "") => {
   return { provinces, departments };
 };
 
+// Mapa inverso operación → segmento del path del mapa (/explore/:operation).
+// El mapa exige una operación; si el listado está en "Todas", defaulteamos a Comprar.
+const EXPLORE_OPERATION = { sale: "Comprar", rent: "Alquilar", temporary_rent: "Temporario" };
+
+/**
+ * Arma la URL del mapa (/explore/:operation) desde los filtros del listado.
+ * El listado guarda la ubicación como texto (sin coords): el mapa abre con la
+ * operación correcta y el buscador precargado, pero sin zoom fino hasta reseleccionar.
+ */
+export const searchToExploreUrl = (filters = {}) => {
+  const op = EXPLORE_OPERATION[filters.operation] || "Comprar";
+  const params = new URLSearchParams();
+  const location = filters.location || filters.department || filters.province;
+  if (location) params.set("location", location);
+  const qs = params.toString();
+  return `/explore/${op}${qs ? `?${qs}` : ""}`;
+};
+
 export const OPERATION_OPTIONS = [
   { value: "", label: "Todas las operaciones" },
   { value: "sale", label: "Comprar" },

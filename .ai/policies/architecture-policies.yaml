@@ -43,11 +43,9 @@ boundaries:
     allowed_importers:
       - "src/hooks/**"
 
-# Estado de tests — deuda declarada, no gate aún.
-# Criterio para promover a gate duro en CI:
-#   1. Cobertura ≥ 80% en hooks críticos (useAuth, useProperties, useLeads, usePlans).
-#   2. Toolchain estable: jsdom sin EPERM en Windows + CI Linux en verde consistente.
-# Hasta entonces: `npm run test` corre localmente como referencia, no bloquea CI.
+# Estado de tests — GATE DURO. Corre en .github/workflows/ci.yml y bloquea (exit 1).
+# Migrado a happy-dom (jsdom daba EPERM intermitente en Windows); estable en Windows y CI Linux.
+# Cobertura ≥ 80% en hooks críticos sigue siendo objetivo (aún no alcanzado), no condición del gate.
 testing:
   status: "gate_duro"          # valores posibles: deuda_declarada | advisory | gate_duro
   runner: "vitest"
@@ -57,5 +55,8 @@ testing:
     hooks_criticos: 80         # objetivo de cobertura para los 4 hooks de datos clave (aún por alcanzar)
   reglas:
     - "Toda feature/fix con lógica nueva suma o ajusta al menos un test (no es opcional)."
+    - "Funcionalidad importante NUEVA = test obligatorio: botón con lógica (navegación/acción),
+       componente nuevo, hook nuevo, o helper puro con lógica. Un helper puro se testea directo;
+       un botón se testea por su callback o por la URL/acción que produce."
     - "El gate NO se baja ni se saca del CI para 'pasar'; si un test es flaky, se arregla la causa."
 

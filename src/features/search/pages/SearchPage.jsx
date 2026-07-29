@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Search as SearchIcon, ChevronLeft, ChevronRight, ChevronDown, Loader2, Filter } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
 import { useAgencies } from "../../../hooks/useAgencies";
 import { usePropertyFormRefs } from "../../../hooks/usePropertyFormRefs";
 import SearchFilters from "../components/SearchFilters";
-import { readFilters, filtersToUrlParams } from "../search.helpers";
+import { readFilters, filtersToUrlParams, searchToExploreUrl } from "../search.helpers";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [form, setForm] = useState(() => readFilters(searchParams));
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -76,6 +77,7 @@ export default function SearchPage() {
             onApply={handleApplyFilters}
             onReset={handleReset}
             onClose={() => setShowMobileFilters(false)}
+            onGoToMap={() => navigate(searchToExploreUrl(currentFilters))}
             agencies={agencies}
             propertyTypes={propertyTypes}
             locations={locations}
