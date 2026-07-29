@@ -49,10 +49,13 @@ boundaries:
 #   2. Toolchain estable: jsdom sin EPERM en Windows + CI Linux en verde consistente.
 # Hasta entonces: `npm run test` corre localmente como referencia, no bloquea CI.
 testing:
-  status: "deuda_declarada"   # valores posibles: deuda_declarada | advisory | gate_duro
+  status: "gate_duro"          # valores posibles: deuda_declarada | advisory | gate_duro
+  runner: "vitest"
+  environment: "happy-dom"     # migrado desde jsdom (EPERM intermitente en Windows) → estable en CI
+  command: "npm run test"      # corre en .github/workflows/ci.yml (gate duro)
   coverage_target:
-    hooks_criticos: 80        # % de cobertura objetivo para los 4 hooks de datos clave
-  gate_duro_cuando:
-    - "coverage_target.hooks_criticos alcanzado"
-    - "toolchain estable en Windows y CI Linux"
+    hooks_criticos: 80         # objetivo de cobertura para los 4 hooks de datos clave (aún por alcanzar)
+  reglas:
+    - "Toda feature/fix con lógica nueva suma o ajusta al menos un test (no es opcional)."
+    - "El gate NO se baja ni se saca del CI para 'pasar'; si un test es flaky, se arregla la causa."
 

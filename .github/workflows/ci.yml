@@ -38,3 +38,8 @@ jobs:
       - name: PROJECT-MAP al día (map:check)
         run: npm run map:check
 
+      # Tests (gate duro): Vitest sobre happy-dom (sin binario nativo → estable en CI,
+      # a diferencia de jsdom que dio EPERM en Windows y por eso se había sacado).
+      - name: Tests (vitest + happy-dom)
+        run: npm run test
+
