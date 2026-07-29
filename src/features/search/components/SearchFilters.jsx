@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { X, MapPin } from "lucide-react";
 import LocationAutocomplete from "./LocationAutocomplete";
 import { deriveLocationOptions, CONDITION_OPTIONS, OPERATION_OPTIONS } from "../search.helpers";
@@ -67,6 +67,23 @@ export default function SearchFilters({
 }) {
   const { provinces, departments } = deriveLocationOptions(locations, form.province);
 
+  // Coords de la última sugerencia elegida en el autocomplete (para el zoom del mapa).
+  // Guardamos también el texto: si el usuario edita la ubicación luego de elegir, dejan
+  // de coincidir y descartamos las coords (evita mandar coords que ya no corresponden).
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const handlePickLocation = (s) =>
+    setSelectedPlace({ text: s.city || s.state || s.value, lat: s.lat, lng: s.lon, bbox: s.bbox });
+
+  const handleGoToMap = () => {
+    const coordsMatch = selectedPlace && selectedPlace.text === form.location;
+    onGoToMap({
+      ...form,
+      lat: coordsMatch ? selectedPlace.lat : undefined,
+      lng: coordsMatch ? selectedPlace.lng : undefined,
+      bbox: coordsMatch ? selectedPlace.bbox : undefined,
+    });
+  };
+
   return (
     <div className="h-full flex flex-col p-6 overflow-y-auto lg:sticky lg:top-28 lg:overflow-visible bg-slate-50 lg:bg-transparent rounded-none lg:border-0 lg:p-0">
       <div className="flex justify-between items-center lg:hidden mb-6">
@@ -82,7 +99,7 @@ export default function SearchFilters({
         {onGoToMap && (
           <button
             type="button"
-            onClick={onGoToMap}
+            onClick={handleGoToMap}
             className="w-full flex items-center justify-center gap-2 mb-4 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition-all"
           >
             <MapPin className="w-4 h-4" /> Ver en el mapa
@@ -110,7 +127,11 @@ export default function SearchFilters({
             </select>
           </Field>
 
-          <LocationAutocomplete value={form.location} onChange={(v) => setField("location", v)} />
+          <LocationAutocomplete
+            value={form.location}
+            onChange={(v) => setField("location", v)}
+            onPick={handlePickLocation}
+          />
 
           {provinces.length > 0 && (
             <Field label="Provincia">
