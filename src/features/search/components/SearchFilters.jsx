@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, MapPin } from "lucide-react";
 import LocationAutocomplete from "./LocationAutocomplete";
 import { deriveLocationOptions, CONDITION_OPTIONS, OPERATION_OPTIONS } from "../search.helpers";
 
@@ -60,6 +60,7 @@ export default function SearchFilters({
   onApply,
   onReset,
   onClose,
+  onGoToMap,
   agencies = [],
   propertyTypes = [],
   locations = [],
@@ -75,15 +76,22 @@ export default function SearchFilters({
         </button>
       </div>
       <div>
-        <div className="hidden lg:flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Filtros</h2>
-          <button onClick={onReset} className="text-xs font-bold text-blue-600 hover:underline">
-            Restablecer todo
+        <h2 className="hidden lg:block text-2xl font-bold text-slate-900 mb-4">Filtros</h2>
+
+        {/* Cruce al mapa conservando la operación de la búsqueda actual. */}
+        {onGoToMap && (
+          <button
+            type="button"
+            onClick={onGoToMap}
+            className="w-full flex items-center justify-center gap-2 mb-4 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition-all"
+          >
+            <MapPin className="w-4 h-4" /> Ver en el mapa
           </button>
-        </div>
-        <div className="lg:hidden mb-6">
-          <button onClick={onReset} className="text-sm font-bold text-blue-600 hover:underline w-full text-left">
-            Restablecer filtros
+        )}
+
+        <div className="mb-6">
+          <button onClick={onReset} className="text-sm font-bold text-blue-600 hover:underline">
+            Restablecer búsqueda
           </button>
         </div>
 

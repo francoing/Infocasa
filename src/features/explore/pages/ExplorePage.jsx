@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Search } from "lucide-react";
+import { ArrowLeft, MapPin, Search, List } from "lucide-react";
 import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
 import { useExploreProperties } from "../../../hooks/useExploreProperties";
 import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
+import { exploreToSearchUrl } from "../explore.helpers";
 
 const OPERATION_MAP = {
   Comprar: { api: "sale", label: "Comprá", searchOp: "Venta" },
@@ -220,6 +221,15 @@ export default function ExplorePage() {
             />
           )}
         </div>
+
+        {/* Cruce a la vista de listado conservando operación y ubicación buscada. */}
+        <button
+          type="button"
+          onClick={() => navigate(exploreToSearchUrl({ operationApi: opConfig.api, location: locationQuery }))}
+          className="w-full mt-4 flex items-center justify-center gap-2 bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/10"
+        >
+          <List className="w-5 h-5" /> Ver propiedades en listado
+        </button>
       </div>
     </Layout>
   );

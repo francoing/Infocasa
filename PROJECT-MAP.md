@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-07-28** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-07-29** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -77,7 +77,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `hooks/usePlans`, `store/useAuthStore`, `setup.js` (36 tests). Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `setup.js` (43 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
 
@@ -89,6 +89,9 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Consulta (lead) precargada con el usuario logueado** — `usePropertyDetail` + `leadFormForUser` completan nombre/email/teléfono si hay sesión (solo campos vacíos; se re-precarga tras enviar).
 - ✅ **`certification_document_url` = URL firmada temporal** — el backend endureció el archivo (disco privado + ruta `signed`); el front lo consume igual en `<img>`/`<iframe>` (la firma va en la query). Si expira, recargar el detalle.
 - ✅ **Ajustes mobile-first** — overflow horizontal del detalle (breadcrumb que empujaba el ancho), flechas del lightbox visibles en touch (antes `opacity-0 group-hover`), y control de orden del listado (etiqueta oculta + flecha propia centrada) en mobile.
+
+### Ciclo 2026-07-29 (cruce mapa ↔ listado)
+- ✅ **Navegación cruzada mapa ↔ listado** — botón **"Ver propiedades en listado"** debajo del mapa (`ExplorePage` → `/search` con operación+ubicación vía `exploreToSearchUrl`) y botón **"Ver en el mapa"** en el panel de filtros, bajo el título "Filtros" antes de "Restablecer" (`SearchFilters`/`SearchPage` → `/explore/:op` vía `searchToExploreUrl`). Helpers puros nuevos: `features/explore/explore.helpers.js`, `searchToExploreUrl` en `search.helpers`. Ambos con test (`test/helpers/crossNav`, `test/components/SearchFilters`). Limitación conocida: listado→mapa no lleva coords (sin zoom fino hasta reseleccionar).
 
 ### Histórico
 - ✅ **Moneda nativa / `price_usd` retirado** (spec `search/currency_native`). La búsqueda filtra por `currency` (`SearchPage` → `useProperties`, default por operación en el backend); creación/edición/reducción mandan solo `price_amount`/`price_currency`. Se eliminó la conversión inventada (`ARS/1000`).
