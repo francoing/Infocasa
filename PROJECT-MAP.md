@@ -77,7 +77,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `setup.js` (43 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `setup.js` (47 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
 
@@ -92,6 +92,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ### Ciclo 2026-07-29 (cruce mapa ↔ listado)
 - ✅ **Navegación cruzada mapa ↔ listado** — botón **"Ver propiedades en listado"** debajo del mapa (`ExplorePage` → `/search` con operación+ubicación vía `exploreToSearchUrl`) y botón **"Ver en el mapa"** en el panel de filtros, bajo el título "Filtros" antes de "Restablecer" (`SearchFilters`/`SearchPage` → `/explore/:op` vía `searchToExploreUrl`). Helpers puros nuevos: `features/explore/explore.helpers.js`, `searchToExploreUrl` en `search.helpers`. Ambos con test (`test/helpers/crossNav`, `test/components/SearchFilters`). Limitación conocida: listado→mapa no lleva coords (sin zoom fino hasta reseleccionar).
+- ✅ **Fix gate de ubicación por acentos** — Geoapify devuelve la provincia sin acento ("Tucuman") y la comparación exacta marcaba **fuera de zona** a usuarios de Tucumán. `useUserProvince.helpers.js` (nuevo: `normalizeProvince`/`isAllowedProvince`, con test) normaliza acentos/casing y tolera prefijo "Provincia de …"; `useUserProvince` usa el helper.
 
 ### Histórico
 - ✅ **Moneda nativa / `price_usd` retirado** (spec `search/currency_native`). La búsqueda filtra por `currency` (`SearchPage` → `useProperties`, default por operación en el backend); creación/edición/reducción mandan solo `price_amount`/`price_currency`. Se eliminó la conversión inventada (`ARS/1000`).
