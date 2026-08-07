@@ -60,31 +60,25 @@ export const deriveLocationOptions = (locations = [], province = "") => {
   return { provinces, departments };
 };
 
-// Mapa inverso operación → segmento del path del mapa (/explore/:operation).
-// El mapa exige una operación; si el listado está en "Todas", defaulteamos a Comprar.
-const EXPLORE_OPERATION = { sale: "Comprar", rent: "Alquilar", temporary_rent: "Temporario" };
-
 /**
- * Arma la URL del mapa (/explore/:operation) desde los filtros del listado.
- * Si el filtro trae coords de una sugerencia elegida (`lat`/`lng`/`bbox`), las emite
- * para que el mapa haga zoom a esa zona (mismo shape de URL que produce el home).
- * Sin coords, pasa solo la ubicación como texto: el mapa abre con la operación correcta
- * y el buscador precargado, pero sin zoom fino hasta reseleccionar.
+ * Arma la URL del mapa (/explore) desde los filtros del listado, conservando TODOS los
+ * filtros (paridad listado → mapa; mismo esquema de query params). Si el filtro trae coords
+ * de una sugerencia elegida (`lat`/`lng`/`bbox`), las emite para que el mapa haga zoom.
  */
 export const searchToExploreUrl = (filters = {}) => {
-  const op = EXPLORE_OPERATION[filters.operation] || "Comprar";
-  const params = new URLSearchParams();
-  const location = filters.location || filters.department || filters.province;
-  if (location) params.set("location", location);
-  if (filters.lat != null && filters.lng != null) {
-    params.set("lat", filters.lat);
-    params.set("lng", filters.lng);
+  // Las coords NO son filtros: se separan para que filtersToUrlParams no las serialice
+  // sueltas (y no se cuelen coords parciales). Se agregan aparte, juntas, para el zoom.
+  const { lat, lng, bbox, ...rest } = filters;
+  const params = new URLSearchParams(filtersToUrlParams(rest));
+  if (lat != null && lng != null) {
+    params.set("lat", lat);
+    params.set("lng", lng);
   }
-  if (Array.isArray(filters.bbox) && filters.bbox.length === 4) {
-    params.set("bbox", filters.bbox.join(","));
+  if (Array.isArray(bbox) && bbox.length === 4) {
+    params.set("bbox", bbox.join(","));
   }
   const qs = params.toString();
-  return `/explore/${op}${qs ? `?${qs}` : ""}`;
+  return `/explore${qs ? `?${qs}` : ""}`;
 };
 
 export const OPERATION_OPTIONS = [

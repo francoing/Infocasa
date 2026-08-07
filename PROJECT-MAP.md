@@ -22,7 +22,7 @@ src/
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
-│                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications,
 │                            useHomeSearch, useGeoapifyPlaces, useGeoapifyGeocode, useUserProvince, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
@@ -40,7 +40,7 @@ src/
 | `/` | HomePage | pública |
 | `/search` | SearchPage | pública |
 | `/property/:id` | PropertyDetailPage | pública |
-| `/explore/:operation` | ExplorePage (mapa) | pública |
+| `/explore` (+ `/explore/:operation` compat) | ExplorePage (mapa, filter-driven) | pública |
 | `/share/:propertyId?` | SharePage | pública |
 | `/login` `/register` `/forgot-password` `/reset-password` | Auth pages | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
@@ -77,7 +77,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/geoapifyGeocode`, `setup.js` (53 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/geoapifyGeocode`, `setup.js` (52 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
 
@@ -85,7 +85,8 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Navegación: botón "Volver" global** — `common/components/BackButton.jsx` (vuelve a la página anterior; si no hay historial, va al home). En `Layout` (todas las rutas menos home, dentro del header) y en el header mobile de `AdminLayout`. Se **quitó el enlace "Todas las Propiedades"** del header; su función pasó al buscador del home.
 - ✅ **Home: buscador con dos salidas** — "Listado de propiedades" (submit/Enter → `/search` con filtros) y "Buscar en Mapa" (→ `/explore`). `useHomeSearch` separa acciones `list`/`map` (respeta el gate de ubicación). Se **quitó el select "Precio"**. El **Tipo** ahora usa `property_type_id` real (mismos ids que el panel de filtros) → queda seleccionado al llegar a `/search`.
 - ✅ **Mapa (`/explore`) centrado en la búsqueda** — el home y el buscador del propio mapa pasan `lat/lng/bbox` (Geoapify; `useGeoapifyPlaces` ahora expone `bbox`) por la URL; `ExplorePage` arma un `focus` y `ProvinceMap` (componente `MapView`) hace **zoom al bbox/centro** en vez de a todo el país. El buscador del mapa **hace zoom** (ya no navega a `/search`) y viene **precargado** con lo buscado en el home.
-- ✅ **Zoom del mapa aunque falten coords** — si llega `location` por texto sin `lat/lng` (búsqueda que no eligió sugerencia, u operación "Todas" → `/explore/Comprar`), `ExplorePage` geocodifica con `useGeoapifyGeocode` (`parseFirstGeocode`, con test) y usa `effectiveFocus = focus || geocodedFocus`. Antes caía a `fitBounds(todos los marcadores)` = "mapa entero". Spec `explore/zoom_geocode_location`.
+- ✅ **Zoom del mapa aunque falten coords** — si llega `location` por texto sin `lat/lng` (búsqueda que no eligió sugerencia), `ExplorePage` geocodifica con `useGeoapifyGeocode` (`parseFirstGeocode`, con test) y usa `effectiveFocus = focus || geocodedFocus`. Antes caía a `fitBounds(todos los marcadores)` = "mapa entero". Spec `explore/zoom_geocode_location`.
+- ✅ **Paridad de filtros listado ↔ mapa** — `/explore` pasó a ser **filter-driven por query params** (mismo esquema que `/search`; `/explore/:operation` queda como compat que siembra la operación). El mapa reusa `SearchFilters` (sidebar + drawer) y trae marcadores con **`useProperties(filters)`** (se retiró `useExploreProperties`). "Aplicar Filtros" re-busca en el mapa; el botón de cruce dice **"Ver listado"** (mapa) / **"Ver en el mapa"** (listado) y "Aplicar" quedó **debajo** del cruce. `searchToExploreUrl`/`exploreToSearchUrl` conservan **todos** los filtros; **"Todas las operaciones" funciona en el mapa**. Spec `explore/map_filters_parity`.
 - ✅ **Sugeridas relacionadas con la propiedad vista** — el pool se acota a **misma operación + provincia** (`buildRelatedFilters`) vía `/properties/search` y se rankea por afinidad, en vez de traer `/properties` sin filtros (antes un temporario sugería ventas de otra zona).
 - ✅ **Consulta (lead) precargada con el usuario logueado** — `usePropertyDetail` + `leadFormForUser` completan nombre/email/teléfono si hay sesión (solo campos vacíos; se re-precarga tras enviar).
 - ✅ **`certification_document_url` = URL firmada temporal** — el backend endureció el archivo (disco privado + ruta `signed`); el front lo consume igual en `<img>`/`<iframe>` (la firma va en la query). Si expira, recargar el detalle.
@@ -114,7 +115,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 ### Backlog de reconciliación de la fitness function (ratchet)
 La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **✅ RATCHET SALDADO (0):** los 16 se refactorizaron; `LEGACY = {}` está **vacío** → la fitness function ya **no tiene excepciones**, todo el código cumple los límites. Los 2 últimos: `PropertyCard` (complexity) → helpers `conditionBadge`/`locationText` + sub-componentes `CardMedia`/`CardPrice`/`CardTags`/`CardFeatures`; `HomePage` (524 líneas) → `useHomeSearch` (hook) + `HomeHero`/`HomeSearchBox`/`FeaturedProperties`/`HomeBenefits`/`HomeCTA` (spec `home/homepage_split`). Regla: **no reintroducir entradas** a `LEGACY`.
 
-- **Boundary (UI→api directo)** — ✅ **categoría saldada.** `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`); `PropertyCard`→`useFavorites`, `ExplorePage`→`useExploreProperties`, `CreatePropertyPage`→`usePublications` (spec `quality/boundary_cleanup`). El boundary UI→api queda **enforced** en toda la capa UI.
+- **Boundary (UI→api directo)** — ✅ **categoría saldada.** `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`); `PropertyCard`→`useFavorites`, `ExplorePage`→`useProperties`, `CreatePropertyPage`→`usePublications` (spec `quality/boundary_cleanup`). El boundary UI→api queda **enforced** en toda la capa UI.
 - **rules-of-hooks** — ✅ **categoría saldada.** `PropertyCard`/`PropertyMap`/`ProvinceMap`: hooks antes del `return` condicional (crash real; spec `quality/hooks_order_fix`). `useLeads`/`usePlans`/`useProperties`: el hack `getQueryClient` (que además **rompía la invalidación de cache** en las funciones exportadas de `useProperties`) → `useQueryClient()` incondicional + singleton en `src/lib/queryClient.js` (spec `quality/query_client_singleton`).
 - **Tamaño/complejidad** — ✅ **categoría saldada (ratchet en 0).** *(salieron enteros: `PropertyCard` → helpers + sub-componentes y `HomePage` → `useHomeSearch` + secciones (spec `home/homepage_split`); `SearchPage` → `components/SearchFilters` + `components/LocationAutocomplete` + `search.helpers` (spec `search/advanced_filters`); `PropertyDetailPage` → `components/detail/` (spec `property/detail_split`); `ProfilePage` (591→200) → `components/` + `useMercadoPagoReturn` (spec `profile/profile_split`); `DashboardPage` (981→204) → `components/` (spec `dashboard/dashboard_split`); `PropertyForm` (1068→95) → `usePropertyForm` + `propertyForm.helpers` + `components/form/` (spec `property/property_form_split`); `useDashboardData` (352→51) → sub-hooks (spec `dashboard/dashboard_data_split`); `usePropertyDetail` + `mapProperty` → helpers puros (spec `property/detail_and_mapper_split`).)*
 

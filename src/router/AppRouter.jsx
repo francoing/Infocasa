@@ -48,7 +48,9 @@ const AppRouter = () => {
           {/* Ruta de Compartir - Pública */}
           <Route path="/share/:propertyId?" element={<SharePage />} />
 
-          {/* Exploración por mapa */}
+          {/* Exploración por mapa — filter-driven por query params.
+              `/explore/:operation` se mantiene como compat de enlaces viejos (siembra la operación). */}
+          <Route path="/explore" element={<ExplorePage />} />
           <Route path="/explore/:operation" element={<ExplorePage />} />
 
           {/* Rutas Protegidas - General (Cualquier usuario logueado) */}
