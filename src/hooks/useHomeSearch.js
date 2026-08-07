@@ -54,20 +54,21 @@ export const useHomeSearch = () => {
       navigate(buildSearchUrl({ operation, inputValue, propertyTypeId, maxPrice }));
       return;
     }
-    // Mapa: si el usuario eligió un lugar del autocomplete (y no editó el texto luego),
-    // pasamos coords + bbox para que el mapa haga zoom a esa zona. Ver ExplorePage/ProvinceMap.
+    // Mapa (filter-driven por query, igual que /search): operación + tipo + ubicación.
+    // Si el usuario eligió un lugar del autocomplete (y no editó el texto luego), pasamos
+    // coords + bbox para que el mapa haga zoom a esa zona. Ver ExplorePage/ProvinceMap.
     const loc = inputValue.trim();
-    const base = `/explore/${operation || "Comprar"}`;
     const place = selectedPlace && selectedPlace.value === loc ? selectedPlace : null;
     const params = new URLSearchParams();
+    params.set("operation", mapOperationToApi(operation));
     if (loc) params.set("location", loc);
+    if (propertyTypeId) params.set("propertyTypeId", propertyTypeId);
     if (place && place.lat != null && place.lon != null) {
       params.set("lat", place.lat);
       params.set("lng", place.lon);
       if (Array.isArray(place.bbox) && place.bbox.length === 4) params.set("bbox", place.bbox.join(","));
     }
-    const qs = params.toString();
-    navigate(qs ? `${base}?${qs}` : base);
+    navigate(`/explore?${params.toString()}`);
   };
 
   // Cuando el gate se resuelve "allowed", recordamos y ejecutamos la acción pendiente.

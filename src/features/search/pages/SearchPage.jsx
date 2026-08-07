@@ -77,7 +77,8 @@ export default function SearchPage() {
             onApply={handleApplyFilters}
             onReset={handleReset}
             onClose={() => setShowMobileFilters(false)}
-            onGoToMap={(intent) => navigate(searchToExploreUrl(intent))}
+            onCrossView={(intent) => navigate(searchToExploreUrl(intent))}
+            crossViewLabel="Ver en el mapa"
             agencies={agencies}
             propertyTypes={propertyTypes}
             locations={locations}

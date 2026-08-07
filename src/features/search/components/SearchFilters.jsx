@@ -60,7 +60,9 @@ export default function SearchFilters({
   onApply,
   onReset,
   onClose,
-  onGoToMap,
+  onCrossView,
+  crossViewLabel,
+  crossViewIcon: CrossIcon = MapPin,
   agencies = [],
   propertyTypes = [],
   locations = [],
@@ -74,9 +76,11 @@ export default function SearchFilters({
   const handlePickLocation = (s) =>
     setSelectedPlace({ text: s.city || s.state || s.value, lat: s.lat, lng: s.lon, bbox: s.bbox });
 
-  const handleGoToMap = () => {
+  // Cruce a la otra vista (mapa ↔ listado) conservando los filtros. Adjunta coords de la
+  // sugerencia elegida (para el zoom del mapa) solo si el texto sigue coincidiendo.
+  const handleCrossView = () => {
     const coordsMatch = selectedPlace && selectedPlace.text === form.location;
-    onGoToMap({
+    onCrossView({
       ...form,
       lat: coordsMatch ? selectedPlace.lat : undefined,
       lng: coordsMatch ? selectedPlace.lng : undefined,
@@ -95,16 +99,24 @@ export default function SearchFilters({
       <div>
         <h2 className="hidden lg:block text-2xl font-bold text-slate-900 mb-4">Filtros</h2>
 
-        {/* Cruce al mapa conservando la operación de la búsqueda actual. */}
-        {onGoToMap && (
+        {/* Cruce a la otra vista (mapa ↔ listado) conservando los filtros. */}
+        {onCrossView && (
           <button
             type="button"
-            onClick={handleGoToMap}
-            className="w-full flex items-center justify-center gap-2 mb-4 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition-all"
+            onClick={handleCrossView}
+            className="w-full flex items-center justify-center gap-2 mb-3 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition-all"
           >
-            <MapPin className="w-4 h-4" /> Ver en el mapa
+            <CrossIcon className="w-4 h-4" /> {crossViewLabel}
           </button>
         )}
+
+        {/* Aplicar (la búsqueda) va debajo del botón de cruce. */}
+        <button
+          onClick={onApply}
+          className="w-full mb-4 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/10"
+        >
+          Aplicar Filtros
+        </button>
 
         <div className="mb-6">
           <button onClick={onReset} className="text-sm font-bold text-blue-600 hover:underline">
@@ -249,13 +261,6 @@ export default function SearchFilters({
               ))}
             </select>
           </Field>
-
-          <button
-            onClick={onApply}
-            className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/10"
-          >
-            Aplicar Filtros
-          </button>
         </div>
       </div>
     </div>
