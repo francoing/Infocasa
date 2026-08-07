@@ -7,7 +7,7 @@ import SearchFilters from "../../search/components/SearchFilters";
 import { useProperties } from "../../../hooks/useProperties";
 import { useAgencies } from "../../../hooks/useAgencies";
 import { usePropertyFormRefs } from "../../../hooks/usePropertyFormRefs";
-import { useGeoapifyGeocode } from "../../../hooks/useGeoapifyGeocode";
+import { findLocationFocus } from "../../../hooks/useLocationSearch.helpers";
 import { readFilters, filtersToUrlParams } from "../../search/search.helpers";
 import { exploreToSearchUrl, pathOperationToApi } from "../explore.helpers";
 
@@ -57,11 +57,15 @@ export default function ExplorePage() {
   // Marcadores del mapa: mismos filtros que el listado.
   const { data: properties, loading, error } = useProperties(currentFilters);
 
-  // Zoom: coords en la URL, o geocodificando la ubicación si vienen solo por texto.
+  // Zoom: coords en la URL, o resolviendo la ubicación por texto desde el INVENTARIO
+  // (mismas locations que alimentan el filtro) — sin depender de Geoapify.
   const locationQuery = searchParams.get("location") || "";
   const focus = useMemo(() => readFocus(searchParams), [searchParams]);
-  const geocodedFocus = useGeoapifyGeocode(locationQuery, !focus && locationQuery.trim().length >= 2);
-  const effectiveFocus = focus || geocodedFocus;
+  const inventoryFocus = useMemo(
+    () => (focus ? null : findLocationFocus(locations, locationQuery)),
+    [focus, locations, locationQuery]
+  );
+  const effectiveFocus = focus || inventoryFocus;
 
   // Aplicar/Reset NAVEGAN a /explore (sin el segmento de compat) → operación 100% por query,
   // así "Todas" (sin `operation`) muestra todas las operaciones.
