@@ -5,6 +5,7 @@ import Layout from "../../../common/components/Layout";
 import ProvinceMap from "../../home/components/ProvinceMap";
 import { useExploreProperties } from "../../../hooks/useExploreProperties";
 import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
+import { useGeoapifyGeocode } from "../../../hooks/useGeoapifyGeocode";
 import { exploreToSearchUrl } from "../explore.helpers";
 
 const OPERATION_MAP = {
@@ -34,6 +35,12 @@ export default function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const locationQuery = searchParams.get("location") || "";
   const focus = useMemo(() => readFocus(searchParams), [searchParams]);
+
+  // Si llegó una ubicación por TEXTO pero sin coords (ej. una búsqueda que no eligió
+  // sugerencia, u operación "Todas"), la geocodificamos para centrar igual el mapa.
+  // Con coords en la URL (`focus`), no se llama. `effectiveFocus` prioriza el foco real.
+  const geocodedFocus = useGeoapifyGeocode(locationQuery, !focus && locationQuery.trim().length >= 2);
+  const effectiveFocus = focus || geocodedFocus;
 
   // Capa de datos: react-query (loading/error/cancelación). No fetchea si la operación es inválida.
   const {
@@ -216,7 +223,7 @@ export default function ExplorePage() {
           ) : (
             <ProvinceMap
               properties={explorationProperties}
-              focus={focus}
+              focus={effectiveFocus}
               onPropertyClick={handlePropertyClick}
             />
           )}

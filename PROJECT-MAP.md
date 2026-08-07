@@ -23,7 +23,7 @@ src/
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, useExploreProperties, usePublications,
-│                            useHomeSearch, useGeoapifyPlaces, useUserProvince, useGeocodeSearch, useToast
+│                            useHomeSearch, useGeoapifyPlaces, useGeoapifyGeocode, useUserProvince, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
@@ -77,7 +77,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `setup.js` (50 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/geoapifyGeocode`, `setup.js` (53 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
 
@@ -85,6 +85,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Navegación: botón "Volver" global** — `common/components/BackButton.jsx` (vuelve a la página anterior; si no hay historial, va al home). En `Layout` (todas las rutas menos home, dentro del header) y en el header mobile de `AdminLayout`. Se **quitó el enlace "Todas las Propiedades"** del header; su función pasó al buscador del home.
 - ✅ **Home: buscador con dos salidas** — "Listado de propiedades" (submit/Enter → `/search` con filtros) y "Buscar en Mapa" (→ `/explore`). `useHomeSearch` separa acciones `list`/`map` (respeta el gate de ubicación). Se **quitó el select "Precio"**. El **Tipo** ahora usa `property_type_id` real (mismos ids que el panel de filtros) → queda seleccionado al llegar a `/search`.
 - ✅ **Mapa (`/explore`) centrado en la búsqueda** — el home y el buscador del propio mapa pasan `lat/lng/bbox` (Geoapify; `useGeoapifyPlaces` ahora expone `bbox`) por la URL; `ExplorePage` arma un `focus` y `ProvinceMap` (componente `MapView`) hace **zoom al bbox/centro** en vez de a todo el país. El buscador del mapa **hace zoom** (ya no navega a `/search`) y viene **precargado** con lo buscado en el home.
+- ✅ **Zoom del mapa aunque falten coords** — si llega `location` por texto sin `lat/lng` (búsqueda que no eligió sugerencia, u operación "Todas" → `/explore/Comprar`), `ExplorePage` geocodifica con `useGeoapifyGeocode` (`parseFirstGeocode`, con test) y usa `effectiveFocus = focus || geocodedFocus`. Antes caía a `fitBounds(todos los marcadores)` = "mapa entero". Spec `explore/zoom_geocode_location`.
 - ✅ **Sugeridas relacionadas con la propiedad vista** — el pool se acota a **misma operación + provincia** (`buildRelatedFilters`) vía `/properties/search` y se rankea por afinidad, en vez de traer `/properties` sin filtros (antes un temporario sugería ventas de otra zona).
 - ✅ **Consulta (lead) precargada con el usuario logueado** — `usePropertyDetail` + `leadFormForUser` completan nombre/email/teléfono si hay sesión (solo campos vacíos; se re-precarga tras enviar).
 - ✅ **`certification_document_url` = URL firmada temporal** — el backend endureció el archivo (disco privado + ruta `signed`); el front lo consume igual en `<img>`/`<iframe>` (la firma va en la query). Si expira, recargar el detalle.
