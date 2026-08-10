@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import PropertyCard from "../../../common/components/PropertyCard";
+import Loader from "../../../common/components/Loader";
 
 /** Grilla de propiedades destacadas (primeras 6). */
 export default function FeaturedProperties({ properties = [], loading, error }) {
@@ -20,9 +20,7 @@ export default function FeaturedProperties({ properties = [], loading, error }) 
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-        </div>
+        <Loader inline className="py-20" />
       ) : error ? (
         <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100">
           Error al cargar las propiedades.

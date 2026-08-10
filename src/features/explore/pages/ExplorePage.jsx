@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Filter, List, MapPin, Loader2 } from "lucide-react";
+import { Filter, List, MapPin } from "lucide-react";
 import Layout from "../../../common/components/Layout";
+import Loader from "../../../common/components/Loader";
 import ProvinceMap from "../../home/components/ProvinceMap";
 import SearchFilters from "../../search/components/SearchFilters";
 import { useProperties } from "../../../hooks/useProperties";
@@ -130,9 +131,7 @@ export default function ExplorePage() {
           )}
 
           {loading ? (
-            <div className="flex items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200">
-              <Loader2 className="w-12 h-12 animate-spin text-blue-600 opacity-20" />
-            </div>
+            <Loader inline className="h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200" />
           ) : properties.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[350px] md:h-[420px] bg-slate-50 rounded-xl border border-slate-200 text-center px-6">
               <MapPin className="w-8 h-8 text-slate-300 mb-2" />

@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Search as SearchIcon, ChevronLeft, ChevronRight, ChevronDown, Loader2, Filter } from "lucide-react";
+import { Search as SearchIcon, ChevronLeft, ChevronRight, ChevronDown, Filter } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
+import Loader from "../../../common/components/Loader";
 import PropertyCard from "../../../common/components/PropertyCard";
 import { useProperties } from "../../../hooks/useProperties";
 import { useAgencies } from "../../../hooks/useAgencies";
@@ -123,9 +124,7 @@ export default function SearchPage() {
           )}
 
           {loading ? (
-            <div className="flex justify-center items-center py-32">
-              <Loader2 className="w-12 h-12 animate-spin text-blue-600 opacity-20" />
-            </div>
+            <Loader inline className="py-32" />
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {properties.length > 0 ? (

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { MapPin, Share2, Heart, ChevronRight } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import Layout from "@/common/components/Layout";
+import Loader from "@/common/components/Loader";
 import PropertyCard from "@/common/components/PropertyCard";
 import PropertyMap from "../components/PropertyMap";
 import PropertyGalleryGrid from "../components/detail/PropertyGalleryGrid";
@@ -12,7 +13,6 @@ import PropertyTechnicalDetails from "../components/detail/PropertyTechnicalDeta
 import PropertyPriceBox from "../components/detail/PropertyPriceBox";
 import PropertyContactForm from "../components/detail/PropertyContactForm";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
-import loadingIcon from "@/assets/img/Icono.png";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -44,10 +44,7 @@ export default function PropertyDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-[70vh] flex flex-col items-center justify-center">
-          <img src={loadingIcon} alt="Cargando..." className="w-20 h-20 object-contain animate-heartbeat mb-4" />
-          <p className="text-slate-500 font-bold animate-pulse">Cargando propiedad premium...</p>
-        </div>
+        <Loader inline className="min-h-[70vh]" />
       </Layout>
     );
   }

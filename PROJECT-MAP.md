@@ -77,9 +77,12 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `setup.js` (56 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `setup.js` (60 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-08-10 (marca en los preloads)
+- ✅ **Preloads unificados con el isotipo de Infocasa** — `Loader` (`common/components/Loader.jsx`) es la **única fuente** para estados de carga de página/sección: isotipo de marca con `animate-heartbeat`. Nuevo prop `inline` (+ `className`/`label`) para cargar una sección dentro de un layout sin ocupar toda la pantalla. Se reemplazaron los spinners genéricos (`Loader2`) y el texto bespoke "Cargando propiedad premium…" por `<Loader>` en: `PropertyDetailPage`, `ExplorePage`, `SearchPage`, `FeaturedProperties` (home), `DashboardPage`, `EditPropertyPage`, `PropertyForm` (loadingRefs). Los spinners **chicos dentro de botones/inputs** (submit, autocomplete "Buscando…") **siguen con `Loader2`** (no son preloads). Test: `components/Loader`.
 
 ### Ciclo 2026-07-28 (UX + mobile + mapa)
 - ✅ **Navegación: botón "Volver" global** — `common/components/BackButton.jsx` (vuelve a la página anterior; si no hay historial, va al home). En `Layout` (todas las rutas menos home, dentro del header) y en el header mobile de `AdminLayout`. Se **quitó el enlace "Todas las Propiedades"** del header; su función pasó al buscador del home.
