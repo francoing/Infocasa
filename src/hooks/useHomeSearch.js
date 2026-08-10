@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGeoapifyAutocomplete } from "./useGeoapifyPlaces";
+import { useLocationSearch } from "./useLocationSearch";
 import { useUserProvince } from "./useUserProvince";
 import { usePropertyFormRefs } from "./usePropertyFormRefs";
 
@@ -82,7 +82,7 @@ export const useHomeSearch = () => {
     }
   }, [gateStatus, operation, inputValue, propertyTypeId, maxPrice, gateOpen, pendingAction]);
 
-  const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
+  const { suggestions, loading: geoLoading, setQuery, clearSuggestions } = useLocationSearch();
   const [focusedIdx, setFocusedIdx] = useState(-1);
   const [showSuggestions, setShowSuggestions] = useState(false);
 

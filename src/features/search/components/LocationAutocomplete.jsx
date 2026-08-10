@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Search as SearchIcon, MapPin, Loader2 } from "lucide-react";
-import { useGeoapifyAutocomplete } from "../../../hooks/useGeoapifyPlaces";
+import { useLocationSearch } from "../../../hooks/useLocationSearch";
 
 /**
  * Input de ciudad/ubicación con autocompletado Geoapify (capa de datos vía hook).
@@ -12,7 +12,7 @@ export default function LocationAutocomplete({ value, onChange, onPick }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState(-1);
   const inputRef = useRef(null);
-  const { suggestions, loading, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
+  const { suggestions, loading, setQuery, clearSuggestions } = useLocationSearch();
 
   const pick = (s) => {
     onChange(s.city || s.state || s.value);
@@ -76,7 +76,7 @@ export default function LocationAutocomplete({ value, onChange, onPick }) {
                   }`}
                 >
                   <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                  <span className="font-medium">{s.value}</span>
+                  <span className="font-medium">{s.label || s.value}</span>
                 </button>
               </li>
             ))}

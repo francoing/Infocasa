@@ -68,7 +68,7 @@ export default function HomeSearchBox({ s }) {
                       }`}
                   >
                     <MapPin className="w-4 h-4 flex-shrink-0 text-slate-400" />
-                    <span className="font-semibold">{sug.value}</span>
+                    <span className="font-semibold">{sug.label || sug.value}</span>
                   </button>
                 </li>
               ))}
