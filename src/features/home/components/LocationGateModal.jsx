@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Loader2, X } from "lucide-react";
+import { MapPin, X } from "lucide-react";
+import Loader from "../../../common/components/Loader";
 
 /**
  * LocationGateModal — Modal que guía al usuario en la verificación de provincia.
@@ -73,7 +74,7 @@ export default function LocationGateModal({ open, status, province, error, onAcc
             {/* ——— CHECKING ——— */}
             {status === "checking" && (
               <>
-                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-5" />
+                <Loader inline className="mb-5" />
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Verificando ubicación</h3>
                 <p className="text-slate-400 text-sm">Un momento por favor...</p>
               </>
