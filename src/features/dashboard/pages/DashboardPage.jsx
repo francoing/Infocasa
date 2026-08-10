@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import Layout from "@/common/components/Layout";
+import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import DashboardStats from "../components/DashboardStats";
@@ -198,9 +199,7 @@ export default function DashboardPage() {
         />
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-          </div>
+          <Loader inline className="py-20" />
         ) : (
           <div>{renderTab()}</div>
         )}
