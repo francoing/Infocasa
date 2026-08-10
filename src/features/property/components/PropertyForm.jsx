@@ -1,5 +1,6 @@
 import React from "react";
 import { Camera, Loader2, Save } from "lucide-react";
+import Loader from "../../../common/components/Loader";
 import ImageUploader from "./ImageUploader";
 import { usePropertyForm } from "../../../hooks/usePropertyForm";
 import MainInfoSection from "./form/MainInfoSection";
@@ -15,12 +16,7 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
   const form = usePropertyForm({ initialData, onSubmit });
 
   if (form.loadingRefs) {
-    return (
-      <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl border border-slate-200">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-bold text-sm">Cargando ubicaciones y categorías...</p>
-      </div>
-    );
+    return <Loader inline className="p-20 bg-white rounded-3xl border border-slate-200" />;
   }
 
   const { formData, handleChange } = form;
