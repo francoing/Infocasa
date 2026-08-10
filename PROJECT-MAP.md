@@ -78,7 +78,8 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `setup.js` (56 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `hooks/usePlans`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `setup.js` (60 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+
 
 ## Deuda técnica / drift conocido
 
