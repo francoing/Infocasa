@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-07-29** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-08-19** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -18,7 +18,7 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── features/{home,search,explore,property,auth,dashboard,profile,share}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`)
+├── features/{home,search,explore,property,auth,dashboard,profile,share,legal}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
@@ -43,6 +43,8 @@ src/
 | `/explore` (+ `/explore/:operation` compat) | ExplorePage (mapa, filter-driven) | pública |
 | `/share/:propertyId?` | SharePage | pública |
 | `/login` `/register` `/forgot-password` `/reset-password` | Auth pages | pública |
+| `/terminos-y-condiciones` | TermsPage (contenido legal estático) | pública |
+| `/politica-de-privacidad` | PrivacyPage (contenido legal estático) | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/profile` | ProfilePage | `auth` (cualquier rol) |
 | `/dashboard` | DashboardPage | owner / agent / admin / buyer |
@@ -82,6 +84,9 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-08-19 (páginas legales)
+- ✅ **Términos y Condiciones + Política de Privacidad** — feature `features/legal/` con dos rutas públicas (`/terminos-y-condiciones`, `/politica-de-privacidad`) linkeadas desde el footer de `Layout`. Contenido **estático** (sin datos/API ni lógica de negocio): `LegalDoc` (shell + primitivos `Section/Clause/P/UL/OL/Note`), páginas `TermsPage`/`PrivacyPage`, y `content/sharedLegal.jsx` (`DatosIdentificatorios` + `TituloIV` reusados por ambas). Refleja el documento legal "Integral V3.0". **Pendiente del ANEXO (no implementado aún):** links legales también en registro/checkout/carga de aviso, tooltip de "Domicilio Certificado", disclaimers al pie de calculadoras/simuladores y formularios de contacto, botón de arrepentimiento, y trazabilidad de aceptación (backend).
 
 ### Ciclo 2026-08-10 (marca en los preloads)
 - ✅ **Preloads unificados con el isotipo de Infocasa** — `Loader` (`common/components/Loader.jsx`) es la **única fuente** para estados de carga de página/sección: isotipo de marca con `animate-heartbeat`. Nuevo prop `inline` (+ `className`/`label`) para cargar una sección dentro de un layout sin ocupar toda la pantalla. Se reemplazaron los spinners genéricos (`Loader2`) y el texto bespoke "Cargando propiedad premium…" por `<Loader>` en: `PropertyDetailPage`, `ExplorePage`, `SearchPage`, `FeaturedProperties` (home), `DashboardPage`, `EditPropertyPage`, `PropertyForm` (loadingRefs). Los spinners **chicos dentro de botones/inputs** (submit, autocomplete "Buscando…") **siguen con `Loader2`** (no son preloads). Test: `components/Loader`.

@@ -151,8 +151,8 @@ function Footer() {
         <div className="text-center lg:text-left">
           <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Legal</h3>
           <ul className="space-y-4">
-            <li><a href="#" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Términos y condiciones</a></li>
-            <li><a href="#" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Política de privacidad</a></li>
+            <li><Link to="/terminos-y-condiciones" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Términos y condiciones</Link></li>
+            <li><Link to="/politica-de-privacidad" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Política de privacidad</Link></li>
             <li><a href="#" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Defensa al consumidor</a></li>
           </ul>
         </div>

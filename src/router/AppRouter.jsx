@@ -18,6 +18,8 @@ const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));
 const EmailVerifiedPage = lazy(() => import('../features/auth/pages/EmailVerifiedPage'));
 const SharePage = lazy(() => import('../features/share/pages/SharePage'));
 const ExplorePage = lazy(() => import('../features/explore/pages/ExplorePage'));
+const TermsPage = lazy(() => import('../features/legal/pages/TermsPage'));
+const PrivacyPage = lazy(() => import('../features/legal/pages/PrivacyPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
@@ -44,6 +46,10 @@ const AppRouter = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/email-verified" element={<EmailVerifiedPage />} />
+
+          {/* Legales - Públicas (linkeadas desde el footer) */}
+          <Route path="/terminos-y-condiciones" element={<TermsPage />} />
+          <Route path="/politica-de-privacidad" element={<PrivacyPage />} />
 
           {/* Ruta de Compartir - Pública */}
           <Route path="/share/:propertyId?" element={<SharePage />} />
