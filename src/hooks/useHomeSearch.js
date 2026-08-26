@@ -136,7 +136,6 @@ export const useHomeSearch = () => {
 
   const handleGateClose = () => {
     setGateOpen(false);
-    if (gateStatus !== "allowed") setOperation("");
     resetGate();
   };
 

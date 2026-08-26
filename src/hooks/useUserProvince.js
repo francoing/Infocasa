@@ -5,7 +5,7 @@ const API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
 const REVERSE_GEO_URL = "https://api.geoapify.com/v1/geocode/reverse";
 
 const initialState = {
-  status: "idle", // idle | checking | allowed | blocked | error
+  status: "idle", // idle | checking | allowed | blocked | denied | error
   province: null,
   error: null,
   coords: null, // { lat, lng }
@@ -107,7 +107,7 @@ export function useUserProvince() {
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
           setState({
-            status: "blocked",
+            status: "denied",
             province: null,
             error: "Permiso de ubicación denegado",
             coords: null,
