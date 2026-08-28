@@ -94,6 +94,28 @@ describe("useHomeSearch — gate de ubicación", () => {
     expect(navigateMock).toHaveBeenCalledWith("/explore?operation=sale");
   });
 
+  it("dirección cargada sin verificar → navega directo al listado, sin gate ni flag", () => {
+    const { result } = renderHook(() => useHomeSearch());
+
+    act(() => result.current.setInputValue("Yerba Buena"));
+    act(() => result.current.handleSearch({ preventDefault: () => {} }));
+
+    expect(result.current.gate.open).toBe(false);
+    expect(navigateMock).toHaveBeenCalledWith("/search?operation=sale&location=Yerba+Buena");
+    expect(sessionStorage.getItem("infocasa_location_verified")).toBeNull();
+  });
+
+  it("dirección cargada sin verificar + 'Buscar en Mapa' → navega directo a /explore", () => {
+    const { result } = renderHook(() => useHomeSearch());
+
+    act(() => result.current.setInputValue("Tafi Viejo"));
+    act(() => result.current.handleMapExplore());
+
+    expect(result.current.gate.open).toBe(false);
+    expect(navigateMock).toHaveBeenCalledWith("/explore?operation=sale&location=Tafi+Viejo");
+    expect(sessionStorage.getItem("infocasa_location_verified")).toBeNull();
+  });
+
   it.each(["blocked", "denied", "error"])(
     "resolución '%s' y cierre → no navega y NO resetea la pestaña de operación",
     (status) => {

@@ -112,10 +112,11 @@ export const useHomeSearch = () => {
     }
   };
 
-  // Dispara una acción ("list" | "map"); si falta verificar ubicación, abre el
-  // gate y la deja pendiente para ejecutarla al resolverse.
+  // Dispara una acción ("list" | "map"). El gate de ubicación SOLO se abre si
+  // no hay dirección cargada y todavía no se verificó la provincia en la sesión:
+  // con dirección cargada se navega directo (los resultados van por la dirección).
   const trigger = (action) => {
-    if (!locationVerified) {
+    if (!locationVerified && inputValue.trim() === "") {
       setPendingAction(action);
       setGateOpen(true);
       return;
