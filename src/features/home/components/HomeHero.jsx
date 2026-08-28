@@ -4,13 +4,7 @@ import { useHomeSearch } from "../../../hooks/useHomeSearch";
 import HomeSearchBox from "./HomeSearchBox";
 import LocationGateModal from "./LocationGateModal";
 
-const STATS = [
-  { value: "500+", label: "Propiedades" },
-  { value: "120+", label: "Inmobiliarias" },
-  { value: "10k+", label: "Usuarios" },
-];
-
-/** Sección hero del Home: título, stats y la caja de búsqueda (con su gate de ubicación). */
+/** Sección hero del Home: título y la caja de búsqueda (con su gate de ubicación). */
 export default function HomeHero() {
   const s = useHomeSearch();
 
@@ -33,20 +27,6 @@ export default function HomeHero() {
           >
             La plataforma que conecta personas, empresas e inmobiliarias en un solo lugar.
           </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-3 gap-6 pt-8 border-t border-white/20 max-w-md text-white"
-          >
-            {STATS.map((stat) => (
-              <div key={stat.label}>
-                <h3 className="text-3xl md:text-4xl font-extrabold">{stat.value}</h3>
-                <p className="text-xs text-white/80 mt-1 uppercase tracking-wider font-semibold">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
         </div>
 
         <div className="lg:col-span-5 w-full">
