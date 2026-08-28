@@ -45,7 +45,7 @@ function Header({ isHome = false }) {
           {!isHome && <BackButton className="text-[#1a1a1a] -ml-2" />}
           <Link to="/" className="flex items-center gap-2">
             <img src="/img/Icono.png" alt="Infocasa" className="h-9 w-auto object-contain" />
-            <Logo size="text-2xl" />
+            <Logo size="text-2xl" className="hidden sm:block" />
           </Link>
         </div>
         <nav className="hidden md:flex items-center space-x-10">
