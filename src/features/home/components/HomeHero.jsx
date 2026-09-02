@@ -25,7 +25,7 @@ export default function HomeHero() {
             transition={{ delay: 0.1 }}
             className="text-lg md:text-xl text-white/90 max-w-xl"
           >
-            La plataforma que conecta personas, empresas e inmobiliarias en un solo lugar.
+            Registrate gratis y publicá tu propiedad en venta o alquiler · Generá el QR y descargá el cartel de punto Infocasa
           </motion.p>
         </div>
 
