@@ -31,8 +31,11 @@ const sizeRules = (scope) => ({
   'max-depth': ['error', scope.max_depth],
 });
 
-// Boundary: la capa UI (features/, common/) NO puede importar el cliente HTTP (api/api.js).
-// La capa de datos (hooks/) y el arranque de sesión (store/useAuthStore) sí pueden; los tests lo mockean.
+// Boundary: la capa UI (features/, common/) NO puede tocar la red directamente:
+//  - no importar el cliente HTTP (api/api.js), y
+//  - no hacer `fetch(...)` ni `new XMLHttpRequest()` sueltos.
+// Toda llamada de red va en la capa de datos (hooks/); el arranque de sesión (store/useAuthStore)
+// y api/api.js sí pueden; los tests lo mockean. Ver .ai/context/architecture.md.
 const apiBoundary = {
   'no-restricted-imports': [
     'error',
@@ -46,25 +49,25 @@ const apiBoundary = {
       ],
     },
   ],
+  'no-restricted-syntax': [
+    'error',
+    {
+      selector: "CallExpression[callee.name='fetch']",
+      message:
+        'No hagas fetch directo en la UI — mové la llamada de red a un hook en src/hooks/** (ver .ai/context/architecture.md).',
+    },
+    {
+      selector: "NewExpression[callee.name='XMLHttpRequest']",
+      message: 'No uses XMLHttpRequest en la UI — mové la llamada de red a un hook en src/hooks/**.',
+    },
+  ],
 };
 
-// --- RATCHET: deuda de reconciliación existente al adoptar el linter (NO agregar). ---
-// Cada entrada se elimina cuando el archivo se refactoriza en su spec. Ver PROJECT-MAP.md.
-const LEGACY = {
-  // Capa UI llamando al HTTP directo (boundary) + componentes/páginas gigantes:
-  'src/common/components/PropertyCard.jsx': ['complexity', 'no-restricted-imports'],
-  'src/features/dashboard/pages/DashboardPage.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
-  'src/features/explore/pages/ExplorePage.jsx': ['no-restricted-imports'],
-  'src/features/home/pages/HomePage.jsx': ['max-lines', 'max-lines-per-function'],
-  'src/features/profile/pages/ProfilePage.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
-  'src/features/property/components/PropertyForm.jsx': ['complexity', 'max-lines', 'max-lines-per-function'],
-  'src/features/property/pages/CreatePropertyPage.jsx': ['no-restricted-imports'],
-  'src/features/search/pages/SearchPage.jsx': ['max-lines-per-function'],
-  // Capa de datos (hooks) sobredimensionada / rules-of-hooks:
-  'src/hooks/useDashboardData.js': ['complexity', 'max-lines', 'max-lines-per-function'],
-  'src/hooks/useProperties.js': ['complexity'],
-  'src/hooks/usePropertyDetail.js': ['max-lines-per-function'],
-};
+// --- RATCHET: deuda de reconciliación existente al adoptar el linter. ---
+// ✅ SALDADO: los 16 archivos con deuda preexistente fueron refactorizados por spec.
+// La lista quedó VACÍA → la fitness function ya no tiene excepciones: todo el código
+// cumple los límites. Regla: NO reintroducir entradas; si algo no entra, refactorizá.
+const LEGACY = {};
 const legacyOverrides = Object.entries(LEGACY).map(([file, rules]) => ({
   files: [file],
   rules: Object.fromEntries(rules.map((r) => [r, 'off'])),

@@ -60,7 +60,7 @@ src/lib/        # Helpers puros (sin estado, sin HTTP)
 
 ## Prohibiciones estrictas
 
-1. **No `api.*` ni `fetch` fuera de `hooks/`.** Componentes y páginas acceden a datos solo vía hooks. *(Enforced: `no-restricted-imports` prohíbe importar `api/api.js` fuera de `src/hooks/**`.)*
+1. **No `api.*` ni `fetch` fuera de `hooks/`.** Componentes y páginas acceden a datos solo vía hooks. *(Enforced en `features/**` + `common/**`: `no-restricted-imports` prohíbe importar `api/api.js`, y `no-restricted-syntax` prohíbe `fetch(...)` y `new XMLHttpRequest()` — mové la llamada de red a un hook. Servicios externos (Nominatim, Geoapify) también van por hook: `useGeocodeSearch`, `useGeoapifyPlaces`, `useUserProvince`.)*
 2. **No duplicar estado de servidor en Zustand.** React Query es el dueño; Zustand es solo cliente.
 3. **No lógica de negocio en JSX.** Cálculos, formateos y reglas van en hooks o `lib/`.
 4. **No re-implementar ordenamiento de resultados.** El backend ordena (destacadas primero, INVIOLABLE). El front respeta el orden recibido; el `sort` de cliente no puede ocultar destacadas.

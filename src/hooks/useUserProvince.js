@@ -1,13 +1,11 @@
 import { useState, useCallback } from "react";
+import { isAllowedProvince } from "./useUserProvince.helpers";
 
 const API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
 const REVERSE_GEO_URL = "https://api.geoapify.com/v1/geocode/reverse";
 
-/** Provincias habilitadas para usar la aplicación */
-const ALLOWED_PROVINCES = ["Tucumán", "Santiago del Estero"];
-
 const initialState = {
-  status: "idle", // idle | checking | allowed | blocked | error
+  status: "idle", // idle | checking | allowed | blocked | denied | error
   province: null,
   error: null,
   coords: null, // { lat, lng }
@@ -82,7 +80,7 @@ export function useUserProvince() {
             return;
           }
 
-          if (ALLOWED_PROVINCES.includes(province)) {
+          if (isAllowedProvince(province)) {
             setState({
               status: "allowed",
               province,
@@ -109,7 +107,7 @@ export function useUserProvince() {
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
           setState({
-            status: "blocked",
+            status: "denied",
             province: null,
             error: "Permiso de ubicación denegado",
             coords: null,

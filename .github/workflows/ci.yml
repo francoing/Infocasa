@@ -22,12 +22,24 @@ jobs:
 
       # Fitness function con dientes: boundary UI→api + límites de tamaño/complejidad
       # (lee .ai/policies/architecture-policies.yaml). --max-warnings 0 → exit 1 en cualquier violación.
-      # ESTE es el gate duro de la gobernanza.
+      # ESTE es el único gate duro de la gobernanza hasta que los tests sean estables.
+      # Estado de tests: deuda declarada en PROJECT-MAP.md → sección "Deuda técnica".
       - name: Lint (architecture gate)
         run: npm run lint
 
-      # Advisory: jsdom fallaba localmente (Windows, node_modules inconsistente). En CI limpio de
-      # Linux debería cargar. Verificar el run y, si pasa, quitar `continue-on-error` (gate duro).
-      - name: Tests (advisory — verificar en CI limpio)
+      # Guardia de código muerto (gate duro): archivos, exports y dependencias huérfanos.
+      # Tapa el agujero que dejó pasar AdminPage + ProfilePage muertos. Config en knip.json.
+      - name: Dead code (knip)
+        run: npm run knip
+
+      # Exactitud del PROJECT-MAP (gate duro): rutas/hooks/stores/componentes derivados
+      # del código deben figurar en PROJECT-MAP.md. Chequea presencia, no "¿lo tocaste?".
+      # Mata el drift que dejó BackButton/FooterLogo fuera del mapa.
+      - name: PROJECT-MAP al día (map:check)
+        run: npm run map:check
+
+      # Tests (gate duro): Vitest sobre happy-dom (sin binario nativo → estable en CI,
+      # a diferencia de jsdom que dio EPERM en Windows y por eso se había sacado).
+      - name: Tests (vitest + happy-dom)
         run: npm run test
-        continue-on-error: true
+
