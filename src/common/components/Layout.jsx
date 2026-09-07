@@ -35,25 +35,18 @@ function Header() {
   const navigate = useNavigate();
   const { user, logout, isAdmin, isPublisher } = useAuth();
 
-  const navItems = [
-    { name: 'Inicio', path: '/' },
-    { name: 'Buscar', path: '/search' },
-  ];
-
-  const handleLogout = async () => {
-    logout();
-    navigate('/');
-  };
-
-  // Determinar la ruta del tablero según el rol
-  const dashboardPath = '/dashboard';
+  const navItems = [];
 
   return (
     <header className="bg-[#edd446] fixed top-0 w-full z-50 border-b border-[#cca425] shadow-sm">
       <div className="flex justify-between items-center px-6 lg:px-12 h-20 max-w-7xl mx-auto w-full">
-        <Link to="/" className="flex items-center">
-          <Logo size="text-2xl" />
-        </Link>
+        <div className="flex items-center gap-1 sm:gap-3">
+          {!isHome && <BackButton className="text-[#1a1a1a] -ml-2" />}
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/img/Icono.png" alt="Infocasa" className="h-9 w-auto object-contain" />
+            <Logo size="text-2xl" className="hidden sm:block" />
+          </Link>
+        </div>
         <nav className="hidden md:flex items-center space-x-10">
           {navItems.map((item) => (
             <Link

@@ -7,7 +7,7 @@ import { Section, Clause, P, OL, UL } from "../components/LegalDoc";
 export function DatosIdentificatorios() {
   const filas = [
     ["Denominación / Titular", "InfoCasa — Actividad Unipersonal"],
-    ["CUIT", "27-26638115-3"],
+    ["CUIT", "27-44189540-8"],
     ["Correo de atención / reclamos", "soporte@infocasa.com.ar · admin@infocasa.com.ar"],
     ["URL oficial", "www.infocasa.com.ar"],
     ["Contacto", "3812066967"],
