@@ -1,0 +1,320 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { User, Mail, Lock, CheckCircle2, Chrome, Loader2, Phone } from "lucide-react";
+import { motion } from "framer-motion";
+import { useAuth } from "../../../hooks/useAuth";
+import Layout from "../../../common/components/Layout";
+
+export default function RegisterPage() {
+  const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneArea, setPhoneArea] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("buyer");
+  
+  // Estados para inmobiliaria
+  const [agencyName, setAgencyName] = useState("");
+  const [cuit, setCuit] = useState("");
+  const [fantasyName, setFantasyName] = useState("");
+  const [taxCondition, setTaxCondition] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [agencyAddress, setAgencyAddress] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { register } = useAuth();
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const user = await register({
+        name: `${name} ${lastName}`,
+        email,
+        phoneArea,
+        phoneNumber,
+        password,
+        avatar: "",
+        role: role,
+        agency_name: agencyName,
+        cuit,
+        fantasy_name: fantasyName,
+        tax_condition: taxCondition,
+        business_name: businessName,
+        agency_address: agencyAddress,
+      });
+      
+      // Si es propietario o agente, va al dashboard a activar su plan
+      if (role === "owner" || role === "agent") {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      if (err.errors) {
+        const errorMessages = Object.values(err.errors).flat();
+        setError(errorMessages.join(" "));
+      } else {
+        setError(err.message || "Error al crear la cuenta.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="min-h-[90vh] flex items-center justify-center px-6 py-12 hero-gradient">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl shadow-blue-600/5 border border-slate-100 p-10 lg:p-14"
+        >
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-bold text-slate-900 mb-3">Crea tu cuenta</h1>
+            <p className="text-slate-500 text-sm font-medium">Únete a la red inmobiliaria más exclusiva del país.</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium text-center border border-red-100">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleRegister}>
+            <div className="space-y-2 mb-6">
+              <label className="text-sm font-bold text-slate-900 ml-1">Tipo de Cuenta</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { id: "buyer", label: "Interesado / Comprador", desc: "Quiero buscar y consultar propiedades" },
+                  { id: "owner", label: "Dueño Directo", desc: "Quiero publicar mis propiedades y recibir consultas" },
+                  { id: "agent", label: "Agente / Inmobiliaria", desc: "Quiero publicar propiedades y gestionar leads" }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setRole(item.id)}
+                    className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all duration-200 ${
+                      role === item.id 
+                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/10" 
+                        : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span className="font-bold text-xs text-slate-900">{item.label}</span>
+                    <span className="text-[10px] text-slate-500 mt-1.5 leading-normal font-medium">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-900 ml-1">Nombre</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input 
+                    type="text" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400" 
+                    placeholder="Juan"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-900 ml-1">Apellido</label>
+                <input 
+                  type="text" 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400" 
+                  placeholder="Pérez"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-900 ml-1">Correo Electrónico</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400" 
+                  placeholder="juan@ejemplo.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-1 space-y-2">
+                <label className="text-sm font-bold text-slate-900 ml-1">Cód. Área</label>
+                <input 
+                  type="text" 
+                  value={phoneArea}
+                  onChange={(e) => setPhoneArea(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 text-center font-bold" 
+                  placeholder="Ej: 11 o 381"
+                  required
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-sm font-bold text-slate-900 ml-1">Número de Teléfono</label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input 
+                    type="text" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-semibold" 
+                    placeholder="Ej: 1544445555"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-900 ml-1">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400" 
+                  placeholder="Mínimo 8 caracteres"
+                  required
+                  minLength={8}
+                />
+              </div>
+            </div>
+
+            {role === "agent" && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-6 pt-6 border-t border-slate-100 overflow-hidden"
+              >
+                <div className="text-left mb-4">
+                  <h3 className="text-lg font-bold text-slate-900">Datos de la Inmobiliaria</h3>
+                  <p className="text-slate-500 text-xs font-medium mt-0.5">Información legal y fiscal requerida.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">Nombre Comercial de la Inmobiliaria</label>
+                    <input 
+                      type="text" 
+                      value={agencyName}
+                      onChange={(e) => setAgencyName(e.target.value)}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
+                      placeholder="Ej: RE/MAX Premium"
+                      required={role === "agent"}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">Nombre de Fantasía</label>
+                    <input 
+                      type="text" 
+                      value={fantasyName}
+                      onChange={(e) => setFantasyName(e.target.value)}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
+                      placeholder="Ej: Inmobiliaria Pérez"
+                      required={role === "agent"}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">Razón Social</label>
+                    <input 
+                      type="text" 
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
+                      placeholder="Ej: Pérez Propiedades S.A."
+                      required={role === "agent"}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">CUIT</label>
+                    <input 
+                      type="text" 
+                      value={cuit}
+                      onChange={(e) => setCuit(e.target.value)}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-bold" 
+                      placeholder="Ej: 30-12345678-9"
+                      required={role === "agent"}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">Condición Fiscal</label>
+                    <select 
+                      value={taxCondition}
+                      onChange={(e) => setTaxCondition(e.target.value)}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all font-medium appearance-none"
+                      required={role === "agent"}
+                    >
+                      <option value="">Selecciona una condición</option>
+                      <option value="Responsable Inscripto">Responsable Inscripto</option>
+                      <option value="Monotributista">Monotributista</option>
+                      <option value="Exento">IVA Exento</option>
+                      <option value="Consumidor Final">Consumidor Final</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-900 ml-1">Dirección Comercial (Opcional)</label>
+                    <input 
+                      type="text" 
+                      value={agencyAddress}
+                      onChange={(e) => setAgencyAddress(e.target.value)}
+                      className="w-full px-4 py-4 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 bg-slate-50 outline-none transition-all placeholder:text-slate-400 font-medium" 
+                      placeholder="Ej: Av. Siempreviva 742"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <div className="flex items-start gap-3 px-1">
+              <input type="checkbox" className="mt-1 w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-600" id="terms" required />
+              <label htmlFor="terms" className="text-xs text-slate-500 font-medium leading-relaxed">
+                Acepto los <Link to="#" className="text-blue-600 font-bold hover:underline">Términos de Servicio</Link> y la <Link to="#" className="text-blue-600 font-bold hover:underline">Política de Privacidad</Link>.
+              </label>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Empezar ahora <CheckCircle2 className="w-5 h-5" /></>}
+            </button>
+          </form>
+
+          <p className="mt-10 text-center text-sm text-slate-500 font-medium">
+            ¿Ya tienes una cuenta?{" "}
+            <Link to="/login" className="text-blue-600 font-bold hover:underline">Inicia sesión</Link>
+          </p>
+        </motion.div>
+      </div>
+    </Layout>
+  );
+}

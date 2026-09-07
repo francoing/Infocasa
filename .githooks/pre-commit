@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Pre-commit del frontend: corre la fitness function (ESLint con dientes) antes de commitear.
+# Activar una vez por clon:  git config core.hooksPath .githooks
+#
+# Espeja el hook del backend: gate rápido y local. Si falla, el commit se aborta.
+
+echo "→ pre-commit: npm run lint (architecture gate)"
+npm run lint
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "✖ Lint falló. Corregí las violaciones (o, si es deuda legítima preexistente, revisá .eslintrc.cjs LEGACY)."
+  echo "  No agregar entradas nuevas a LEGACY para 'pasar' — mové la llamada a un hook / achicá el componente."
+  exit 1
+fi
+
+echo "✔ Lint OK"
+exit 0
