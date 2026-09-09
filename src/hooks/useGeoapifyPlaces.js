@@ -73,8 +73,12 @@ export function useGeoapifyAutocomplete() {
           value: f.properties.formatted,
           lat: f.properties.lat,
           lon: f.properties.lon,
+          // bbox del feature [minLon, minLat, maxLon, maxLat] → permite hacer zoom al área (ciudad/depto).
+          bbox: Array.isArray(f.bbox) && f.bbox.length === 4 ? f.bbox : null,
           city: f.properties.city || f.properties.county || "",
           state: f.properties.state || "",
+          street: f.properties.street || "",
+          housenumber: f.properties.housenumber || "",
           formatted: f.properties.formatted,
         }));
 

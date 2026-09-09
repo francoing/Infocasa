@@ -12,13 +12,14 @@ const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../features/auth/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../features/auth/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage'));
-const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'));
 const CreatePropertyPage = lazy(() => import('../features/property/pages/CreatePropertyPage'));
 const EditPropertyPage = lazy(() => import('../features/property/pages/EditPropertyPage'));
 const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));
 const EmailVerifiedPage = lazy(() => import('../features/auth/pages/EmailVerifiedPage'));
 const SharePage = lazy(() => import('../features/share/pages/SharePage'));
 const ExplorePage = lazy(() => import('../features/explore/pages/ExplorePage'));
+const TermsPage = lazy(() => import('../features/legal/pages/TermsPage'));
+const PrivacyPage = lazy(() => import('../features/legal/pages/PrivacyPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
@@ -46,10 +47,16 @@ const AppRouter = () => {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/email-verified" element={<EmailVerifiedPage />} />
 
+          {/* Legales - Públicas (linkeadas desde el footer) */}
+          <Route path="/terminos-y-condiciones" element={<TermsPage />} />
+          <Route path="/politica-de-privacidad" element={<PrivacyPage />} />
+
           {/* Ruta de Compartir - Pública */}
           <Route path="/share/:propertyId?" element={<SharePage />} />
 
-          {/* Exploración por mapa */}
+          {/* Exploración por mapa — filter-driven por query params.
+              `/explore/:operation` se mantiene como compat de enlaces viejos (siembra la operación). */}
+          <Route path="/explore" element={<ExplorePage />} />
           <Route path="/explore/:operation" element={<ExplorePage />} />
 
           {/* Rutas Protegidas - General (Cualquier usuario logueado) */}

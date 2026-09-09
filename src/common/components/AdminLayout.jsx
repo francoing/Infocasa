@@ -5,6 +5,7 @@ import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
 import { usePlans } from "../../hooks/usePlans";
 import Logo from "./Logo";
+import BackButton from "./BackButton";
 import WhatsAppButton from "./WhatsAppButton";
 import EmailVerificationBanner from "./EmailVerificationBanner";
 
@@ -60,13 +61,13 @@ export default function AdminLayout({ children }) {
           active={location.pathname === '/admin' || location.pathname === '/dashboard'}
           onClick={() => setSidebarOpen(false)}
         />
-        {(isAdmin || isPublisher) && (
+        {isPublisher && (
           userPlan ? (
-            <SidebarLink 
-              to="/dashboard/properties/create" 
-              icon={<PlusCircle />} 
-              label="Publicar" 
-              active={location.pathname === '/dashboard/properties/create'} 
+            <SidebarLink
+              to="/dashboard/properties/create"
+              icon={<PlusCircle />}
+              label="Publicar"
+              active={location.pathname === '/dashboard/properties/create'}
               onClick={() => setSidebarOpen(false)}
             />
           ) : (
@@ -74,7 +75,7 @@ export default function AdminLayout({ children }) {
           )
         )}
 
-        <SidebarLink to="/search" icon={<Search />} label="Marketplace" onClick={() => setSidebarOpen(false)} />
+        {/* <SidebarLink to="/search" icon={<Search />} label="Marketplace" onClick={() => setSidebarOpen(false)} /> */}
         <SidebarLink to="/profile" icon={<User />} label="Mi Perfil" active={location.pathname === '/profile'} onClick={() => setSidebarOpen(false)} />
       </nav>
       <div className="px-6 pt-6 border-t border-slate-100 mt-auto">
@@ -112,9 +113,8 @@ export default function AdminLayout({ children }) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 shadow-2xl transition-transform duration-300 lg:hidden ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white flex-col py-8 space-y-4 shadow-2xl transition-transform duration-300 lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {sidebarContent}
       </aside>
@@ -128,6 +128,7 @@ export default function AdminLayout({ children }) {
           <Menu className="w-6 h-6" />
         </button>
         <Logo size="text-xl" />
+        <BackButton className="ml-auto" />
       </div>
 
       <main className="flex-1 min-w-0 pt-16 lg:pt-0">

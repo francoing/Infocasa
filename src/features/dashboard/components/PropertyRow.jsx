@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Eye, Heart, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, TrendingDown, Percent, Loader2 } from "lucide-react";
+import { MapPin, Eye, Heart, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, TrendingDown, Percent, Loader2, QrCode } from "lucide-react";
+import QrModal from "./QrModal";
 
 /** Panel expandible de reducción de precio (dentro de PropertyRow). */
 function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice }) {
@@ -68,7 +69,9 @@ function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, redu
 
 /** Fila de una propiedad publicada: datos, métricas, acciones y reducción de precio. */
 export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, ...reduction }) {
+  const [qrOpen, setQrOpen] = useState(false);
   return (
+    <>
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <div className="p-4 flex flex-col md:flex-row items-center gap-6">
         <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden flex-shrink-0">
@@ -102,6 +105,9 @@ export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, 
           <Link to={`/property/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Ver publicación" target="_blank">
             <ExternalLink className="w-5 h-5" />
           </Link>
+          <button onClick={() => setQrOpen(true)} className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="Punto Infocasa (QR)">
+            <QrCode className="w-5 h-5" />
+          </button>
           <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
             <Edit className="w-5 h-5" />
           </Link>
@@ -116,5 +122,7 @@ export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, 
 
       {expanded && <PriceReductionPanel prop={prop} {...reduction} />}
     </div>
+    {qrOpen && <QrModal property={prop} onClose={() => setQrOpen(false)} />}
+    </>
   );
 }

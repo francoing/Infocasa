@@ -1,12 +1,10 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-08-25** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-09-09** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
 > Para el QUÉ del negocio ver la capa compartida (`.ai/product/README.md` → backend); para el CÓMO técnico ver `.ai/context/`.
->
-> Última sincronización: 2026-07-15 (gestión de imágenes al editar: borrar + reordenar/portada).
 
 ## Stack / Entorno
 - **React 18** + **Vite 5** · SPA. Rutas: **React Router 6** (lazy + code splitting).
@@ -20,18 +18,19 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── features/{home,search,explore,property,auth,dashboard,admin,profile,share}/{pages,components}
+├── features/{home,search,explore,property,auth,dashboard,profile,share,legal}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
-├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, useLeads, usePlans,
-│                            useAdminData, useDashboardData, useAuth, useAgencies, usePropertyFormRefs,
-│                            useGeoapifyPlaces, useUserProvince, useToast
-├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanBadge, PlanStatusCard, ToastContainer,
-│                            WhatsAppButton, Loader, Logo, EmailVerificationBanner
+├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
+│                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications,
+│                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast
+│                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
+├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
+│                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
 ├── data/provincias.json  ← datos estáticos de provincias
 ├── mock/                 ← mockApi + handlers/searchProperties + data (switch por VITE_USE_MOCK)
-├── theme/                ← tema
 └── test/                 ← Vitest (components, hooks, store, setup)
 ```
 
@@ -41,9 +40,11 @@ src/
 | `/` | HomePage | pública |
 | `/search` | SearchPage | pública |
 | `/property/:id` | PropertyDetailPage | pública |
-| `/explore/:operation` | ExplorePage (mapa) | pública |
+| `/explore` (+ `/explore/:operation` compat) | ExplorePage (mapa, filter-driven) | pública |
 | `/share/:propertyId?` | SharePage | pública |
 | `/login` `/register` `/forgot-password` `/reset-password` | Auth pages | pública |
+| `/terminos-y-condiciones` | TermsPage (contenido legal estático) | pública |
+| `/politica-de-privacidad` | PrivacyPage (contenido legal estático) | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/profile` | ProfilePage | `auth` (cualquier rol) |
 | `/dashboard` | DashboardPage | owner / agent / admin / buyer |
@@ -64,7 +65,7 @@ src/
 Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ...]`, `["me_favorites"]`, `["leads", ...]`, `["sent_leads", ...]`, `["admin_properties"]`, `["admin_users"]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
 
 ## Contrato con backend (`/api/v1`)
-Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoints que el front consume hoy:
+Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
 - **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites` (+ login/register/logout/forgot/reset vía `useAuth`).
 - **Properties:** `properties`, `properties/{id}`, `properties/search`, `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
@@ -72,7 +73,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`.
 
 ## Servicios externos
-- **Geoapify** — autocompletado de lugares (`useGeoapifyPlaces`, `VITE_GEOAPIFY_API_KEY`).
+- **Geoapify** (`VITE_GEOAPIFY_API_KEY`) — SOLO para **creación de propiedad** (`useGeoapifyPlaces` + `geocodeAddress` en `MapLocationSelector`: geocodifica direcciones arbitrarias) y el **gate de ubicación** (`useUserProvince`: reverse geocode del GPS). El **autocomplete de búsqueda NO usa Geoapify**: va por inventario (`useLocationSearch`).
 - **Leaflet** — mapas / clustering (Home, Explore, PropertyMap, MapLocationSelector).
 - **MercadoPago** — checkout vía `preference` del backend (CheckoutModal).
 - **Vercel** — hosting/deploy.
@@ -83,6 +84,10 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-09-09 (Punto Infocasa / QR + limpieza de merge regresivo)
+- ✅ **Punto Infocasa (QR) por propiedad** — `features/dashboard/components/QrModal.jsx`: genera **client-side** (canvas + `qrcode`) una imagen "Punto Infocasa" en alta resolución (2480×3508) con el QR de la propiedad embebido sobre `public/img/punto-infocasa-base.jpg`, con descargar (JPG) e imprimir. Se dispara desde un botón en `PropertyRow` (estado local `qrOpen`). Deps nuevas: `qrcode`, `qrcode.react`, `html2canvas`. Sin cambios de API (todo local).
+- 🔧 **Limpieza de merge regresivo** — un merge desde una base vieja había revertido gobernanza y features (scripts `knip`/`map:check`/`api:surface` fuera de `package.json`, `jsdom` en vez de `happy-dom`, `Loader`/`LocationGateModal`/`Layout`/`HomePage`/`DashboardPage` y otros a versiones viejas, y resucitó código muerto: `AdminPage`, `useAdminData`, `useLeads`, `hooks/index`, `mock/data/cities`, `theme/aceTheme`, `PlanBadge`, `auth/ProfilePage`). Se restauró todo `src/` a `origin/production` conservando solo el QR, y se rehidrató `package.json` (gobernanza + deps del QR). **Pendiente:** `knip.json` tiene mal el `entry` (apunta solo a tests → 54 falsos positivos); no sigue los `import()` lazy del router — arreglar aparte.
 
 ### Ciclo 2026-08-19 (páginas legales)
 - ✅ **Términos y Condiciones + Política de Privacidad** — feature `features/legal/` con dos rutas públicas (`/terminos-y-condiciones`, `/politica-de-privacidad`) linkeadas desde el footer de `Layout`. Contenido **estático** (sin datos/API ni lógica de negocio): `LegalDoc` (shell + primitivos `Section/Clause/P/UL/OL/Note`), páginas `TermsPage`/`PrivacyPage`, y `content/sharedLegal.jsx` (`DatosIdentificatorios` + `TituloIV` reusados por ambas). Refleja el documento legal "Integral V3.0". **Pendiente del ANEXO (no implementado aún):** links legales también en registro/checkout/carga de aviso, tooltip de "Domicilio Certificado", disclaimers al pie de calculadoras/simuladores y formularios de contacto, botón de arrepentimiento, y trazabilidad de aceptación (backend).
@@ -112,21 +117,27 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. Endpoint
 - ✅ **`useFilterStore` eliminado** (era código muerto).
 - ✅ **`sort` por precio ahora funciona** como orden **secundario** (backend `sort=price_asc|price_desc`; destacadas siguen primero). Spec `search/search_coherence`.
 - ✅ **Filtro por inmobiliaria funciona** (`agency_id`; el estado `userId` se renombró a `agencyId`). Spec `search/search_coherence`.
-- ✅ **Moderación de certificación (admin)** — aprobar/rechazar temporarias desde el AdminPage. Spec `admin/certification_moderation`.
+- ✅ **Moderación + revisión de certificación (admin) — en el DashboardPage.** ⚠️ Corrección: la moderación original vivía en `features/admin/AdminPage.jsx`, que era **código muerto** (`/admin` → `Navigate` a `/dashboard`); **nunca fue accesible**. Se eliminó ese código muerto (`features/admin/**` + `useAdminData.js` + import lazy en `AppRouter`) y la feature se cableó en el panel real: nueva pestaña **"Certificaciones"** en `DashboardTabs` (admin, con badge del nº de pendientes) → `CertificationsTab` lista la cola (`pendingCertifications`, derivada en `useDashboardQueries`). Cada fila abre `CertificationReviewModal` con preview del documento (imagen `<img>` / PDF `<iframe>` / fallback link) + aprobar/rechazar (`moderateCertification` en `useDashboardMutations`, `PATCH /admin/properties/{id}/verify`). El dato ya llegaba (`certificationDocumentUrl`, backend `canSeePrivate`). Spec `admin/certification_review`.
 - ✅ **Subida de imágenes arreglada** — se persisten vía `POST /properties/{id}/images` (antes se perdían). Spec `property/image_upload`.
 - ✅ **Gestión de imágenes al editar** — borrar (`DELETE /images/{id}`) y reordenar/portada por drag (`PUT /images/order`). `PropertyForm` preserva `{id,url}` de las existentes; `ImageUploader` reordena; `EditPropertyPage` aplica borrado → upload → orden. Spec `property/image_management`.
-- 🟢 **`ProfilePage` duplicado** — existe en `features/auth/pages/` y `features/profile/pages/`; el router usa el de `profile/`. El de `auth/` es código muerto (candidato a borrar).
+- ✅ **Filtros avanzados de búsqueda** — el front cablea los filtros que el backend ya soportaba y estaban sin exponer: `province`, `department` (cascada desde `/locations`), `property_type_id` (tipos reales, no hardcode), `rooms_min`, `bedrooms_min`, `parking_spaces_min`, `condition`, `pets_allowed`, `professional_use`. `useProperties` arma la query vía `properties.query.js` (`buildSearchQueryString`, table-driven); UI en `SearchFilters`/`LocationAutocomplete`. Spec `search/advanced_filters`. *(Pendiente 2ª iteración: `features[]` amenities + `neighborhood` + rangos con máximo.)*
+- ✅ **`ProfilePage` duplicado eliminado** — se borró el muerto `features/auth/pages/ProfilePage.jsx` (el router usa el de `profile/`). Spec `quality/governance_enforcement`.
+- ✅ **Boundary de red con dientes + `fetch` de Nominatim movido a hook** — el `fetch` directo de `MapLocationSelector` pasó a `useGeocodeSearch` (capa de datos); el linter ahora prohíbe `fetch(`/`XMLHttpRequest` en `features/**`+`common/**` (`no-restricted-syntax`), no solo el import de `api/api.js`. Spec `quality/governance_enforcement`.
+- ✅ **Código muerto barrido + guardia `knip`** — se sumó `knip` como gate de CI y en su primera corrida detectó y se eliminaron: 5 archivos huérfanos (`PlanBadge`, `hooks/index.js` barrel, `useLeads`, `mock/data/cities.js`, `theme/aceTheme.js`), 2 exports muertos (`getPublisherById`, `deleteProperty` en `useProperties`) y 3 exports innecesarios de-exportados. Se declaró `js-yaml` (usaba `.eslintrc.cjs` sin estar en `package.json`). Spec `quality/deadcode_guard`.
 - 🟢 **`.env` con `VITE_GEOAPIFY_API_KEY` versionada** — key de front (pública), pero conviene revisar restricción por dominio.
-- 🟡 **`npm run test` — toolchain a medio arreglar.** `vitest` bajado de `^4.1.7` (incompatible con vite 5) a **`^2.1.9`** → `package-lock.json` regenerado y `npm ci` **vuelve a funcionar** (esbuild 0.21.5 alineado). Pero **jsdom** sigue fallando en el entorno **local** (Windows, `node_modules` inconsistente por instalaciones superpuestas / `EPERM`): `SyntaxError` cargando un archivo generado de jsdom. Muy probablemente **local-only** → verificar el paso de tests en CI limpio (Linux); si pasa, quitar `continue-on-error` de `ci.yml` y volverlo gate duro. Si también falla en CI, alinear jsdom.
+- ✅ **`npm run test` — VUELTO a ser gate duro (CI).** Se migró el entorno de `jsdom` → **`happy-dom`** (sin binario nativo → sin el EPERM intermitente de Windows que lo había sacado del CI). La suite (36 tests) corre estable local y en CI. Sigue vigente el objetivo de **ampliar cobertura** en los hooks de datos críticos (`useAuth`, `useProperties`, `useLeads`, `usePlans`); ver `.ai/policies/architecture-policies.yaml` sección `testing`. **Nuevo test → parte del trabajo, no opcional.**
 
 ### Backlog de reconciliación de la fitness function (ratchet)
-La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **No agregar entradas nuevas.** Auditoría de sanidad 2026-07-15 arrancó el paydown: quedan **9**.
+La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con deuda preexistente listados en `.eslintrc.cjs` (`LEGACY`). El gate **bloquea violaciones nuevas**; estas se saldan por spec y se sacan de `LEGACY` al refactorizar. **✅ RATCHET SALDADO (0):** los 16 se refactorizaron; `LEGACY = {}` está **vacío** → la fitness function ya **no tiene excepciones**, todo el código cumple los límites. Los 2 últimos: `PropertyCard` (complexity) → helpers `conditionBadge`/`locationText` + sub-componentes `CardMedia`/`CardPrice`/`CardTags`/`CardFeatures`; `HomePage` (524 líneas) → `useHomeSearch` (hook) + `HomeHero`/`HomeSearchBox`/`FeaturedProperties`/`HomeBenefits`/`HomeCTA` (spec `home/homepage_split`). Regla: **no reintroducir entradas** a `LEGACY`.
 
-- **Boundary (UI→api directo)** — mover la llamada a un hook: `PropertyCard`, `ExplorePage`, `CreatePropertyPage`. *(Ya salieron: `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`).)*
+- **Boundary (UI→api directo)** — ✅ **categoría saldada.** `SearchPage`+`ProfilePage` vía `useAgencies` (spec `profile/agency_hook`); `PropertyForm` vía `usePropertyFormRefs` (spec `property/form_refs_hook`); `PropertyCard`→`useFavorites`, `ExplorePage`→`useProperties`, `CreatePropertyPage`→`usePublications` (spec `quality/boundary_cleanup`). El boundary UI→api queda **enforced** en toda la capa UI.
 - **rules-of-hooks** — ✅ **categoría saldada.** `PropertyCard`/`PropertyMap`/`ProvinceMap`: hooks antes del `return` condicional (crash real; spec `quality/hooks_order_fix`). `useLeads`/`usePlans`/`useProperties`: el hack `getQueryClient` (que además **rompía la invalidación de cache** en las funciones exportadas de `useProperties`) → `useQueryClient()` incondicional + singleton en `src/lib/queryClient.js` (spec `quality/query_client_singleton`).
-- **Tamaño/complejidad (componentes/hooks gigantes)** — `PropertyForm` (1068), `DashboardPage` (981), `ProfilePage` (591), `HomePage` (524), `useDashboardData`, `useProperties`, `usePropertyDetail`. *(✅ `PropertyDetailPage` salió entero: partido en `components/detail/` — spec `property/detail_split`.)*
+- **Tamaño/complejidad** — ✅ **categoría saldada (ratchet en 0).** *(salieron enteros: `PropertyCard` → helpers + sub-componentes y `HomePage` → `useHomeSearch` + secciones (spec `home/homepage_split`); `SearchPage` → `components/SearchFilters` + `components/LocationAutocomplete` + `search.helpers` (spec `search/advanced_filters`); `PropertyDetailPage` → `components/detail/` (spec `property/detail_split`); `ProfilePage` (591→200) → `components/` + `useMercadoPagoReturn` (spec `profile/profile_split`); `DashboardPage` (981→204) → `components/` (spec `dashboard/dashboard_split`); `PropertyForm` (1068→95) → `usePropertyForm` + `propertyForm.helpers` + `components/form/` (spec `property/property_form_split`); `useDashboardData` (352→51) → sub-hooks (spec `dashboard/dashboard_data_split`); `usePropertyDetail` + `mapProperty` → helpers puros (spec `property/detail_and_mapper_split`).)*
 
 ## Gobernanza
 - `.ai/` — gobernanza propia del front (`context`, `policies`, `workflows`). Producto = compartido (pointer al backend).
-- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit`.
-- Comandos clave: `npm run lint` · `npm run test` · `npm run dev`.
+- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
+- **Guardia de código muerto: `knip`** (`knip.json`) — gate duro en CI (`npm run knip`). Detecta archivos, exports y dependencias huérfanos (lo que dejó pasar `AdminPage`/`ProfilePage` muertos). Debe quedar **limpio**.
+- **Coherencia contrato↔front:** `npm run api:surface` (script `scripts/api-surface.mjs`) + checklist en STEP 3.5 del workflow. Extrae la superficie de API real y la diffea contra el contrato del backend. No es gate de CI (el contrato vive en otro repo); es la ritualización del chequeo que faltaba (causa raíz de los filtros de search ausentes).
+- **Exactitud del PROJECT-MAP con dientes: `npm run map:check`** (`scripts/project-map-check.mjs`) — **gate duro** en CI y pre-commit. Deriva del código rutas/hooks/stores/componentes comunes y **falla si alguno no figura en este archivo**. Chequea PRESENCIA por nombre (no un touch → no se gamea bumpeando la fecha; no valida la descripción, eso sigue siendo criterio humano). Nace de que el mapa driftó (`BackButton`/`FooterLogo` quedaron fuera).
+- Comandos clave: `npm run lint` · `npm run knip` · `npm run map:check` · `npm run api:surface` · `npm run test` · `npm run dev`.

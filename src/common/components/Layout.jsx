@@ -1,17 +1,19 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Heart, User, LogOut, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
 import Logo from "./Logo";
 import FooterLogo from "./FooterLogo";
 import AdminLayout from "./AdminLayout";
+import UserMenu from "./UserMenu";
+import BackButton from "./BackButton";
 import WhatsAppButton from "./WhatsAppButton";
 import EmailVerificationBanner from "./EmailVerificationBanner";
 
 export default function Layout({ children }) {
   const location = useLocation();
   const isDashboardPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard');
+  const isHome = location.pathname === "/";
 
   if (isDashboardPath) {
     return <AdminLayout>{children}</AdminLayout>;
@@ -19,7 +21,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header isHome={isHome} />
       <main className="flex-grow pt-20">
         <EmailVerificationBanner />
         {children}
@@ -30,10 +32,9 @@ export default function Layout({ children }) {
   );
 }
 
-function Header() {
+function Header({ isHome = false }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout, isAdmin, isPublisher } = useAuth();
+  const { user } = useAuth();
 
   const navItems = [];
 
@@ -65,18 +66,7 @@ function Header() {
         </nav>
         <div className="flex items-center space-x-6">
           {user ? (
-            <div className="flex items-center gap-4">
-              <Link to={dashboardPath} className="text-[#1a1a1a]/85 hover:text-[#1a1a1a] transition-colors flex items-center gap-2 font-bold text-sm">
-                <LayoutDashboard className="w-5 h-5" /> Tablero
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-[#1a1a1a]/60 hover:text-red-600 transition-colors p-2"
-                title="Cerrar sesión"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+            <UserMenu />
           ) : (
             <>
               <Link to="/login" className="text-sm font-bold text-[#1a1a1a]/80 hover:text-black transition-all">
@@ -160,8 +150,8 @@ function Footer() {
         <div className="text-center lg:text-left">
           <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Legal</h3>
           <ul className="space-y-4">
-            <li><a href="#" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Términos y condiciones</a></li>
-            <li><a href="#" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Política de privacidad</a></li>
+            <li><Link to="/terminos-y-condiciones" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Términos y condiciones</Link></li>
+            <li><Link to="/politica-de-privacidad" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Política de privacidad</Link></li>
             <li><a href="#" className="text-xs text-slate-400 font-medium hover:text-[#ff0019] hover:translate-x-0.5 transition-all block">Defensa al consumidor</a></li>
           </ul>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CreditCard, ShieldCheck, Loader2, CheckCircle, QrCode, Phone } from 'lucide-react';
+import { X, CreditCard, ShieldCheck, CheckCircle, QrCode, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Loader from '@/common/components/Loader';
 
 export default function CheckoutModal({ plan, onConfirm, onCancel }) {
   const [step, setStep] = useState('form'); // 'form', 'processing', 'success', 'error'
@@ -115,7 +116,7 @@ export default function CheckoutModal({ plan, onConfirm, onCancel }) {
               exit={{ opacity: 0 }}
               className="p-20 flex flex-col items-center justify-center text-center"
             >
-              <Loader2 className="w-16 h-16 text-blue-600 animate-spin mb-6" />
+              <Loader inline className="mb-6" />
               <h3 className="text-xl font-bold text-slate-900">Verificando Pago...</h3>
               <p className="text-slate-500 text-sm mt-2">Estamos confirmando la transacción con Mercado Pago.</p>
             </motion.div>

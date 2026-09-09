@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
+import Loader from "../../../common/components/Loader";
 import PropertyForm from "../components/PropertyForm";
 import { getPropertyById, updateProperty, uploadPropertyImages, deletePropertyImage, updatePropertyImagesOrder } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
-import { Loader2 } from "lucide-react";
 
 export default function EditPropertyPage() {
   const { id } = useParams();
@@ -90,9 +90,7 @@ export default function EditPropertyPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-        </div>
+        <Loader inline className="min-h-[60vh]" />
       </Layout>
     );
   }

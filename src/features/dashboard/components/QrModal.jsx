@@ -1,53 +1,40 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Download, Printer, Loader2 } from "lucide-react";
 import QRCode from "qrcode";
 
-export default function QrModal({ property, onClose }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [isGeneratingPreview, setIsGeneratingPreview] = useState(true);
-
-  const propertyUrl = `${window.location.origin}/property/${property.id}`;
-
-  // Función para generar la imagen en alta resolución (2480 x 3508)
-  const generateHighResImage = async () => {
+// Genera la imagen del "Punto Infocasa" en alta resolución (2480 x 3508) con el QR
+// de la propiedad embebido en la esquina inferior derecha. A nivel de módulo porque
+// no depende del estado del componente (solo del id de la propiedad).
+function buildPuntoInfocasaCanvas(propertyId) {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     const width = 2480;
     const height = 3508;
     canvas.width = width;
     canvas.height = height;
-    
+
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.src = '/img/punto-infocasa-base.jpg';
-    
+
     img.onload = () => {
       ctx.drawImage(img, 0, 0, width, height);
-      
-      // QR más grande para mejor legibilidad
+
       const qrSize = 450;
-      const marginX = 0;
-      const marginY = 0;
-      const x = width - qrSize - marginX;
-      const y = height - qrSize - marginY;
-      
-      // Usar una URL más corta para el QR
-      const shortUrl = `${window.location.origin}/property/${property.id}`;
-      
+      const x = width - qrSize;
+      const y = height - qrSize;
+      const shortUrl = `${window.location.origin}/property/${propertyId}`;
+
       QRCode.toCanvas(
         document.createElement('canvas'),
-        shortUrl, // 👈 Usamos la URL corta
+        shortUrl,
         {
           width: qrSize,
           margin: 0,
-          errorCorrectionLevel: 'L', // 👈 Nivel bajo para QR más simple
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
-          }
+          errorCorrectionLevel: 'L',
+          color: { dark: '#000000', light: '#ffffff' },
         },
         (error, qrCanvas) => {
           if (error) {
@@ -60,19 +47,22 @@ export default function QrModal({ property, onClose }) {
         }
       );
     };
-    
-    img.onerror = () => {
-      reject(new Error('No se pudo cargar la imagen base'));
-    };
+
+    img.onerror = () => reject(new Error('No se pudo cargar la imagen base'));
   });
-};
+}
+
+export default function QrModal({ property, onClose }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(true);
 
   // Generar la vista previa al abrir el modal
   useEffect(() => {
     const generatePreview = async () => {
       try {
         setIsGeneratingPreview(true);
-        const canvas = await generateHighResImage();
+        const canvas = await buildPuntoInfocasaCanvas(property.id);
         setPreviewImage(canvas.toDataURL('image/jpeg', 0.95));
       } catch (error) {
         console.error('Error al generar vista previa:', error);
@@ -87,7 +77,7 @@ export default function QrModal({ property, onClose }) {
   const handleDownload = async () => {
     try {
       setIsLoading(true);
-      const canvas = await generateHighResImage();
+      const canvas = await buildPuntoInfocasaCanvas(property.id);
       
       const link = document.createElement('a');
       link.download = `punto-infocasa-${property.id}.jpg`;

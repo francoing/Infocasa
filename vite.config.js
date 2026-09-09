@@ -13,7 +13,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    // happy-dom en vez de jsdom: sin binario nativo, evita el EPERM intermitente en
+    // Windows que había sacado los tests del CI. Ver PROJECT-MAP "Tests".
+    environment: 'happy-dom',
     setupFiles: './src/test/setup.js',
   },
 })

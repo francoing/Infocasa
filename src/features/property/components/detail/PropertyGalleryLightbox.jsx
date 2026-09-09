@@ -24,7 +24,8 @@ export default function PropertyGalleryLightbox({ images, activeImage, setActive
       <div className="relative flex items-center justify-center flex-1 max-w-5xl mx-auto w-full group">
         <button
           onClick={prev}
-          className="absolute left-4 p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all opacity-0 group-hover:opacity-100 z-10"
+          aria-label="Imagen anterior"
+          className="absolute left-2 sm:left-4 p-3 sm:p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all z-10"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -42,7 +43,8 @@ export default function PropertyGalleryLightbox({ images, activeImage, setActive
 
         <button
           onClick={next}
-          className="absolute right-4 p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all opacity-0 group-hover:opacity-100 z-10"
+          aria-label="Imagen siguiente"
+          className="absolute right-2 sm:right-4 p-3 sm:p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all z-10"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
