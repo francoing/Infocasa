@@ -22,7 +22,7 @@ src/
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
-│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
@@ -70,7 +70,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Properties:** `properties`, `properties/{id}`, `properties/search`, `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
 - **Admin:** `admin/properties`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
-- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`.
+- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota`.
 
 ## Servicios externos
 - **Geoapify** (`VITE_GEOAPIFY_API_KEY`) — SOLO para **creación de propiedad** (`useGeoapifyPlaces` + `geocodeAddress` en `MapLocationSelector`: geocodifica direcciones arbitrarias) y el **gate de ubicación** (`useUserProvince`: reverse geocode del GPS). El **autocomplete de búsqueda NO usa Geoapify**: va por inventario (`useLocationSearch`).
@@ -84,6 +84,9 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-09-09 (cupo de publicaciones en el selector)
+- ✅ **Cupo destacadas/premium en "Tipo de Publicación"** — nuevo hook `usePublicationQuota` (`GET /me/publication-quota` → `{ plan, properties, featured, premium }`, cada uno `{ limit, used, available }`; `available === null` = ilimitado). `PublicationTypeSelector` lo consume: por tarjeta muestra "Te quedan N" (o "Cupo ilimitado") y **deshabilita** Destacada/Premium cuando `available <= 0`; Básica siempre habilitada. Si la opción elegida se queda sin cupo, vuelve a Básica. El backend sigue validando con **403** al publicar (no se confía solo en el front). Se recalcula en cada apertura (`staleTime: 0`) → descuenta tras publicar.
 
 ### Ciclo 2026-09-09 (Punto Infocasa / QR + limpieza de merge regresivo)
 - ✅ **Punto Infocasa (QR) por propiedad** — `features/dashboard/components/QrModal.jsx`: genera **client-side** (canvas + `qrcode`) una imagen "Punto Infocasa" en alta resolución (2480×3508) con el QR de la propiedad embebido sobre `public/img/punto-infocasa-base.jpg`, con descargar (JPG) e imprimir. Se dispara desde un botón en `PropertyRow` (estado local `qrOpen`). Deps nuevas: `qrcode`, `qrcode.react`, `html2canvas`. Sin cambios de API (todo local).
