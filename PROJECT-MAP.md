@@ -20,7 +20,7 @@ src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
 ├── features/{home,search,explore,property,auth,dashboard,profile,share,legal}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
-├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
+├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast
@@ -67,7 +67,7 @@ Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunc
 ## Contrato con backend (`/api/v1`)
 Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
 - **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites` (+ login/register/logout/forgot/reset vía `useAuth`).
-- **Properties:** `properties`, `properties/{id}`, `properties/search`, `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
+- **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
 - **Admin:** `admin/properties`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
 - **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota`.
@@ -86,7 +86,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 ## Deuda técnica / drift conocido
 
 ### Ciclo 2026-09-11 (mapa mostraba solo 12 marcadores)
-- ✅ **Mapa `/explore` limitado a 12** — `buildSearchQueryString` (`hooks/properties.query.js`) aplicaba `per_page=12` cuando no venía `page`; el mapa (`ExplorePage`) llama a `useProperties` sin `page`, así que traía solo 12 aunque hubiera más. Fix: nueva rama que respeta `filters.perPage` (alto) sin `page`; `ExplorePage` pasa `perPage: 200`. Default 12 (Home) y paginado 6 (`/search`) intactos. Test nuevo `hooks/propertiesQuery`. Ver `specs/explore/map_filters_parity/bug-mapa-per-page.md`. Recordar: el buscador público no trae borradores/pendientes y el mapa descarta sin `latitude/longitude`; si el backend caps `per_page` < 200, ese tope manda.
+- ✅ **Mapa `/explore` limitado a 12** — el mapa usaba `GET /properties/search` (paginado, `per_page=12`), así que traía solo 12. El backend agregó **`GET /properties/map`** (mismos filtros, sin paginar, trae todo de una; cada item con `coordinates.{lat,lng,exact}`). Fix front: `buildMapQueryString` (filtros sin paginación, reusa `buildFilterParts` con `buildSearchQueryString`), hook nuevo **`useMapProperties`** → `/properties/map`, `buildMapMarker` (mapea `coordinates.lat/lng` + `coordinatesExact`), y `ExplorePage` migra a `useMapProperties`. `ProvinceMap` plotea exactas como pin clusterizado y **aproximadas** (`exact === false`) como **área** (círculo ámbar + aviso "Ubicación aproximada"). Test `hooks/propertiesQuery` (search paginado vs. map sin paginar). Ver `specs/explore/map_filters_parity/bug-mapa-per-page.md`. Recordar: `/properties/map` público no trae borradores/pendientes y el mapa descarta sin coordenadas.
 
 ### Ciclo 2026-09-11 (vencimiento de plan, precios /mes, mobile del modal, verdes de CI)
 - ✅ **Vencimiento del plan** — `me/publication-quota` ahora devuelve `expires_at` (ISO 8601 o `null`). `DashboardPage` lo pasa (`quota?.expires_at`) por `DashboardStats` → `PlanStatusCard` (nueva prop `expiresAt`), que muestra "Tu plan vence el {fecha}" o "Plan sin vencimiento". `null` = sin vencimiento; fallback a `plan.expiryDate` por compat.

@@ -30,8 +30,10 @@ const legacyTypeId = (type) => {
 
 const hasValue = (v) => v !== undefined && v !== null && v !== "";
 
-/** Devuelve `?a=1&b=2` (o `""`) para los filtros de búsqueda que el backend soporta. */
-export const buildSearchQueryString = (filters = {}) => {
+// Parámetros de FILTRO (sin paginación) que soporta el backend. Compartidos por el
+// listado (/properties/search) y el mapa (/properties/map): mismos filtros, distinta
+// forma de traer resultados (paginado vs. todo de una).
+const buildFilterParts = (filters) => {
   const parts = [];
   const add = (key, val) => parts.push(`${key}=${encodeURIComponent(val)}`);
 
@@ -56,16 +58,25 @@ export const buildSearchQueryString = (filters = {}) => {
     add("sort", filters.sort);
   }
 
+  return parts;
+};
+
+const toQueryString = (parts) => (parts.length > 0 ? `?${parts.join("&")}` : "");
+
+/** Query string para GET /properties/search (paginado): filtros + page/per_page. */
+export const buildSearchQueryString = (filters = {}) => {
+  const parts = buildFilterParts(filters);
+
   if (filters.page) {
-    add("page", filters.page);
-    add("per_page", 6);
-  } else if (hasValue(filters.perPage)) {
-    // El mapa (/explore) no pagina: pide un per_page alto para traer TODOS los
-    // marcadores de la zona a la vez (ver spec explore/map_filters_parity §3).
-    add("per_page", filters.perPage);
+    parts.push(`page=${encodeURIComponent(filters.page)}`);
+    parts.push("per_page=6");
   } else {
-    add("per_page", 12);
+    parts.push("per_page=12");
   }
 
-  return parts.length > 0 ? `?${parts.join("&")}` : "";
+  return toQueryString(parts);
 };
+
+/** Query string para GET /properties/map (sin paginar): SOLO filtros. El mapa
+ *  trae todos los resultados que matchean de una — no usa page/per_page. */
+export const buildMapQueryString = (filters = {}) => toQueryString(buildFilterParts(filters));
