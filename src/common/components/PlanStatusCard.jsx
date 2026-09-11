@@ -1,12 +1,15 @@
 import React from 'react';
 import { Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 
-export default function PlanStatusCard({ plan, usage, limit, onUpgrade }) {
+export default function PlanStatusCard({ plan, usage, limit, expiresAt, onUpgrade }) {
   if (!plan) return null;
 
   const percentage = Math.min((usage / limit) * 100, 100);
   const isNearLimit = percentage >= 80;
-  const isExpired = plan.expiryDate && new Date(plan.expiryDate) < new Date();
+  // Vencimiento: viene del quota del backend (expires_at, ISO o null). Fallback a
+  // plan.expiryDate por compatibilidad si no se pasa la prop. null = sin vencimiento.
+  const expiry = expiresAt !== undefined ? expiresAt : plan.expiryDate;
+  const isExpired = expiry && new Date(expiry) < new Date();
 
   return (
     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
@@ -38,7 +41,7 @@ export default function PlanStatusCard({ plan, usage, limit, onUpgrade }) {
       <div className="flex items-center justify-between pt-2 border-t border-slate-50">
         <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
           <Calendar className="w-4 h-4" />
-          <span>{plan.expiryDate ? `Vence el ${new Date(plan.expiryDate).toLocaleDateString()}` : 'Plan Vitalicio'}</span>
+          <span>{expiry ? `Tu plan vence el ${new Date(expiry).toLocaleDateString()}` : 'Plan sin vencimiento'}</span>
         </div>
         {onUpgrade && (
           <button onClick={onUpgrade} className="text-[10px] text-blue-600 font-bold uppercase tracking-widest hover:underline">

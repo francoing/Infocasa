@@ -5,10 +5,10 @@ import { Check } from "lucide-react";
 export default function PlanPickerModal({ plans, userPlan, onChoose, onClose }) {
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-8">
+      <div className="bg-white w-full max-w-2xl rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         <h3 className="text-2xl font-black text-slate-900 mb-2">Elegí tu Plan</h3>
         <p className="text-slate-500 font-medium mb-8">Seleccioná el plan que mejor se adapte a tus necesidades.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -19,7 +19,7 @@ export default function PlanPickerModal({ plans, userPlan, onChoose, onClose }) 
                 <h4 className="text-lg font-black text-slate-900 uppercase mb-1">{plan.name}</h4>
                 <div className="flex items-baseline gap-1 mb-4">
                   <span className="text-2xl font-black text-slate-900">${plan.price}</span>
-                  <span className="text-xs text-slate-400 font-bold">/ año</span>
+                  <span className="text-xs text-slate-400 font-bold">/ mes</span>
                 </div>
                 <ul className="space-y-2 mb-6 flex-1">
                   {plan.features?.map((f, i) => (

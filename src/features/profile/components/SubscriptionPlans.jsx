@@ -30,7 +30,7 @@ function PlanCard({ plan, isCurrentPlan, isPopular, onChoose }) {
       <h3 className="text-xl font-black text-slate-900 mb-2">{plan.name}</h3>
       <div className="flex items-baseline gap-1 mb-6">
         <span className="text-3xl font-black text-slate-900">${plan.price}</span>
-        <span className="text-slate-500 font-bold text-sm">/año</span>
+        <span className="text-slate-500 font-bold text-sm">/mes</span>
       </div>
 
       <div className="flex-1 space-y-3 mb-8">

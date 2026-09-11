@@ -195,6 +195,7 @@ export default function DashboardPage() {
           userPlan={userPlan}
           properties={properties}
           leads={leads}
+          planExpiresAt={quota?.expires_at}
           onUpgrade={() => setShowPlanPicker(true)}
         />
 
