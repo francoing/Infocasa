@@ -86,7 +86,7 @@ export default function CheckoutModal({ plan, onConfirm, onCancel }) {
                   <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 space-y-4">
                     <div className="flex items-center justify-between font-bold text-slate-700">
                       <span>Total a pagar:</span>
-                      <span className="text-2xl font-black text-slate-900">${plan.price}/año</span>
+                      <span className="text-2xl font-black text-slate-900">${plan.price}/mes</span>
                     </div>
                     <p className="text-xs text-slate-500 text-left leading-relaxed">
                       Serás redirigido de forma segura al sandbox de Mercado Pago para completar tu pago con tarjeta o saldo de prueba.

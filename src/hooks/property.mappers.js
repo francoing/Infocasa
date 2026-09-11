@@ -97,3 +97,15 @@ export const buildProperty = (item) => ({
   ...mapAttributes(item),
   ...mapMeta(item),
 });
+
+/**
+ * Marcador del mapa (GET /properties/map). Mismo shape de UI que buildProperty, pero
+ * las coordenadas vienen en `coordinates.{lat,lng,exact}`. `exact === false` = ubicación
+ * del barrio (aproximada), no la dirección exacta → el mapa la plotea como área.
+ */
+export const buildMapMarker = (item) => ({
+  ...buildProperty(item),
+  latitude: item.coordinates?.lat ?? item.coordinates?.latitude ?? null,
+  longitude: item.coordinates?.lng ?? item.coordinates?.longitude ?? null,
+  coordinatesExact: item.coordinates?.exact !== false,
+});

@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-08-25** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-09-09** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -20,9 +20,9 @@ src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
 ├── features/{home,search,explore,property,auth,dashboard,profile,share,legal}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
-├── hooks/                ← capa de datos (react-query): useProperties, usePropertyDetail, usePlans,
+├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
-│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
@@ -67,10 +67,10 @@ Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunc
 ## Contrato con backend (`/api/v1`)
 Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
 - **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites` (+ login/register/logout/forgot/reset vía `useAuth`).
-- **Properties:** `properties`, `properties/{id}`, `properties/search`, `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
+- **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
 - **Admin:** `admin/properties`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
-- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`.
+- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota`.
 
 ## Servicios externos
 - **Geoapify** (`VITE_GEOAPIFY_API_KEY`) — SOLO para **creación de propiedad** (`useGeoapifyPlaces` + `geocodeAddress` en `MapLocationSelector`: geocodifica direcciones arbitrarias) y el **gate de ubicación** (`useUserProvince`: reverse geocode del GPS). El **autocomplete de búsqueda NO usa Geoapify**: va por inventario (`useLocationSearch`).
@@ -80,10 +80,26 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `setup.js` (90 tests). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `hooks/propertiesQuery`, `setup.js` (97 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-09-11 (mapa mostraba solo 12 marcadores)
+- ✅ **Mapa `/explore` limitado a 12** — el mapa usaba `GET /properties/search` (paginado, `per_page=12`), así que traía solo 12. El backend agregó **`GET /properties/map`** (mismos filtros, sin paginar, trae todo de una; cada item con `coordinates.{lat,lng,exact}`). Fix front: `buildMapQueryString` (filtros sin paginación, reusa `buildFilterParts` con `buildSearchQueryString`), hook nuevo **`useMapProperties`** → `/properties/map`, `buildMapMarker` (mapea `coordinates.lat/lng` + `coordinatesExact`), y `ExplorePage` migra a `useMapProperties`. `ProvinceMap` plotea exactas como pin clusterizado y **aproximadas** (`exact === false`) como **área** (círculo ámbar + aviso "Ubicación aproximada"). Test `hooks/propertiesQuery` (search paginado vs. map sin paginar). Ver `specs/explore/map_filters_parity/bug-mapa-per-page.md`. Recordar: `/properties/map` público no trae borradores/pendientes y el mapa descarta sin coordenadas.
+
+### Ciclo 2026-09-11 (vencimiento de plan, precios /mes, mobile del modal, verdes de CI)
+- ✅ **Vencimiento del plan** — `me/publication-quota` ahora devuelve `expires_at` (ISO 8601 o `null`). `DashboardPage` lo pasa (`quota?.expires_at`) por `DashboardStats` → `PlanStatusCard` (nueva prop `expiresAt`), que muestra "Tu plan vence el {fecha}" o "Plan sin vencimiento". `null` = sin vencimiento; fallback a `plan.expiryDate` por compat.
+- ✅ **Precios "/mes"** — los planes decían "/año"; corregido en `PlanPickerModal`, `profile/SubscriptionPlans` y `dashboard/CheckoutModal`.
+- ✅ **Mobile del `PlanPickerModal`** — el modal de "Mejorar Plan" desbordaba en mobile (3 planes apilados sin scroll, recortados por el centrado). Ahora `max-h-[90vh] overflow-y-auto` + padding/redondeo responsive.
+- ✅ **Verdes de CI** — knip: se quitaron deps muertas (`html2canvas`, `qrcode.react`) y el export sin uso `fetchPublicationQuota`; tests: se neutralizó el animador WAAPI de framer-motion en el setup (ver sección Tests). `npm run knip`/`test` vuelven a salir con código 0.
+
+### Ciclo 2026-09-09 (cupo de publicaciones en el selector)
+- ✅ **Cupo destacadas/premium en "Tipo de Publicación"** — nuevo hook `usePublicationQuota` (`GET /me/publication-quota` → `{ plan, properties, featured, premium }`, cada uno `{ limit, used, available }`; `available === null` = ilimitado). `PublicationTypeSelector` lo consume: por tarjeta muestra "Te quedan N" (o "Cupo ilimitado") y **deshabilita** Destacada/Premium cuando `available <= 0`; Básica ahora también usa el bucket `properties` (muestra "Te quedan N" y se deshabilita si `properties.available <= 0`). Si la opción elegida se queda sin cupo, vuelve a Básica. Además el botón **"Nueva Propiedad"** del `DashboardPage` se deshabilita cuando `properties.available <= 0`. El backend sigue validando con **403** al publicar (no se confía solo en el front). Se recalcula en cada apertura (`staleTime: 0`) → descuenta tras publicar. Nota: el contador "X/Y" de `PlanStatusCard` sigue saliendo de `properties.length` (incluye borradores); migrarlo al endpoint es una mejora pendiente.
+
+### Ciclo 2026-09-09 (Punto Infocasa / QR + limpieza de merge regresivo)
+- ✅ **Punto Infocasa (QR) por propiedad** — `features/dashboard/components/QrModal.jsx`: genera **client-side** (canvas + `qrcode`) una imagen "Punto Infocasa" en alta resolución (2480×3508) con el QR de la propiedad embebido sobre `public/img/punto-infocasa-base.jpg`, con descargar (JPG) e imprimir. Se dispara desde un botón en `PropertyRow` (estado local `qrOpen`). Dep nueva: `qrcode`. Sin cambios de API (todo local).
+- 🔧 **Limpieza de merge regresivo** — un merge desde una base vieja había revertido gobernanza y features (scripts `knip`/`map:check`/`api:surface` fuera de `package.json`, `jsdom` en vez de `happy-dom`, `Loader`/`LocationGateModal`/`Layout`/`HomePage`/`DashboardPage` y otros a versiones viejas, y resucitó código muerto: `AdminPage`, `useAdminData`, `useLeads`, `hooks/index`, `mock/data/cities`, `theme/aceTheme`, `PlanBadge`, `auth/ProfilePage`). Se restauró todo `src/` a `origin/production` conservando solo el QR, y se rehidrató `package.json` (gobernanza + deps del QR). **Pendiente:** `knip.json` tiene mal el `entry` (apunta solo a tests → 54 falsos positivos); no sigue los `import()` lazy del router — arreglar aparte.
 
 ### Ciclo 2026-08-19 (páginas legales)
 - ✅ **Términos y Condiciones + Política de Privacidad** — feature `features/legal/` con dos rutas públicas (`/terminos-y-condiciones`, `/politica-de-privacidad`) linkeadas desde el footer de `Layout`. Contenido **estático** (sin datos/API ni lógica de negocio): `LegalDoc` (shell + primitivos `Section/Clause/P/UL/OL/Note`), páginas `TermsPage`/`PrivacyPage`, y `content/sharedLegal.jsx` (`DatosIdentificatorios` + `TituloIV` reusados por ambas). Refleja el documento legal "Integral V3.0". **Pendiente del ANEXO (no implementado aún):** links legales también en registro/checkout/carga de aviso, tooltip de "Domicilio Certificado", disclaimers al pie de calculadoras/simuladores y formularios de contacto, botón de arrepentimiento, y trazabilidad de aceptación (backend).
