@@ -10,7 +10,7 @@ const LockIcon = () => (
 );
 
 const PLAN_DEFS = [
-  { type: "basic", label: "Básica", desc: "Listado estándar en los resultados de búsqueda.", icon: <Zap className="w-6 h-6" />, quotaKey: null, color: "border-slate-600 hover:border-slate-400", active: "border-blue-500 bg-blue-500/10", dotColor: "#3b82f6", iconColor: "text-slate-400" },
+  { type: "basic", label: "Básica", desc: "Listado estándar en los resultados de búsqueda.", icon: <Zap className="w-6 h-6" />, quotaKey: "properties", color: "border-slate-600 hover:border-slate-400", active: "border-blue-500 bg-blue-500/10", dotColor: "#3b82f6", iconColor: "text-slate-400" },
   { type: "featured", label: "Destacada", desc: "Aparece en la sección principal del Home.", icon: <Star className="w-6 h-6" />, quotaKey: "featured", color: "border-slate-600 hover:border-amber-400", active: "border-amber-400 bg-amber-400/10", dotColor: "#fbbf24", iconColor: "text-amber-400" },
   { type: "premium", label: "Premium", desc: "Máxima visibilidad: portada del home + badge especial.", icon: <Crown className="w-6 h-6" />, quotaKey: "premium", color: "border-slate-600 hover:border-purple-400", active: "border-purple-400 bg-purple-400/10", dotColor: "#a855f7", iconColor: "text-purple-400" },
 ];

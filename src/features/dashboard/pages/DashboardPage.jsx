@@ -5,6 +5,7 @@ import Layout from "@/common/components/Layout";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { usePublicationQuota } from "@/hooks/usePublicationQuota";
 import DashboardStats from "../components/DashboardStats";
 import DashboardTabs from "../components/DashboardTabs";
 import FavoritesTab from "../components/FavoritesTab";
@@ -29,6 +30,10 @@ export default function DashboardPage() {
     propSearch, setPropSearch, propStatus, setPropStatus, propOperation, setPropOperation,
     handleAssignPlan, updateUserStatus, deleteUser,
   } = useDashboardData();
+
+  // Cupo de propiedades del plan: si no quedan, se bloquea la creación (el backend valida igual con 403).
+  const { data: quota } = usePublicationQuota({ enabled: !isBuyer && !isAdmin });
+  const noPropsLeft = !!quota?.properties && quota.properties.available !== null && quota.properties.available <= 0;
 
   const [activeTab, setActiveTab] = useState("properties");
 
@@ -164,7 +169,7 @@ export default function DashboardPage() {
           </div>
           {/* El admin no publica propiedades ni gestiona planes. */}
           {!isBuyer && !isAdmin && (
-            userPlan ? (
+            userPlan && !noPropsLeft ? (
               <Link
                 to="/dashboard/properties/create"
                 className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
@@ -172,7 +177,10 @@ export default function DashboardPage() {
                 <Plus className="w-5 h-5" /> Nueva Propiedad
               </Link>
             ) : (
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm">
+              <span
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm"
+                title={noPropsLeft ? "Alcanzaste el límite de propiedades de tu plan" : "Necesitás un plan activo para publicar"}
+              >
                 <Plus className="w-5 h-5" /> Nueva Propiedad
               </span>
             )
