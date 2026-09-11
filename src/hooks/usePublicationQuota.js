@@ -7,7 +7,7 @@ import { api } from "../api/api";
  * cada uno { limit, used, available }. `available === null` = ilimitado.
  * El backend valida igual con 403 al publicar (no confiar solo en el front).
  */
-export const fetchPublicationQuota = async () => {
+const fetchPublicationQuota = async () => {
   const res = await api.get("/me/publication-quota");
   return res?.data || res;
 };
