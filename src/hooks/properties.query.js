@@ -59,6 +59,10 @@ export const buildSearchQueryString = (filters = {}) => {
   if (filters.page) {
     add("page", filters.page);
     add("per_page", 6);
+  } else if (hasValue(filters.perPage)) {
+    // El mapa (/explore) no pagina: pide un per_page alto para traer TODOS los
+    // marcadores de la zona a la vez (ver spec explore/map_filters_parity §3).
+    add("per_page", filters.perPage);
   } else {
     add("per_page", 12);
   }

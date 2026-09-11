@@ -55,8 +55,9 @@ export default function ExplorePage() {
     [searchParams, pathOperation]
   );
 
-  // Marcadores del mapa: mismos filtros que el listado.
-  const { data: properties, loading, error } = useProperties(currentFilters);
+  // Marcadores del mapa: mismos filtros que el listado, pero SIN paginar — el mapa
+  // muestra todos los resultados de la zona a la vez (per_page alto, no 12). Ver spec.
+  const { data: properties, loading, error } = useProperties({ ...currentFilters, perPage: 200 });
 
   // Zoom: coords en la URL, o resolviendo la ubicación por texto desde el INVENTARIO
   // (mismas locations que alimentan el filtro) — sin depender de Geoapify.
