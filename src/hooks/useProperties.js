@@ -1,13 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { queryClient } from "../lib/queryClient";
-import { buildProperty } from "./property.mappers";
-import { buildSearchQueryString } from "./properties.query";
+import { buildProperty, buildMapMarker } from "./property.mappers";
+import { buildSearchQueryString, buildMapQueryString } from "./properties.query";
 
 /** Normaliza una propiedad del backend (o `{data}`) al shape que consume la UI. */
 export const mapProperty = (p) => {
   if (!p) return null;
   return buildProperty(p.data ? p.data : p);
+};
+
+/**
+ * Propiedades para el MAPA: GET /properties/map (sin paginar) con los mismos filtros
+ * que el listado. Trae TODO lo que matchea de una. Cada item trae coordinates.{lat,lng,exact}
+ * → se mapea con buildMapMarker. Ver spec explore/map_filters_parity.
+ */
+export const useMapProperties = (filters = {}) => {
+  const queryKey = ["properties", "map", filters];
+
+  const query = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const queryString = buildMapQueryString(filters);
+      const res = await api.get(`/properties/map${queryString}`);
+      const raw = res.data || [];
+      return raw.map((p) => buildMapMarker(p.data ? p.data : p));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  return {
+    data: query.data || [],
+    loading: query.isLoading,
+    error: query.error?.message || null,
+    refresh: () => queryClient.invalidateQueries({ queryKey }),
+  };
 };
 
 export const useProperties = (filters = {}) => {
