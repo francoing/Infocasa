@@ -78,6 +78,7 @@ const mapAttributes = (item) => ({
 const mapMeta = (item) => ({
   favoritesCount: item.favorites_count || item.favoritesCount || item.favorites || 0,
   viewsCount: item.views_count || item.viewsCount || item.views || 0,
+  qrScansCount: item.qr_scans_count || 0,  // 👈 NUEVA LÍNEA
   isFavorited: item.is_favorited || false,
   status: item.status,
   createdAt: item.created_at,

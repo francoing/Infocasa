@@ -13,6 +13,8 @@ import PropertyTechnicalDetails from "../components/detail/PropertyTechnicalDeta
 import PropertyPriceBox from "../components/detail/PropertyPriceBox";
 import PropertyContactForm from "../components/detail/PropertyContactForm";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { api } from "@/api/api";
+import { queryClient } from "@/lib/queryClient";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -39,6 +41,25 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [id]);
+
+  // NUEVO: Registrar escaneo de QR si viene con ?ref=qr
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isQrRef = params.get("ref") === "qr";
+
+    if (isQrRef && id) {
+      // Llamar al endpoint del backend para registrar el escaneo
+      api.post(`/properties/${id}/qr-scan`)
+        .then(() => {
+          // Opcional: invalidar la query del dashboard para que el contador se actualice
+          queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+        })
+        .catch((err) => {
+          // No mostrar error al usuario, es solo un registro
+          console.warn("No se pudo registrar el escaneo de QR:", err);
+        });
+    }
   }, [id]);
 
   if (loading) {
