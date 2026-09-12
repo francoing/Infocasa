@@ -23,7 +23,8 @@ src/
 ├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota,
-│                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast
+│                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
+│                            useRegisterQrScan
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
