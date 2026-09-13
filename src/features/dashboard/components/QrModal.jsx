@@ -25,7 +25,7 @@ function buildPuntoInfocasaCanvas(propertyId) {
       const qrSize = 450;
       const x = width - qrSize;
       const y = height - qrSize;
-      const shortUrl = `${window.location.origin}/property/${propertyId}`;
+      const shortUrl = `${window.location.origin}/property/${propertyId}?ref=qr`;
 
       QRCode.toCanvas(
         document.createElement('canvas'),

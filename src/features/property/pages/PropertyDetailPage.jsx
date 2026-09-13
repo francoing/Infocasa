@@ -13,6 +13,7 @@ import PropertyTechnicalDetails from "../components/detail/PropertyTechnicalDeta
 import PropertyPriceBox from "../components/detail/PropertyPriceBox";
 import PropertyContactForm from "../components/detail/PropertyContactForm";
 import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { useRegisterQrScan } from "@/hooks/useRegisterQrScan";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
@@ -40,6 +41,9 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+ 
+  useRegisterQrScan(id);
 
   if (loading) {
     return (

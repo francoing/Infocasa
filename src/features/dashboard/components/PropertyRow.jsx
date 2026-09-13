@@ -98,6 +98,9 @@ export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, 
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Favoritos">
                 <Heart className="w-3.5 h-3.5 text-red-500" /> {prop.favoritesCount || 0}
               </span>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Escaneos QR">
+                <QrCode className="w-3.5 h-3.5 text-emerald-500" /> {prop.qrScansCount || 0}
+              </span>
             </div>
           </div>
         </div>
