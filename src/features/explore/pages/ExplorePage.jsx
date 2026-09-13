@@ -5,7 +5,7 @@ import Layout from "../../../common/components/Layout";
 import Loader from "../../../common/components/Loader";
 import ProvinceMap from "../../home/components/ProvinceMap";
 import SearchFilters from "../../search/components/SearchFilters";
-import { useProperties } from "../../../hooks/useProperties";
+import { useMapProperties } from "../../../hooks/useProperties";
 import { useAgencies } from "../../../hooks/useAgencies";
 import { usePropertyFormRefs } from "../../../hooks/usePropertyFormRefs";
 import { findLocationFocus } from "../../../hooks/useLocationSearch.helpers";
@@ -55,8 +55,9 @@ export default function ExplorePage() {
     [searchParams, pathOperation]
   );
 
-  // Marcadores del mapa: mismos filtros que el listado.
-  const { data: properties, loading, error } = useProperties(currentFilters);
+  // Marcadores del mapa: mismos filtros que el listado, pero SIN paginar. Pega a
+  // /properties/map, que trae TODO lo que matchea de una. Ver spec.
+  const { data: properties, loading, error } = useMapProperties(currentFilters);
 
   // Zoom: coords en la URL, o resolviendo la ubicación por texto desde el INVENTARIO
   // (mismas locations que alimentan el filtro) — sin depender de Geoapify.

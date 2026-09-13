@@ -23,20 +23,20 @@ describe("PlanStatusCard component", () => {
     
     expect(screen.getByText("Premium")).toBeInTheDocument();
     expect(screen.getByText("5 / 20")).toBeInTheDocument();
-    expect(screen.getByText("Plan Vitalicio")).toBeInTheDocument();
+    expect(screen.getByText("Plan sin vencimiento")).toBeInTheDocument();
   });
 
-  it("should render expiration date formatted if plan.expiryDate is provided", () => {
-    const planWithExpiry = {
-      ...mockPlan,
-      expiryDate: "2026-12-31T00:00:00.000Z"
-    };
+  it("should render expiration date formatted if expiresAt is provided", () => {
+    render(<PlanStatusCard plan={mockPlan} usage={5} limit={20} expiresAt="2026-12-31T00:00:00.000Z" />);
 
-    render(<PlanStatusCard plan={planWithExpiry} usage={5} limit={20} />);
-    
     // Check if the localized date string is rendered
     const expectedDateString = new Date("2026-12-31T00:00:00.000Z").toLocaleDateString();
-    expect(screen.getByText(`Vence el ${expectedDateString}`)).toBeInTheDocument();
+    expect(screen.getByText(`Tu plan vence el ${expectedDateString}`)).toBeInTheDocument();
+  });
+
+  it("should render 'Plan sin vencimiento' when expiresAt is null", () => {
+    render(<PlanStatusCard plan={mockPlan} usage={5} limit={20} expiresAt={null} />);
+    expect(screen.getByText("Plan sin vencimiento")).toBeInTheDocument();
   });
 
   it("should render the Upgrade button if onUpgrade is provided and trigger it on click", () => {
