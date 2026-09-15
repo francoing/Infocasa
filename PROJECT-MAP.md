@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-09-09** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-09-15** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -26,10 +26,10 @@ src/
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
-├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer,
+├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
-├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query)
+├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (readPaginated + buildPageRange)
 ├── data/provincias.json  ← datos estáticos de provincias
 ├── mock/                 ← mockApi + handlers/searchProperties + data (switch por VITE_USE_MOCK)
 └── test/                 ← Vitest (components, hooks, store, setup)
@@ -63,7 +63,9 @@ src/
 > La búsqueda **no** usa store: `SearchPage` maneja sus filtros por `searchParams` → `useProperties`. (El viejo `useFilterStore` era código muerto → eliminado.)
 
 ## Capa de datos (`hooks/`, react-query)
-Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ...]`, `["me_favorites"]`, `["leads", ...]`, `["sent_leads", ...]`, `["admin_properties"]`, `["admin_users"]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
+Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ..., page]`, `["me_favorites", page]`, `["leads", ..., page]`, `["sent_leads", ..., page]`, `["admin_properties", page]`, `["admin_users", page]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
+
+> **Listados paginados (dashboard):** la **página va en la query key** y la respuesta se normaliza con `readPaginated` (`lib/pagination.js`) → `{ items, meta }`. Contar `items` da el tamaño de la página, **no** el total: para totales/contadores usar **`meta.total`**.
 
 ## Contrato con backend (`/api/v1`)
 Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
@@ -81,10 +83,14 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `hooks/propertiesQuery`, `setup.js` (97 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `hooks/propertiesQuery`, `setup.js` (119 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-09-15 (paginación de los listados del dashboard)
+- ✅ **Los listados del dashboard mostraban solo la primera página** — todos esos endpoints **ya venían paginados por el backend** (paginador de Laravel), pero el front leía `data` y **descartaba `links`/`meta`**: era pérdida silenciosa de datos, no solo UI faltante. Topes reales que había: `me/properties` 15 · `leads` 15 (admin 50) · `leads/sent` 15 · `me/favorites` 15 · `users` 20 · `admin/properties` 15. Fix front (**sin cambios de backend ni de contrato**: Laravel ya lee `?page=`): helpers puros nuevos en `lib/pagination.js` (**`readPaginated`** normaliza `{data, links, meta}` → `{items, meta}` camelCase y tolera respuestas sin paginar; **`buildPageRange`** arma los números con elipsis), componente compartido **`common/components/Pagination`** (Anterior/Siguiente + números, "Mostrando X–Y de Z", `aria-current`, oculto si hay 1 sola página, mobile → "Página X de Y"), `useDashboardQueries` suma la página a la query key + al request y devuelve `{listado}Meta` (con `placeholderData: keepPreviousData` para no parpadear), `useDashboardData` mantiene **una página por listado** (estado de cliente, no va a la URL) y **resetea a la 1 al filtrar**, y los 6 tabs (`PropertiesTab`, `LeadsTab`, `SentLeadsTab`, `FavoritesTab`, `AdminUsersTab`, `AdminPropertiesTab`) renderizan el paginador al pie. **Efecto colateral arreglado:** `DashboardStats` y `PlanStatusCard` contaban con `.length` del array recibido → mostraban el tamaño de página como si fuera el total ("Propiedades Totales" decía 15 con 40 propiedades); ahora reciben `meta.total`. Tests: `helpers/pagination` (11) + `components/Pagination` (10). Spec `dashboard/listing_pagination`.
+- 🟡 **Cola de Certificaciones acotada a la página actual** — `pendingCertifications` se deriva **filtrando en el cliente** `adminProperties`, así que el admin solo ve las pendientes de la página que está mirando de `admin/properties`. Es **preexistente** (antes era "las de las primeras 15"), la paginación no lo introduce ni lo puede resolver bien desde el front: **necesita filtro server-side** (`admin/properties?certification_status=pending` o endpoint propio de la cola). Abrir cambio en el backend.
 
 ### Ciclo 2026-09-11 (mapa mostraba solo 12 marcadores)
 - ✅ **Mapa `/explore` limitado a 12** — el mapa usaba `GET /properties/search` (paginado, `per_page=12`), así que traía solo 12. El backend agregó **`GET /properties/map`** (mismos filtros, sin paginar, trae todo de una; cada item con `coordinates.{lat,lng,exact}`). Fix front: `buildMapQueryString` (filtros sin paginación, reusa `buildFilterParts` con `buildSearchQueryString`), hook nuevo **`useMapProperties`** → `/properties/map`, `buildMapMarker` (mapea `coordinates.lat/lng` + `coordinatesExact`), y `ExplorePage` migra a `useMapProperties`. `ProvinceMap` plotea exactas como pin clusterizado y **aproximadas** (`exact === false`) como **área** (círculo ámbar + aviso "Ubicación aproximada"). Test `hooks/propertiesQuery` (search paginado vs. map sin paginar). Ver `specs/explore/map_filters_parity/bug-mapa-per-page.md`. Recordar: `/properties/map` público no trae borradores/pendientes y el mapa descarta sin coordenadas.
