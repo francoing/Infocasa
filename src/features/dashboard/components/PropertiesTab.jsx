@@ -1,5 +1,6 @@
 import React from "react";
 import { Search } from "lucide-react";
+import Pagination from "@/common/components/Pagination";
 import PropertyRow from "./PropertyRow";
 
 /** Barra de filtros de propiedades (búsqueda local aplicada con "Buscar"). */
@@ -66,7 +67,7 @@ function PropertyFilters({ localSearch, setLocalSearch, localOperation, setLocal
 }
 
 /** Tab de propiedades publicadas (rol vendedor): filtros + filas con reducción de precio. */
-export default function PropertiesTab({ properties, filters, rowProps }) {
+export default function PropertiesTab({ properties, filters, rowProps, meta, onPageChange }) {
   const hasAppliedFilters = filters.propSearch || filters.propOperation || filters.propStatus;
 
   return (
@@ -110,6 +111,8 @@ export default function PropertiesTab({ properties, filters, rowProps }) {
           </div>
         )}
       </div>
+
+      <Pagination meta={meta} onPageChange={onPageChange} itemLabel="propiedades" />
     </div>
   );
 }

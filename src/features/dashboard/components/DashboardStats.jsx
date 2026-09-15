@@ -13,8 +13,11 @@ const StatCard = ({ icon, iconClass, label, value }) => (
 );
 
 /** Fila de stats del dashboard: variante comprador (favoritos/consultas) vs vendedor (plan + totales).
- *  El admin no publica ni gestiona planes → no ve esta fila (plan/publicación no aplican). */
-export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads, userPlan, properties, leads, planExpiresAt, onUpgrade }) {
+ *  El admin no publica ni gestiona planes → no ve esta fila (plan/publicación no aplican).
+ *
+ *  Los totales llegan ya resueltos desde `meta.total` del backend: los listados vienen
+ *  paginados, así que contar el array recibido daría el tamaño de la página, no el total. */
+export default function DashboardStats({ isBuyer, isAdmin, favoritesTotal, sentLeadsTotal, userPlan, propertiesTotal, leadsTotal, planExpiresAt, onUpgrade }) {
   if (isAdmin) return null;
 
   if (isBuyer) {
@@ -24,13 +27,13 @@ export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads,
           icon={<Heart className="w-8 h-8 fill-rose-500 text-rose-600" />}
           iconClass="bg-rose-50 text-rose-600"
           label="Favoritos Guardados"
-          value={favorites.length}
+          value={favoritesTotal}
         />
         <StatCard
           icon={<MessageSquare className="w-8 h-8" />}
           iconClass="bg-blue-50 text-blue-600"
           label="Consultas Realizadas"
-          value={sentLeads.length}
+          value={sentLeadsTotal}
         />
       </div>
     );
@@ -40,7 +43,7 @@ export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads,
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
       <div className="lg:col-span-4">
         {userPlan ? (
-          <PlanStatusCard plan={userPlan} usage={properties.length} limit={userPlan.details.limit} expiresAt={planExpiresAt} onUpgrade={onUpgrade} />
+          <PlanStatusCard plan={userPlan} usage={propertiesTotal} limit={userPlan.details.limit} expiresAt={planExpiresAt} onUpgrade={onUpgrade} />
         ) : (
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tu Plan Actual</h4>
@@ -61,14 +64,14 @@ export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads,
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Home className="w-6 h-6" /></div>
             <span className="text-slate-500 font-medium">Propiedades Totales</span>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{properties.length}</div>
+          <div className="text-3xl font-bold text-slate-900">{propertiesTotal}</div>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-green-50 text-green-600 rounded-xl"><MessageSquare className="w-6 h-6" /></div>
             <span className="text-slate-500 font-medium">Consultas Recibidas</span>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{leads.length}</div>
+          <div className="text-3xl font-bold text-slate-900">{leadsTotal}</div>
         </div>
       </div>
     </div>

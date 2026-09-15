@@ -22,6 +22,8 @@ export default function DashboardPage() {
     user, isAdmin, isBuyer,
     favorites, sentLeads, removeFavorite,
     properties, leads, adminUsers, adminProperties, pendingCertifications,
+    favoritesMeta, sentLeadsMeta, propertiesMeta, leadsMeta, adminUsersMeta, adminPropertiesMeta,
+    setFavoritesPage, setSentLeadsPage, setPropertiesPage, setLeadsPage, setAdminUsersPage, setAdminPropertiesPage,
     userPlan, plansList, loading,
     showCheckout, setShowCheckout,
     reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, handleReducePrice,
@@ -102,7 +104,14 @@ export default function DashboardPage() {
   const renderTab = () => {
     switch (activeTab) {
       case "favorites":
-        return <FavoritesTab favorites={favorites} onRemoveFavorite={removeFavorite} />;
+        return (
+          <FavoritesTab
+            favorites={favorites}
+            onRemoveFavorite={removeFavorite}
+            meta={favoritesMeta}
+            onPageChange={setFavoritesPage}
+          />
+        );
       case "sent_leads":
         return (
           <SentLeadsTab
@@ -110,6 +119,8 @@ export default function DashboardPage() {
             filterStatus={filterStatus} setFilterStatus={setFilterStatus}
             filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
             filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
+            meta={sentLeadsMeta}
+            onPageChange={setSentLeadsPage}
           />
         );
       case "properties":
@@ -125,14 +136,30 @@ export default function DashboardPage() {
               expandedId, onToggleExpand: toggleExpand, onDelete: confirmDeleteProperty,
               reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice: handleReducePrice,
             }}
+            meta={propertiesMeta}
+            onPageChange={setPropertiesPage}
           />
         );
       case "admin_users":
         return isAdmin ? (
-          <AdminUsersTab adminUsers={adminUsers} currentUserId={user.id} onUpdateUserStatus={updateUserStatus} onDeleteUser={confirmDeleteUser} />
+          <AdminUsersTab
+            adminUsers={adminUsers}
+            currentUserId={user.id}
+            onUpdateUserStatus={updateUserStatus}
+            onDeleteUser={confirmDeleteUser}
+            meta={adminUsersMeta}
+            onPageChange={setAdminUsersPage}
+          />
         ) : null;
       case "admin_properties":
-        return isAdmin ? <AdminPropertiesTab adminProperties={adminProperties} onDeleteProperty={confirmModerateProperty} /> : null;
+        return isAdmin ? (
+          <AdminPropertiesTab
+            adminProperties={adminProperties}
+            onDeleteProperty={confirmModerateProperty}
+            meta={adminPropertiesMeta}
+            onPageChange={setAdminPropertiesPage}
+          />
+        ) : null;
       case "certifications":
         return isAdmin ? (
           <CertificationsTab items={pendingCertifications} onModerate={moderateCertification} disabled={isModerating} />
@@ -148,6 +175,8 @@ export default function DashboardPage() {
             replyBody={replyBody} setReplyBody={setReplyBody}
             onSendReply={handleSendReply} isReplying={isReplying}
             onUpdateLeadStatus={updateLeadStatus}
+            meta={leadsMeta}
+            onPageChange={setLeadsPage}
           />
         );
       default:
@@ -187,14 +216,15 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Totales reales del backend (`meta.total`), no el tamaño de la página actual. */}
         <DashboardStats
           isBuyer={isBuyer}
           isAdmin={isAdmin}
-          favorites={favorites}
-          sentLeads={sentLeads}
+          favoritesTotal={favoritesMeta?.total ?? favorites.length}
+          sentLeadsTotal={sentLeadsMeta?.total ?? sentLeads.length}
           userPlan={userPlan}
-          properties={properties}
-          leads={leads}
+          propertiesTotal={propertiesMeta?.total ?? properties.length}
+          leadsTotal={leadsMeta?.total ?? leads.length}
           planExpiresAt={quota?.expires_at}
           onUpgrade={() => setShowPlanPicker(true)}
         />
