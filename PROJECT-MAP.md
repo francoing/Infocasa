@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-09-15** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-09-17** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -83,7 +83,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `hooks/propertiesQuery`, `setup.js` (119 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `setup.js` (124 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
@@ -94,6 +94,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ### Ciclo 2026-09-11 (mapa mostraba solo 12 marcadores)
 - ✅ **Mapa `/explore` limitado a 12** — el mapa usaba `GET /properties/search` (paginado, `per_page=12`), así que traía solo 12. El backend agregó **`GET /properties/map`** (mismos filtros, sin paginar, trae todo de una; cada item con `coordinates.{lat,lng,exact}`). Fix front: `buildMapQueryString` (filtros sin paginación, reusa `buildFilterParts` con `buildSearchQueryString`), hook nuevo **`useMapProperties`** → `/properties/map`, `buildMapMarker` (mapea `coordinates.lat/lng` + `coordinatesExact`), y `ExplorePage` migra a `useMapProperties`. `ProvinceMap` plotea exactas como pin clusterizado y **aproximadas** (`exact === false`) como **área** (círculo ámbar + aviso "Ubicación aproximada"). Test `hooks/propertiesQuery` (search paginado vs. map sin paginar). Ver `specs/explore/map_filters_parity/bug-mapa-per-page.md`. Recordar: `/properties/map` público no trae borradores/pendientes y el mapa descarta sin coordenadas.
+- ✅ **Miniatura real en el popup del mapa** — el popup mostraba **siempre la foto genérica**: `buildPopupHtml` toma `images[0].url || imageUrl`, pero `/properties/map` no trae `images[]`, así que `buildMapMarker` caía a `FALLBACK_IMAGE`. El backend agregó **`image_url`** al payload del mapa (primera foto por `order_index`, o `null`). Fix: `buildMapMarker` mapea `imageUrl: item.image_url || FALLBACK_IMAGE` (sin foto o backend viejo → genérica, sin romper). Test `hooks/propertyMappers` (incluye que el HTML del popup lleve la miniatura real). Ver `specs/explore/map_filters_parity/bug-mapa-miniatura-generica.md`.
 
 ### Ciclo 2026-09-11 (vencimiento de plan, precios /mes, mobile del modal, verdes de CI)
 - ✅ **Vencimiento del plan** — `me/publication-quota` ahora devuelve `expires_at` (ISO 8601 o `null`). `DashboardPage` lo pasa (`quota?.expires_at`) por `DashboardStats` → `PlanStatusCard` (nueva prop `expiresAt`), que muestra "Tu plan vence el {fecha}" o "Plan sin vencimiento". `null` = sin vencimiento; fallback a `plan.expiryDate` por compat.
