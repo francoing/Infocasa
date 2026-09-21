@@ -103,9 +103,12 @@ export const buildProperty = (item) => ({
  * Marcador del mapa (GET /properties/map). Mismo shape de UI que buildProperty, pero
  * las coordenadas vienen en `coordinates.{lat,lng,exact}`. `exact === false` = ubicación
  * del barrio (aproximada), no la dirección exacta → el mapa la plotea como área.
+ * La miniatura del popup viene en `image_url` (primera foto de la galería); el payload
+ * del mapa no trae `images[]`, así que sin esto el popup caía siempre a la genérica.
  */
 export const buildMapMarker = (item) => ({
   ...buildProperty(item),
+  imageUrl: item.image_url || FALLBACK_IMAGE,
   latitude: item.coordinates?.lat ?? item.coordinates?.latitude ?? null,
   longitude: item.coordinates?.lng ?? item.coordinates?.longitude ?? null,
   coordinatesExact: item.coordinates?.exact !== false,
