@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, AlertCircle } from "lucide-react";
 
 export default function ImageUploader({ images = [], onChange, maxImages = 10 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
+  const [showLimitMessage, setShowLimitMessage] = useState(false);
 
   // Cache File → objectURL: se crea una vez por archivo (no en cada render) y se revoca
   // todo al desmontar, evitando la fuga de blobs. Ver bug-preview-reupload.
@@ -30,12 +31,26 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
 
   const processFiles = (files) => {
     const newImages = [];
+    const availableSlots = maxImages - images.length;
+
+    // Si no hay espacio, mostrar el mensaje y no procesar
+    if (availableSlots <= 0) {
+      setShowLimitMessage(true);
+      setTimeout(() => setShowLimitMessage(false), 3000);
+      return;
+    }
 
     for (const file of files) {
-      if (images.length + newImages.length >= maxImages) break;
+      if (newImages.length >= availableSlots) break;
       if (!file.type.startsWith("image/")) continue;
 
       newImages.push(file);
+    }
+
+    // Si se intentaron subir más de los permitidos, mostrar aviso
+    if (files.length > availableSlots) {
+      setShowLimitMessage(true);
+      setTimeout(() => setShowLimitMessage(false), 3000);
     }
 
     onChange([...images, ...newImages]);
@@ -74,35 +89,88 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
     onChange(next);
   };
 
+  const isFull = images.length >= maxImages;
+
   return (
     <div className="space-y-4">
+      {/* Contador de imágenes */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          Imágenes
+        </p>
+        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+          isFull 
+            ? 'bg-red-100 text-red-700' 
+            : 'bg-blue-100 text-blue-700'
+        }`}>
+          {images.length} / {maxImages}
+        </span>
+      </div>
+
+      {/* Mensaje de límite alcanzado */}
+      {showLimitMessage && (
+        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm font-semibold">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>Solo podés subir hasta {maxImages} imágenes. Eliminá alguna para subir más.</span>
+        </div>
+      )}
+
+      {/* Área de subida */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragOver={(e) => { 
+          if (!isFull) {
+            e.preventDefault(); 
+            setIsDragging(true); 
+          }
+        }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        className={`relative border-2 border-dashed rounded-3xl p-10 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${isDragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-blue-400 bg-slate-50'}`}
+        onDrop={isFull ? undefined : handleDrop}
+        className={`relative border-2 border-dashed rounded-3xl p-10 transition-all flex flex-col items-center justify-center text-center ${
+          isFull 
+            ? 'border-slate-200 bg-slate-100 cursor-not-allowed opacity-60' 
+            : isDragging 
+              ? 'border-blue-600 bg-blue-50 cursor-pointer' 
+              : 'border-slate-200 hover:border-blue-400 bg-slate-50 cursor-pointer'
+        }`}
       >
         <input
           type="file"
           multiple
           accept="image/*"
           onChange={handleFileInput}
-          className="absolute inset-0 opacity-0 cursor-pointer"
+          disabled={isFull}
+          className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
         />
 
         {uploading ? (
           <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
         ) : (
-          <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 mb-4">
-            <Upload className="w-8 h-8 text-blue-600" />
+          <div className={`p-4 rounded-2xl shadow-sm border mb-4 ${
+            isFull 
+              ? 'bg-slate-200 border-slate-300' 
+              : 'bg-white border-slate-100'
+          }`}>
+            <Upload className={`w-8 h-8 ${isFull ? 'text-slate-400' : 'text-blue-600'}`} />
           </div>
         )}
 
-        <p className="text-lg font-bold text-slate-900">
-          {uploading ? 'Procesando imágenes...' : 'Arrastrá tus fotos aquí'}
+        <p className={`text-lg font-bold ${isFull ? 'text-slate-400' : 'text-slate-900'}`}>
+          {uploading 
+            ? 'Procesando imágenes...' 
+            : isFull 
+              ? 'Límite alcanzado' 
+              : 'Arrastrá tus fotos aquí'}
         </p>
-        <p className="text-slate-500 text-sm mt-1">O hacé clic para buscar en tu equipo</p>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">JPG, PNG hasta 5MB</p>
+        <p className={`text-sm mt-1 ${isFull ? 'text-slate-400' : 'text-slate-500'}`}>
+          {isFull 
+            ? `Ya tenés ${maxImages} imágenes. Eliminá alguna para subir más.` 
+            : 'O hacé clic para buscar en tu equipo'}
+        </p>
+        {!isFull && (
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">
+            JPG, PNG hasta 5MB
+          </p>
+        )}
       </div>
 
       {/* Preview Grid — arrastrá para reordenar; la 1ª es la portada */}
@@ -119,7 +187,9 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
                 onDragStart={() => setDragIndex(index)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleTileDrop(index)}
-                className={`relative group aspect-square rounded-2xl overflow-hidden border shadow-sm cursor-move transition-opacity ${dragIndex === index ? 'border-blue-500 opacity-50' : 'border-slate-100'}`}
+                className={`relative group aspect-square rounded-2xl overflow-hidden border shadow-sm cursor-move transition-opacity ${
+                  dragIndex === index ? 'border-blue-500 opacity-50' : 'border-slate-100'
+                }`}
               >
                 <img src={previewSrc(img)} alt={`Preview ${index}`} className="w-full h-full object-cover pointer-events-none" />
                 <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
