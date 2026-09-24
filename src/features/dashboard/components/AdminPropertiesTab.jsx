@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Pagination from "@/common/components/Pagination";
 
 /** Tab admin: tabla de moderación de propiedades (ver / dar de baja). */
-export default function AdminPropertiesTab({ adminProperties, onDeleteProperty }) {
+export default function AdminPropertiesTab({ adminProperties, onDeleteProperty, meta, onPageChange }) {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -55,6 +56,8 @@ export default function AdminPropertiesTab({ adminProperties, onDeleteProperty }
           </table>
         </div>
       </div>
+
+      <Pagination meta={meta} onPageChange={onPageChange} itemLabel="propiedades" />
     </div>
   );
 }
