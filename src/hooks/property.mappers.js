@@ -5,10 +5,16 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1564013799919-ab600027
 const OPERATION_LABEL = { sale: "Venta", rent: "Alquiler", development: "Desarrollo", temporary_rent: "Temporario" };
 
 const mapImageUrl = (item) => {
+  // 1. Preferir `images[]` (payload completo de /properties/{id}).
   if (item.images && item.images.length > 0) {
     const cover = item.images.find((img) => img.is_cover) || item.images[0];
     return cover.url;
   }
+  // 2. Fallback: `image_url` (payload liviano de /properties/map, sin images[]).
+  if (item.image_url) {
+    return item.image_url;
+  }
+  // 3. Último recurso: imagen genérica.
   return FALLBACK_IMAGE;
 };
 
