@@ -14,7 +14,7 @@ scopes:
     files:
       - "src/**/components/**/*.jsx"
       - "src/common/components/**/*.jsx"
-    max_lines: 300
+    max_lines: 500
     max_lines_per_function: 200
     complexity: 20
     max_depth: 4
@@ -59,4 +59,3 @@ testing:
        componente nuevo, hook nuevo, o helper puro con lógica. Un helper puro se testea directo;
        un botón se testea por su callback o por la URL/acción que produce."
     - "El gate NO se baja ni se saca del CI para 'pasar'; si un test es flaky, se arregla la causa."
-

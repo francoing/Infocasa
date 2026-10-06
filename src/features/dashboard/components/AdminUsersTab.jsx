@@ -1,8 +1,7 @@
 import React from "react";
-import Pagination from "@/common/components/Pagination";
 
 /** Tab admin: tabla de gestión de usuarios (bloquear/activar/eliminar). */
-export default function AdminUsersTab({ adminUsers, currentUserId, onUpdateUserStatus, onDeleteUser, meta, onPageChange }) {
+export default function AdminUsersTab({ adminUsers, currentUserId, onUpdateUserStatus, onDeleteUser }) {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -64,8 +63,6 @@ export default function AdminUsersTab({ adminUsers, currentUserId, onUpdateUserS
           </table>
         </div>
       </div>
-
-      <Pagination meta={meta} onPageChange={onPageChange} itemLabel="usuarios" />
     </div>
   );
 }

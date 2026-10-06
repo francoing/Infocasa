@@ -163,11 +163,11 @@ describe("usePlans hook - validateLimit", () => {
 });
 
 describe("fetchPlans", () => {
-  it("should fetch and map plans with features for basic plan", async () => {
+  it("should fetch plans from /plans and return raw array", async () => {
     const mockPlans = {
       data: [
-        { id: 1, name: "Basic", price: 0, property_limit: 3, featured_limit: 0 }
-      ]
+        { id: 1, name: "Basic", price: 0, property_limit: 3, featured_limit: 0 },
+      ],
     };
     api.get.mockResolvedValueOnce(mockPlans);
 
@@ -175,47 +175,47 @@ describe("fetchPlans", () => {
 
     expect(api.get).toHaveBeenCalledWith("/plans");
     expect(result).toHaveLength(1);
-    expect(result[0].name).toBe("Basic");
-    expect(result[0].features).toEqual([
-      "Hasta 3 propiedades",
-      "Sin destacadas",
-      "Soporte básico por email",
-      "Publicación estándar"
-    ]);
+    expect(result[0]).toEqual({
+      id: 1,
+      name: "Basic",
+      price: 0,
+      property_limit: 3,
+      featured_limit: 0,
+    });
   });
 
-  it("should fetch and map plans for premium plan", async () => {
+  it("should return empty array when backend returns no data", async () => {
+    api.get.mockResolvedValueOnce({ data: null });
+
+    const result = await fetchPlans();
+
+    expect(result).toEqual([]);
+  });
+
+  it("should return empty array when backend returns undefined data", async () => {
+    api.get.mockResolvedValueOnce({});
+
+    const result = await fetchPlans();
+
+    expect(result).toEqual([]);
+  });
+
+  it("should return multiple plans as-is", async () => {
     const mockPlans = {
       data: [
-        { id: 2, name: "Premium", price: 2000, property_limit: 20, featured_limit: 5 }
-      ]
+        { id: 1, name: "Profesional", price: 75000, property_limit: 30, featured_limit: 5 },
+        { id: 2, name: "Profesional Plus", price: 150000, property_limit: 100, featured_limit: 15 },
+        { id: 3, name: "Profesional Premium", price: 300000, property_limit: 200, featured_limit: 30 },
+      ],
     };
     api.get.mockResolvedValueOnce(mockPlans);
 
     const result = await fetchPlans();
 
-    expect(result).toHaveLength(1);
-    expect(result[0].features).toEqual([
-      "Hasta 20 propiedades",
-      "Hasta 5 destacadas",
-      "Soporte prioritario",
-      "Mayor visibilidad en búsquedas"
-    ]);
-  });
-
-  it("should fetch and map plans for unlimited/other plans", async () => {
-    const mockPlans = {
-      data: [
-        { id: 3, name: "Unlimited", price: 5000, property_limit: null, featured_limit: 50 }
-      ]
-    };
-    api.get.mockResolvedValueOnce(mockPlans);
-
-    const result = await fetchPlans();
-
-    expect(result).toHaveLength(1);
-    expect(result[0].features).toContain("Propiedades ilimitadas");
-    expect(result[0].features).toContain("Asignación directa de leads");
+    expect(result).toHaveLength(3);
+    expect(result[0].name).toBe("Profesional");
+    expect(result[1].name).toBe("Profesional Plus");
+    expect(result[2].name).toBe("Profesional Premium");
   });
 });
 

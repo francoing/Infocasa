@@ -5,10 +5,16 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1564013799919-ab600027
 const OPERATION_LABEL = { sale: "Venta", rent: "Alquiler", development: "Desarrollo", temporary_rent: "Temporario" };
 
 const mapImageUrl = (item) => {
+  // 1. Preferir `images[]` (payload completo de /properties/{id}).
   if (item.images && item.images.length > 0) {
     const cover = item.images.find((img) => img.is_cover) || item.images[0];
     return cover.url;
   }
+  // 2. Fallback: `image_url` (payload liviano de /properties/map, sin images[]).
+  if (item.image_url) {
+    return item.image_url;
+  }
+  // 3. Último recurso: imagen genérica.
   return FALLBACK_IMAGE;
 };
 
@@ -103,12 +109,9 @@ export const buildProperty = (item) => ({
  * Marcador del mapa (GET /properties/map). Mismo shape de UI que buildProperty, pero
  * las coordenadas vienen en `coordinates.{lat,lng,exact}`. `exact === false` = ubicación
  * del barrio (aproximada), no la dirección exacta → el mapa la plotea como área.
- * La miniatura del popup viene en `image_url` (primera foto de la galería); el payload
- * del mapa no trae `images[]`, así que sin esto el popup caía siempre a la genérica.
  */
 export const buildMapMarker = (item) => ({
   ...buildProperty(item),
-  imageUrl: item.image_url || FALLBACK_IMAGE,
   latitude: item.coordinates?.lat ?? item.coordinates?.latitude ?? null,
   longitude: item.coordinates?.lng ?? item.coordinates?.longitude ?? null,
   coordinatesExact: item.coordinates?.exact !== false,

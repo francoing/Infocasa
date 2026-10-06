@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-09-17** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-10-06** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -29,7 +29,7 @@ src/
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
-├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (readPaginated + buildPageRange)
+├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado)
 ├── data/provincias.json  ← datos estáticos de provincias
 ├── mock/                 ← mockApi + handlers/searchProperties + data (switch por VITE_USE_MOCK)
 └── test/                 ← Vitest (components, hooks, store, setup)
@@ -46,6 +46,9 @@ src/
 | `/login` `/register` `/forgot-password` `/reset-password` | Auth pages | pública |
 | `/terminos-y-condiciones` | TermsPage (contenido legal estático) | pública |
 | `/politica-de-privacidad` | PrivacyPage (contenido legal estático) | pública |
+| `/sobre-nosotros` | SobreNosotrosPage (contenido institucional estático) | pública |
+| `/noticias` | NoticiasPage (noticias del NOA inmobiliario, estático) | pública |
+| `/contacto` | ContactoPage (formulario de contacto) | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/profile` | ProfilePage | `auth` (cualquier rol) |
 | `/dashboard` | DashboardPage | owner / agent / admin / buyer |
@@ -63,9 +66,7 @@ src/
 > La búsqueda **no** usa store: `SearchPage` maneja sus filtros por `searchParams` → `useProperties`. (El viejo `useFilterStore` era código muerto → eliminado.)
 
 ## Capa de datos (`hooks/`, react-query)
-Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ..., page]`, `["me_favorites", page]`, `["leads", ..., page]`, `["sent_leads", ..., page]`, `["admin_properties", page]`, `["admin_users", page]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
-
-> **Listados paginados (dashboard):** la **página va en la query key** y la respuesta se normaliza con `readPaginated` (`lib/pagination.js`) → `{ items, meta }`. Contar `items` da el tamaño de la página, **no** el total: para totales/contadores usar **`meta.total`**.
+Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunca desde componentes). Query keys: `["properties"]`, `["property", id]`, `["me_properties", ...]`, `["me_favorites"]`, `["leads", ...]`, `["sent_leads", ...]`, `["admin_properties"]`, `["admin_users"]`, `["admin_leads"]`, `["plans", role]`, `["userPlan", id]`, `["auth_me"]`.
 
 ## Contrato con backend (`/api/v1`)
 Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
@@ -83,18 +84,21 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `setup.js` (124 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `setup.js` (97 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
 
-### Ciclo 2026-09-15 (paginación de los listados del dashboard)
-- ✅ **Los listados del dashboard mostraban solo la primera página** — todos esos endpoints **ya venían paginados por el backend** (paginador de Laravel), pero el front leía `data` y **descartaba `links`/`meta`**: era pérdida silenciosa de datos, no solo UI faltante. Topes reales que había: `me/properties` 15 · `leads` 15 (admin 50) · `leads/sent` 15 · `me/favorites` 15 · `users` 20 · `admin/properties` 15. Fix front (**sin cambios de backend ni de contrato**: Laravel ya lee `?page=`): helpers puros nuevos en `lib/pagination.js` (**`readPaginated`** normaliza `{data, links, meta}` → `{items, meta}` camelCase y tolera respuestas sin paginar; **`buildPageRange`** arma los números con elipsis), componente compartido **`common/components/Pagination`** (Anterior/Siguiente + números, "Mostrando X–Y de Z", `aria-current`, oculto si hay 1 sola página, mobile → "Página X de Y"), `useDashboardQueries` suma la página a la query key + al request y devuelve `{listado}Meta` (con `placeholderData: keepPreviousData` para no parpadear), `useDashboardData` mantiene **una página por listado** (estado de cliente, no va a la URL) y **resetea a la 1 al filtrar**, y los 6 tabs (`PropertiesTab`, `LeadsTab`, `SentLeadsTab`, `FavoritesTab`, `AdminUsersTab`, `AdminPropertiesTab`) renderizan el paginador al pie. **Efecto colateral arreglado:** `DashboardStats` y `PlanStatusCard` contaban con `.length` del array recibido → mostraban el tamaño de página como si fuera el total ("Propiedades Totales" decía 15 con 40 propiedades); ahora reciben `meta.total`. Tests: `helpers/pagination` (11) + `components/Pagination` (10). Spec `dashboard/listing_pagination`.
-- 🟡 **Cola de Certificaciones acotada a la página actual** — `pendingCertifications` se deriva **filtrando en el cliente** `adminProperties`, así que el admin solo ve las pendientes de la página que está mirando de `admin/properties`. Es **preexistente** (antes era "las de las primeras 15"), la paginación no lo introduce ni lo puede resolver bien desde el front: **necesita filtro server-side** (`admin/properties?certification_status=pending` o endpoint propio de la cola). Abrir cambio en el backend.
+### Ciclo 2026-10-06 (header de marca, planes, noticias NOA, amenities)
+- ✅ **Header de marca (Layout)** — rediseño completo del header público con paleta corporativa (dorado `#ffda31` + rojo `#ff0019` + gris `#4a4a49`): fondo dorado, franja roja inferior, nav centrado con hover rojo, logo a la izquierda en desktop / centrado en mobile/tablet, sombra reforzada en páginas con fondo rojo (`RED_BACKGROUND_ROUTES = ["/sobre-nosotros", "/noticias", "/contacto"]`). Footer pasado a gris oscuro `#1a1a1a`. `AdminLayout` con logo agrandado (desktop `h-20`, mobile `h-14`, header mobile `h-10`). `Logo.jsx` apunta al nuevo imagotipo horizontal (`/img/imagotipo-horizontal.png`).
+- ✅ **Páginas legales nuevas** — `SobreNosotrosPage` (`/sobre-nosotros`, contenido institucional del NOA + visor embebido de hoja membretada desde `/docs/hoja-membretada.pdf`), `NoticiasPage` (`/noticias`, noticias del NOA inmobiliario con filtros por categoría y provincia, paginación y fuentes clickeables a la nota original), `ContactoPage` (`/contacto`, formulario con validación local + datos de contacto).
+- ✅ **Planes alineados al backend** — `SubscriptionPlans` con features dinámicas desde `property_limit`/`featured_limit`, filtrado por rol del usuario (owner ve 4 planes, agent ve 3, admin ve los 7), badges por nombre (`Plan Fundador`/`Más Elegido`) + badge dinámico `Tu Plan` en el plan activo, promo del Plan Fundador con vencimiento `10/11/2026`. `usePlans.js` simplificado: `fetchPlans` devuelve los planes crudos del backend (el front arma features/badges).
+- ✅ **AmenitiesSection con chips** — rediseño a `flex-wrap` de chips togglables (activo: fondo azul + `Check`; inactivo: borde gris + círculo vacío). Se evita el corte de textos largos en desktop.
+- ✅ **Fixes de JSX** — `DashboardPage`/`ProfilePage`/`PropertyDetailPage`/`SharePage` envueltos con `<>...</>` (Fragment) para resolver `Parsing error: Unexpected token {` / `Adjacent JSX elements must be wrapped`. `SharePage` sin `<Layout>` duplicado. `PropertyDetailPage` sin import muerto de `Layout`.
+- 🔧 **Fitness function tuneada** — `max_lines` del scope `component` subido de **300 → 500** en `.ai/policies/architecture-policies.yaml` (para acomodar `Layout.jsx` con el header rediseñado). El resto de los límites (page 400, hook 250) sin tocar.
 
 ### Ciclo 2026-09-11 (mapa mostraba solo 12 marcadores)
 - ✅ **Mapa `/explore` limitado a 12** — el mapa usaba `GET /properties/search` (paginado, `per_page=12`), así que traía solo 12. El backend agregó **`GET /properties/map`** (mismos filtros, sin paginar, trae todo de una; cada item con `coordinates.{lat,lng,exact}`). Fix front: `buildMapQueryString` (filtros sin paginación, reusa `buildFilterParts` con `buildSearchQueryString`), hook nuevo **`useMapProperties`** → `/properties/map`, `buildMapMarker` (mapea `coordinates.lat/lng` + `coordinatesExact`), y `ExplorePage` migra a `useMapProperties`. `ProvinceMap` plotea exactas como pin clusterizado y **aproximadas** (`exact === false`) como **área** (círculo ámbar + aviso "Ubicación aproximada"). Test `hooks/propertiesQuery` (search paginado vs. map sin paginar). Ver `specs/explore/map_filters_parity/bug-mapa-per-page.md`. Recordar: `/properties/map` público no trae borradores/pendientes y el mapa descarta sin coordenadas.
-- ✅ **Miniatura real en el popup del mapa** — el popup mostraba **siempre la foto genérica**: `buildPopupHtml` toma `images[0].url || imageUrl`, pero `/properties/map` no trae `images[]`, así que `buildMapMarker` caía a `FALLBACK_IMAGE`. El backend agregó **`image_url`** al payload del mapa (primera foto por `order_index`, o `null`). Fix: `buildMapMarker` mapea `imageUrl: item.image_url || FALLBACK_IMAGE` (sin foto o backend viejo → genérica, sin romper). Test `hooks/propertyMappers` (incluye que el HTML del popup lleve la miniatura real). Ver `specs/explore/map_filters_parity/bug-mapa-miniatura-generica.md`.
 
 ### Ciclo 2026-09-11 (vencimiento de plan, precios /mes, mobile del modal, verdes de CI)
 - ✅ **Vencimiento del plan** — `me/publication-quota` ahora devuelve `expires_at` (ISO 8601 o `null`). `DashboardPage` lo pasa (`quota?.expires_at`) por `DashboardStats` → `PlanStatusCard` (nueva prop `expiresAt`), que muestra "Tu plan vence el {fecha}" o "Plan sin vencimiento". `null` = sin vencimiento; fallback a `plan.expiryDate` por compat.

@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { queryClient } from "../lib/queryClient";
-import { readPaginated } from "../lib/pagination";
 import { buildProperty, buildMapMarker } from "./property.mappers";
 import { buildSearchQueryString, buildMapQueryString } from "./properties.query";
 
@@ -133,7 +132,6 @@ export const updatePropertyImagesOrder = async (propertyId, imageIds) => {
   return res;
 };
 
-/** Propiedades del usuario (paginado por el backend). Devuelve `{ items, meta }`. */
 export const getPropertiesByUser = async (userId, filters = {}) => {
   let queryParams = [];
   if (filters.search) {
@@ -145,10 +143,7 @@ export const getPropertiesByUser = async (userId, filters = {}) => {
   if (filters.operation) {
     queryParams.push(`operation=${encodeURIComponent(filters.operation)}`);
   }
-  if (filters.page && filters.page > 1) {
-    queryParams.push(`page=${filters.page}`);
-  }
   const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
   const res = await api.get(`/me/properties${queryString}`);
-  return readPaginated(res, mapProperty);
+  return (res.data || []).map(p => mapProperty(p));
 };

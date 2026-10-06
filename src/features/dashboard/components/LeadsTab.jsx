@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Loader2, Send } from "lucide-react";
-import Pagination from "@/common/components/Pagination";
 import LeadFilters from "./LeadFilters";
 import { leadStatusBadge } from "./leadStatus";
 
@@ -121,7 +120,7 @@ function LeadCard({ lead, replyingLeadId, setReplyingLeadId, replyBody, setReply
 }
 
 /** Tab de consultas recibidas (rol vendedor): filtros + tarjetas con respuesta inline. */
-export default function LeadsTab({ leads, filterStatus, setFilterStatus, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, meta, onPageChange, ...cardProps }) {
+export default function LeadsTab({ leads, filterStatus, setFilterStatus, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, ...cardProps }) {
   return (
     <div className="space-y-6">
       <LeadFilters
@@ -140,8 +139,6 @@ export default function LeadsTab({ leads, filterStatus, setFilterStatus, filterD
           <p className="text-slate-500">No se encontraron consultas con los filtros seleccionados.</p>
         </div>
       )}
-
-      <Pagination meta={meta} onPageChange={onPageChange} itemLabel="consultas" />
     </div>
   );
 }
