@@ -47,9 +47,7 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <Layout>
         <Loader inline className="min-h-[70vh]" />
-      </Layout>
     );
   }
 
@@ -59,7 +57,6 @@ export default function PropertyDetailPage() {
   const openGallery = (index) => { setActiveImage(index); setShowGallery(true); };
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-10">
 
         {/* Breadcrumbs & Actions */}
@@ -186,6 +183,5 @@ export default function PropertyDetailPage() {
           />
         )}
       </AnimatePresence>
-    </Layout>
   );
 }

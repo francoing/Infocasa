@@ -65,7 +65,6 @@ export default function SearchPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row gap-12 py-12">
         <aside
           className={`fixed inset-y-0 left-0 z-[100] w-full md:w-80 bg-white shadow-2xl transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-auto ${
@@ -165,6 +164,5 @@ export default function SearchPage() {
           )}
         </section>
       </div>
-    </Layout>
   );
 }

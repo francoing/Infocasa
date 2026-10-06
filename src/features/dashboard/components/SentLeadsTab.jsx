@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
-import Pagination from "@/common/components/Pagination";
 import LeadFilters from "./LeadFilters";
 import { leadStatusBadge } from "./leadStatus";
 
@@ -63,7 +62,7 @@ function SentLeadCard({ lead }) {
 }
 
 /** Tab de consultas enviadas (rol comprador). */
-export default function SentLeadsTab({ sentLeads, filterStatus, setFilterStatus, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo, meta, onPageChange }) {
+export default function SentLeadsTab({ sentLeads, filterStatus, setFilterStatus, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo }) {
   return (
     <div className="space-y-6">
       <LeadFilters
@@ -82,8 +81,6 @@ export default function SentLeadsTab({ sentLeads, filterStatus, setFilterStatus,
           <p className="text-slate-500">No has enviado ninguna consulta con los filtros seleccionados.</p>
         </div>
       )}
-
-      <Pagination meta={meta} onPageChange={onPageChange} itemLabel="consultas" />
     </div>
   );
 }

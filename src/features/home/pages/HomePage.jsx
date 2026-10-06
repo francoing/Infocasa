@@ -11,7 +11,6 @@ export default function HomePage() {
   const { data: properties, loading, error } = useProperties();
 
   return (
-    <Layout>
       <div className="flex flex-col">
         <HomeHero />
         <FeaturedProperties properties={properties} loading={loading} error={error} />
@@ -19,6 +18,5 @@ export default function HomePage() {
         <HomeBenefits />
         <HomeCTA />
       </div>
-    </Layout>
   );
 }

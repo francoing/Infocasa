@@ -89,18 +89,15 @@ export default function SharePage() {
 
   if (!propertyUrl) {
     return (
-      <Layout>
         <div className="max-w-4xl mx-auto px-6 lg:px-12 py-20 text-center">
           <h1 className="text-3xl font-black text-slate-900 mb-4">Sin propiedad seleccionada</h1>
           <p className="text-slate-500">Seleccioná una propiedad para poder compartirla.</p>
           <Link to="/" className="mt-6 inline-block text-blue-600 font-bold hover:underline">Volver al inicio</Link>
         </div>
-      </Layout>
     );
   }
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto px-6 lg:px-12 py-10">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-8">

@@ -43,7 +43,6 @@ export default function LoginPage() {
   };
 
   return (
-    <Layout>
       <div className="min-h-[80vh] flex items-center justify-center px-6 py-12 hero-gradient">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -122,6 +121,5 @@ export default function LoginPage() {
           </p>
         </motion.div>
       </div>
-    </Layout>
   );
 }

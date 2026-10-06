@@ -9,7 +9,6 @@ import Layout from "../../../common/components/Layout";
  */
 export default function LegalDoc({ kicker, title, version, updated, intro, toc, children }) {
   return (
-    <Layout>
       <div className="bg-slate-50">
         <header className="bg-white border-b-4 border-[#ff0019]">
           <div className="max-w-3xl mx-auto px-6 py-14">
@@ -74,7 +73,6 @@ export default function LegalDoc({ kicker, title, version, updated, intro, toc, 
           </footer>
         </article>
       </div>
-    </Layout>
   );
 }
 

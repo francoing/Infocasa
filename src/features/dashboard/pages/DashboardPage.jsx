@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
-import Layout from "@/common/components/Layout";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -22,8 +21,6 @@ export default function DashboardPage() {
     user, isAdmin, isBuyer,
     favorites, sentLeads, removeFavorite,
     properties, leads, adminUsers, adminProperties, pendingCertifications,
-    favoritesMeta, sentLeadsMeta, propertiesMeta, leadsMeta, adminUsersMeta, adminPropertiesMeta,
-    setFavoritesPage, setSentLeadsPage, setPropertiesPage, setLeadsPage, setAdminUsersPage, setAdminPropertiesPage,
     userPlan, plansList, loading,
     showCheckout, setShowCheckout,
     reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, handleReducePrice,
@@ -35,7 +32,10 @@ export default function DashboardPage() {
 
   // Cupo de propiedades del plan: si no quedan, se bloquea la creación (el backend valida igual con 403).
   const { data: quota } = usePublicationQuota({ enabled: !isBuyer && !isAdmin });
-  const noPropsLeft = !!quota?.properties && quota.properties.available !== null && quota.properties.available <= 0;
+  const noPropsLeft =
+    !!quota?.properties &&
+    quota.properties.available !== null &&
+    quota.properties.available <= 0;
 
   const [activeTab, setActiveTab] = useState("properties");
 
@@ -104,14 +104,7 @@ export default function DashboardPage() {
   const renderTab = () => {
     switch (activeTab) {
       case "favorites":
-        return (
-          <FavoritesTab
-            favorites={favorites}
-            onRemoveFavorite={removeFavorite}
-            meta={favoritesMeta}
-            onPageChange={setFavoritesPage}
-          />
-        );
+        return <FavoritesTab favorites={favorites} onRemoveFavorite={removeFavorite} />;
       case "sent_leads":
         return (
           <SentLeadsTab
@@ -119,8 +112,6 @@ export default function DashboardPage() {
             filterStatus={filterStatus} setFilterStatus={setFilterStatus}
             filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
             filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
-            meta={sentLeadsMeta}
-            onPageChange={setSentLeadsPage}
           />
         );
       case "properties":
@@ -136,8 +127,6 @@ export default function DashboardPage() {
               expandedId, onToggleExpand: toggleExpand, onDelete: confirmDeleteProperty,
               reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice: handleReducePrice,
             }}
-            meta={propertiesMeta}
-            onPageChange={setPropertiesPage}
           />
         );
       case "admin_users":
@@ -147,8 +136,6 @@ export default function DashboardPage() {
             currentUserId={user.id}
             onUpdateUserStatus={updateUserStatus}
             onDeleteUser={confirmDeleteUser}
-            meta={adminUsersMeta}
-            onPageChange={setAdminUsersPage}
           />
         ) : null;
       case "admin_properties":
@@ -156,13 +143,15 @@ export default function DashboardPage() {
           <AdminPropertiesTab
             adminProperties={adminProperties}
             onDeleteProperty={confirmModerateProperty}
-            meta={adminPropertiesMeta}
-            onPageChange={setAdminPropertiesPage}
           />
         ) : null;
       case "certifications":
         return isAdmin ? (
-          <CertificationsTab items={pendingCertifications} onModerate={moderateCertification} disabled={isModerating} />
+          <CertificationsTab
+            items={pendingCertifications}
+            onModerate={moderateCertification}
+            disabled={isModerating}
+          />
         ) : null;
       case "leads":
         return (
@@ -175,8 +164,6 @@ export default function DashboardPage() {
             replyBody={replyBody} setReplyBody={setReplyBody}
             onSendReply={handleSendReply} isReplying={isReplying}
             onUpdateLeadStatus={updateLeadStatus}
-            meta={leadsMeta}
-            onPageChange={setLeadsPage}
           />
         );
       default:
@@ -185,7 +172,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
@@ -196,6 +183,7 @@ export default function DashboardPage() {
                 : `Bienvenido, ${user?.name}. Gestiona tus publicaciones y contactos.`}
             </p>
           </div>
+
           {/* El admin no publica propiedades ni gestiona planes. */}
           {!isBuyer && !isAdmin && (
             userPlan && !noPropsLeft ? (
@@ -208,7 +196,11 @@ export default function DashboardPage() {
             ) : (
               <span
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm"
-                title={noPropsLeft ? "Alcanzaste el límite de propiedades de tu plan" : "Necesitás un plan activo para publicar"}
+                title={
+                  noPropsLeft
+                    ? "Alcanzaste el límite de propiedades de tu plan"
+                    : "Necesitás un plan activo para publicar"
+                }
               >
                 <Plus className="w-5 h-5" /> Nueva Propiedad
               </span>
@@ -216,15 +208,14 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Totales reales del backend (`meta.total`), no el tamaño de la página actual. */}
         <DashboardStats
           isBuyer={isBuyer}
           isAdmin={isAdmin}
-          favoritesTotal={favoritesMeta?.total ?? favorites.length}
-          sentLeadsTotal={sentLeadsMeta?.total ?? sentLeads.length}
+          favorites={favorites}
+          sentLeads={sentLeads}
           userPlan={userPlan}
-          propertiesTotal={propertiesMeta?.total ?? properties.length}
-          leadsTotal={leadsMeta?.total ?? leads.length}
+          properties={properties}
+          leads={leads}
           planExpiresAt={quota?.expires_at}
           onUpgrade={() => setShowPlanPicker(true)}
         />
@@ -245,12 +236,21 @@ export default function DashboardPage() {
       </div>
 
       {showPlanPicker && plansList.length > 0 && (
-        <PlanPickerModal plans={plansList} userPlan={userPlan} onChoose={openCheckout} onClose={() => setShowPlanPicker(false)} />
+        <PlanPickerModal
+          plans={plansList}
+          userPlan={userPlan}
+          onChoose={openCheckout}
+          onClose={() => setShowPlanPicker(false)}
+        />
       )}
 
       {showCheckout && selectedPlan && (
-        <CheckoutModal plan={selectedPlan} onConfirm={() => handleAssignPlan(selectedPlan)} onCancel={() => setShowCheckout(false)} />
+        <CheckoutModal
+          plan={selectedPlan}
+          onConfirm={() => handleAssignPlan(selectedPlan)}
+          onCancel={() => setShowCheckout(false)}
+        />
       )}
-    </Layout>
+    </>
   );
 }

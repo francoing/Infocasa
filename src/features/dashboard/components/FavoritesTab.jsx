@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin, ExternalLink, Trash2 } from "lucide-react";
-import Pagination from "@/common/components/Pagination";
 
 const EmptyState = ({ children }) => (
   <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
@@ -10,7 +9,7 @@ const EmptyState = ({ children }) => (
 );
 
 /** Tab de favoritos guardados (rol comprador). */
-export default function FavoritesTab({ favorites, onRemoveFavorite, meta, onPageChange }) {
+export default function FavoritesTab({ favorites, onRemoveFavorite }) {
   if (!favorites || favorites.length === 0) {
     return (
       <div className="space-y-6">
@@ -63,8 +62,6 @@ export default function FavoritesTab({ favorites, onRemoveFavorite, meta, onPage
           </div>
         ))}
       </div>
-
-      <Pagination meta={meta} onPageChange={onPageChange} itemLabel="favoritos" />
     </div>
   );
 }

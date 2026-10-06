@@ -63,7 +63,6 @@ export default function CreatePropertyPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900">Publicar Nueva Propiedad</h1>
@@ -77,6 +76,5 @@ export default function CreatePropertyPage() {
           userPlan={userPlan}
         />
       </div>
-    </Layout>
   );
 }

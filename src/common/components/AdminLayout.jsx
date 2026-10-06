@@ -36,7 +36,7 @@ export default function AdminLayout({ children }) {
       {/* Mobile header: logo + close button */}
       <div className="px-6 pt-6 pb-4 flex items-center justify-between lg:hidden">
         <Link to="/" className="block">
-          <Logo size="text-2xl" />
+          <Logo size="text-2xl" className="h-14 w-auto object-contain" />
         </Link>
         <button
           onClick={() => setSidebarOpen(false)}
@@ -48,11 +48,12 @@ export default function AdminLayout({ children }) {
 
       {/* Desktop header: logo + gold line */}
       <div className="hidden lg:block px-10 mb-12">
-        <Link to="/" className="block mb-2">
-          <Logo size="text-2xl" />
+        <Link to="/" className="block mb-3">
+          <Logo size="text-2xl" className="h-20 w-auto object-contain" />
         </Link>
         <div className="h-1 w-12 bg-[#cca425] rounded-full"></div>
       </div>
+
       <nav className="flex-1 px-4 space-y-2">
         <SidebarLink
           to={dashboardPath}
@@ -75,7 +76,6 @@ export default function AdminLayout({ children }) {
           )
         )}
 
-        {/* <SidebarLink to="/search" icon={<Search />} label="Marketplace" onClick={() => setSidebarOpen(false)} /> */}
         <SidebarLink to="/profile" icon={<User />} label="Mi Perfil" active={location.pathname === '/profile'} onClick={() => setSidebarOpen(false)} />
       </nav>
       <div className="px-6 pt-6 border-t border-slate-100 mt-auto">
@@ -127,7 +127,7 @@ export default function AdminLayout({ children }) {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <Logo size="text-xl" />
+        <Logo size="text-xl" className="h-10 w-auto object-contain" />
         <BackButton className="ml-auto" />
       </div>
 
@@ -166,5 +166,3 @@ function SidebarLink({ icon, label, to, active = false, onClick }) {
     </Link>
   );
 }
-
-
