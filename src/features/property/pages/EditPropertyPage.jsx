@@ -89,14 +89,11 @@ export default function EditPropertyPage() {
 
   if (loading) {
     return (
-      <Layout>
         <Loader inline className="min-h-[60vh]" />
-      </Layout>
     );
   }
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900">Editar Propiedad</h1>
@@ -109,6 +106,5 @@ export default function EditPropertyPage() {
           loading={submitting}
         />
       </div>
-    </Layout>
   );
 }

@@ -33,7 +33,7 @@ export default function EmailVerifiedPage() {
   }
 
   return (
-    <Layout>
+
       <div className="max-w-md mx-auto px-6 py-24 text-center">
         <div className="flex justify-center mb-6">{content.icon}</div>
         <h1 className="text-3xl font-bold text-slate-900 mb-3">{content.title}</h1>
@@ -53,6 +53,5 @@ export default function EmailVerifiedPage() {
           </Link>
         </div>
       </div>
-    </Layout>
   );
 }

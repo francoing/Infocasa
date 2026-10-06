@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
-import Layout from "@/common/components/Layout";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -33,7 +32,10 @@ export default function DashboardPage() {
 
   // Cupo de propiedades del plan: si no quedan, se bloquea la creación (el backend valida igual con 403).
   const { data: quota } = usePublicationQuota({ enabled: !isBuyer && !isAdmin });
-  const noPropsLeft = !!quota?.properties && quota.properties.available !== null && quota.properties.available <= 0;
+  const noPropsLeft =
+    !!quota?.properties &&
+    quota.properties.available !== null &&
+    quota.properties.available <= 0;
 
   const [activeTab, setActiveTab] = useState("properties");
 
@@ -129,13 +131,27 @@ export default function DashboardPage() {
         );
       case "admin_users":
         return isAdmin ? (
-          <AdminUsersTab adminUsers={adminUsers} currentUserId={user.id} onUpdateUserStatus={updateUserStatus} onDeleteUser={confirmDeleteUser} />
+          <AdminUsersTab
+            adminUsers={adminUsers}
+            currentUserId={user.id}
+            onUpdateUserStatus={updateUserStatus}
+            onDeleteUser={confirmDeleteUser}
+          />
         ) : null;
       case "admin_properties":
-        return isAdmin ? <AdminPropertiesTab adminProperties={adminProperties} onDeleteProperty={confirmModerateProperty} /> : null;
+        return isAdmin ? (
+          <AdminPropertiesTab
+            adminProperties={adminProperties}
+            onDeleteProperty={confirmModerateProperty}
+          />
+        ) : null;
       case "certifications":
         return isAdmin ? (
-          <CertificationsTab items={pendingCertifications} onModerate={moderateCertification} disabled={isModerating} />
+          <CertificationsTab
+            items={pendingCertifications}
+            onModerate={moderateCertification}
+            disabled={isModerating}
+          />
         ) : null;
       case "leads":
         return (
@@ -156,7 +172,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
@@ -167,6 +183,7 @@ export default function DashboardPage() {
                 : `Bienvenido, ${user?.name}. Gestiona tus publicaciones y contactos.`}
             </p>
           </div>
+
           {/* El admin no publica propiedades ni gestiona planes. */}
           {!isBuyer && !isAdmin && (
             userPlan && !noPropsLeft ? (
@@ -179,7 +196,11 @@ export default function DashboardPage() {
             ) : (
               <span
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm"
-                title={noPropsLeft ? "Alcanzaste el límite de propiedades de tu plan" : "Necesitás un plan activo para publicar"}
+                title={
+                  noPropsLeft
+                    ? "Alcanzaste el límite de propiedades de tu plan"
+                    : "Necesitás un plan activo para publicar"
+                }
               >
                 <Plus className="w-5 h-5" /> Nueva Propiedad
               </span>
@@ -215,12 +236,21 @@ export default function DashboardPage() {
       </div>
 
       {showPlanPicker && plansList.length > 0 && (
-        <PlanPickerModal plans={plansList} userPlan={userPlan} onChoose={openCheckout} onClose={() => setShowPlanPicker(false)} />
+        <PlanPickerModal
+          plans={plansList}
+          userPlan={userPlan}
+          onChoose={openCheckout}
+          onClose={() => setShowPlanPicker(false)}
+        />
       )}
 
       {showCheckout && selectedPlan && (
-        <CheckoutModal plan={selectedPlan} onConfirm={() => handleAssignPlan(selectedPlan)} onCancel={() => setShowCheckout(false)} />
+        <CheckoutModal
+          plan={selectedPlan}
+          onConfirm={() => handleAssignPlan(selectedPlan)}
+          onCancel={() => setShowCheckout(false)}
+        />
       )}
-    </Layout>
+    </>
   );
 }

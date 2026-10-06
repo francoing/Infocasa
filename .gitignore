@@ -32,3 +32,4 @@ db.json
 .env.development
 
 .vercel
+.envproduction 

@@ -67,7 +67,6 @@ export default function RegisterPage() {
   };
 
   return (
-    <Layout>
       <div className="min-h-[90vh] flex items-center justify-center px-6 py-12 hero-gradient">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -299,6 +298,5 @@ export default function RegisterPage() {
           </p>
         </motion.div>
       </div>
-    </Layout>
   );
 }

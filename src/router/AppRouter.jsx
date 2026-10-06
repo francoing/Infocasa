@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+import Layout from '../common/components/Layout';
 import loadingIcon from '../assets/img/Icono.png';
 
 // Lazy load pages for code splitting
@@ -20,6 +21,9 @@ const SharePage = lazy(() => import('../features/share/pages/SharePage'));
 const ExplorePage = lazy(() => import('../features/explore/pages/ExplorePage'));
 const TermsPage = lazy(() => import('../features/legal/pages/TermsPage'));
 const PrivacyPage = lazy(() => import('../features/legal/pages/PrivacyPage'));
+const SobreNosotrosPage = lazy(() => import('../features/legal/pages/SobreNosotrosPage'));
+const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
+const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
@@ -28,7 +32,9 @@ const LoadingFallback = () => (
       alt="Cargando..."
       className="w-20 h-20 object-contain animate-heartbeat mb-4"
     />
-    <p className="text-slate-500 font-black animate-pulse uppercase tracking-widest text-[10px]">Cargando InfoCasa...</p>
+    <p className="text-slate-500 font-black animate-pulse uppercase tracking-widest text-[10px]">
+      Cargando InfoCasa...
+    </p>
   </div>
 );
 
@@ -37,71 +43,62 @@ const AppRouter = () => {
     <BrowserRouter>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          {/* Rutas Públicas */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/property/:id" element={<PropertyDetailPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/email-verified" element={<EmailVerifiedPage />} />
+          {/* RUTAS CON LAYOUT PÚBLICO (header + footer) */}
+          <Route element={<Layout><Outlet /></Layout>}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/property/:id" element={<PropertyDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/email-verified" element={<EmailVerifiedPage />} />
+            <Route path="/terminos-y-condiciones" element={<TermsPage />} />
+            <Route path="/politica-de-privacidad" element={<PrivacyPage />} />
+            <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />
+            <Route path="/noticias" element={<NoticiasPage />} />
+            <Route path="/contacto" element={<ContactoPage />} />
+            <Route path="/share/:propertyId?" element={<SharePage />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/explore/:operation" element={<ExplorePage />} />
 
-          {/* Legales - Públicas (linkeadas desde el footer) */}
-          <Route path="/terminos-y-condiciones" element={<TermsPage />} />
-          <Route path="/politica-de-privacidad" element={<PrivacyPage />} />
+            {/* Rutas protegidas que usan el mismo Layout */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/properties/create"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
+                  <CreatePropertyPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/properties/edit/:id"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
+                  <EditPropertyPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
 
-          {/* Ruta de Compartir - Pública */}
-          <Route path="/share/:propertyId?" element={<SharePage />} />
-
-          {/* Exploración por mapa — filter-driven por query params.
-              `/explore/:operation` se mantiene como compat de enlaces viejos (siembra la operación). */}
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/explore/:operation" element={<ExplorePage />} />
-
-          {/* Rutas Protegidas - General (Cualquier usuario logueado) */}
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Rutas Protegidas - Owner, Agent & Admin */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}>
-                <DashboardPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard/properties/create" 
-            element={
-              <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
-                <CreatePropertyPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard/properties/edit/:id" 
-            element={
-              <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
-                <EditPropertyPage />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Rutas Protegidas - Admin Only */}
-          <Route 
-            path="/admin" 
-            element={
-              <Navigate to="/dashboard" replace />
-            } 
-          />
+          {/* Admin redirige al dashboard */}
+          <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
 
           {/* Fallback */}
           <Route path="*" element={<HomePage />} />

@@ -4,7 +4,6 @@ import { usePlans } from '@/hooks/usePlans';
 import { useToast } from '@/hooks/useToast';
 import { useMercadoPagoReturn } from '@/hooks/useMercadoPagoReturn';
 import { createAgency, updateAgency } from '@/hooks/useAgencies';
-import Layout from '@/common/components/Layout';
 import CheckoutModal from '@/features/dashboard/components/CheckoutModal';
 import ProfileAvatarCard from '../components/ProfileAvatarCard';
 import SubscriptionPlans from '../components/SubscriptionPlans';
@@ -165,7 +164,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900">Mi Perfil</h1>
@@ -193,6 +192,6 @@ export default function ProfilePage() {
           onCancel={() => setShowCheckout(false)}
         />
       )}
-    </Layout>
+    </>
   );
 }
