@@ -21,6 +21,7 @@
 const RED_BACKGROUND_ROUTES = [
   "/",                    // ← Inicio
   "/sobre-nosotros",
+  "/search",
   "/noticias",
   "/contacto",
   "/explore",             // ← Explorar mapa
@@ -39,7 +40,7 @@ const RED_BACKGROUND_ROUTES = [
     return (
       <div className="flex flex-col min-h-screen">
         <Header isHome={isHome} />
-        <main className="flex-grow pt-20 lg:pt-32">
+        <main className="flex-grow pt-16 lg:pt-20">
           <EmailVerificationBanner />
           {children}
         </main>
@@ -95,13 +96,11 @@ const RED_BACKGROUND_ROUTES = [
             "fixed top-0 left-0 w-full z-50 transition-all duration-300",
             hasRedBackground
               ? "shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
-              : scrolled
-              ? "shadow-[0_4px_20px_rgba(74,74,73,0.15)]"
-              : "shadow-none"
+              : "shadow-[0_4px_20px_rgba(74,74,73,0.15)]"
           )}
           style={{ background: BRAND.gold }}
         >
-          <div className="relative flex items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6 lg:px-12 h-20 lg:h-32 max-w-7xl mx-auto w-full">
+          <div className="relative flex items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6 lg:px-12 h-16 lg:h-20 max-w-7xl mx-auto w-full">
             {/* IZQUIERDA: mobile/tablet → hamburguesa | desktop → logo */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-10">
               {/* Hamburguesa solo en mobile y tablet */}
@@ -120,7 +119,7 @@ const RED_BACKGROUND_ROUTES = [
                 aria-label="Ir al inicio"
               >
                 <Logo
-                  size="text-3xl"
+                  size="text-2xl"
                   className="h-28 w-auto object-contain transition-transform group-hover:scale-[1.03]"
                 />
               </Link>
@@ -208,97 +207,218 @@ const RED_BACKGROUND_ROUTES = [
     );
   }
 
+  
   /* ============================================================
-    MOBILE MENU
-    ============================================================ */
-  function MobileMenu({ open, onClose, navItems, user }) {
-    const location = useLocation();
+  MOBILE MENU (HEADER ROJO + OPCIONES PULIDAS)
+  ============================================================ */
+function MobileMenu({ open, onClose, navItems, user }) {
+  const location = useLocation();
 
-    return (
+  // Iconos SVG para cada opción del menú
+  const menuIcons = {
+    "Marketplace": (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+    ),
+    "Explorar mapa": (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+        <line x1="8" y1="2" x2="8" y2="18"></line>
+        <line x1="16" y1="6" x2="16" y2="22"></line>
+      </svg>
+    ),
+    "Sobre nosotros": (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+    ),
+    "Noticias": (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+      </svg>
+    ),
+    "Contacto": (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"></path>
+      </svg>
+    ),
+  };
+
+  return (
+    <div
+      className={cn(
+        "fixed inset-0 z-[60] lg:hidden transition-opacity duration-300",
+        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}
+      aria-hidden={!open}
+    >
+      {/* Overlay oscuro con blur */}
       <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Menú lateral */}
+      <aside
         className={cn(
-          "fixed inset-0 z-[60] lg:hidden transition-opacity duration-300",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          "absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-2xl",
+          "flex flex-col transition-transform duration-300 ease-out",
+          open ? "translate-x-0" : "translate-x-full"
         )}
-        aria-hidden={!open}
       >
+        {/* Header rojo con "Menú" */}
         <div
-          className="absolute inset-0 bg-[#4a4a49]/50 backdrop-blur-sm"
-          onClick={onClose}
-        />
-
-        <aside
-          className={cn(
-            "absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-2xl",
-            "flex flex-col transition-transform duration-300 ease-out",
-            open ? "translate-x-0" : "translate-x-full"
-          )}
+          className="flex items-center justify-between px-6 h-20 border-b-4"
+          style={{ 
+            background: BRAND.red,
+            borderColor: BRAND.gold
+          }}
         >
-          <div
-            className="flex items-center justify-between px-5 h-20 border-b border-[#ffda31]"
-            style={{ background: BRAND.gold }}
-          >
-            <Link to="/" onClick={onClose} className="flex items-center">
-              <Logo size="text-xl" className="h-12 w-auto object-contain" />
-            </Link>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 inline-flex items-center justify-center rounded-full text-[#4a4a49] hover:bg-white/40 transition"
-              aria-label="Cerrar menú"
-            >
-              <X className="w-6 h-6" />
-            </button>
+          <div className="flex items-center gap-3">
+            <span className="text-white text-2xl font-black tracking-wide">
+              Menú
+            </span>
           </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95"
+            aria-label="Cerrar menú"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
-          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-            {navItems.map((item) => {
+        {/* Items de navegación */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="space-y-1.5">
+            {navItems.map((item, index) => {
               const active =
                 location.pathname === item.path ||
                 (item.path !== "/" && location.pathname.startsWith(item.path));
+              
               return (
                 <Link
                   key={item.name}
                   to={item.path}
                   onClick={onClose}
                   className={cn(
-                    "block px-4 py-3 rounded-xl text-base font-bold transition-colors border-l-4",
+                    "group relative flex items-center gap-4 px-5 py-4 rounded-xl text-base font-bold transition-all duration-300 overflow-hidden",
                     active
-                      ? "bg-[#ffda31]/60 text-[#4a4a49] border-[#ff0019]"
-                      : "text-[#4a4a49] hover:bg-[#ffda31]/30 border-transparent"
+                      ? "text-white shadow-lg"
+                      : "text-[#4a4a49] hover:text-[#4a4a49]"
                   )}
+                  style={{
+                    background: active 
+                      ? `linear-gradient(135deg, ${BRAND.red} 0%, #ff334d 100%)`
+                      : "transparent",
+                    boxShadow: active ? `0 8px 20px -6px ${BRAND.red}60` : "none",
+                    transform: active ? "scale(1.02)" : "scale(1)",
+                  }}
                 >
-                  {item.name}
+                  {/* Fondo hover sutil */}
+                  {!active && (
+                    <div className="absolute inset-0 bg-[#ffda31]/0 group-hover:bg-[#ffda31]/15 transition-colors duration-300 rounded-xl" />
+                  )}
+                  
+                  {/* Icono */}
+                  <div className={cn(
+                    "relative z-10 flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-300",
+                    active 
+                      ? "bg-white/20 text-white" 
+                      : "bg-[#ffda31]/30 text-[#4a4a49] group-hover:bg-[#ffda31]/50 group-hover:scale-110"
+                  )}>
+                    {menuIcons[item.name]}
+                  </div>
+
+                  {/* Texto */}
+                  <span className="relative z-10 flex-1 tracking-wide">
+                    {item.name}
+                  </span>
+
+                  {/* Flecha indicadora */}
+                  <svg 
+                    className={cn(
+                      "relative z-10 w-5 h-5 transition-all duration-300",
+                      active 
+                        ? "translate-x-0 opacity-100 text-white" 
+                        : "-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-60"
+                    )}
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+
+                  {/* Borde izquierdo activo */}
+                  {active && (
+                    <div 
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
+                      style={{ background: BRAND.gold }}
+                    />
+                  )}
                 </Link>
               );
             })}
-          </nav>
+          </div>
 
-          {!user && (
-            <div className="p-4 border-t border-slate-100 space-y-2">
-              <Link
-                to="/login"
-                onClick={onClose}
-                className="block text-center w-full px-4 py-3 rounded-xl text-sm font-bold text-[#4a4a49] bg-[#ffda31]/50 hover:bg-[#ffda31]/70 transition-colors"
-              >
-                Iniciar sesión
-              </Link>
-              <Link
-                to="/register"
-                onClick={onClose}
-                className="block text-center w-full px-4 py-3 rounded-xl text-sm font-black text-white transition-colors shadow-lg"
-                style={{
-                  background: BRAND.red,
-                  boxShadow: `0 10px 25px -8px ${BRAND.red}80`,
-                }}
-              >
-                Publicar propiedad
-              </Link>
-            </div>
-          )}
-        </aside>
-      </div>
-    );
-  }
+          {/* Separador decorativo */}
+          <div className="my-6 flex items-center gap-3 px-5">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#ffda31]/50 to-transparent" />
+            <div className="w-2 h-2 rounded-full" style={{ background: BRAND.gold }} />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#ffda31]/50 to-transparent" />
+          </div>
+
+          {/* Info de contacto rápida */}
+          <div className="px-5 py-4 rounded-xl bg-[#ffda31]/10 border border-[#ffda31]/30">
+            <p className="text-xs font-bold text-[#4a4a49] uppercase tracking-wider mb-1">
+              ¿Necesitas ayuda?
+            </p>
+            <p className="text-xs text-[#4a4a49]/70">
+              Escríbenos por WhatsApp o email
+            </p>
+          </div>
+        </nav>
+
+        {/* Botones de autenticación */}
+        {!user && (
+          <div className="p-5 border-t-2 border-slate-100 space-y-3 bg-gradient-to-t from-slate-50 to-white">
+            <Link
+              to="/login"
+              onClick={onClose}
+              className="group relative flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-xl text-sm font-bold text-[#4a4a49] bg-[#ffda31]/30 hover:bg-[#ffda31]/50 transition-all overflow-hidden"
+            >
+              <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+              </svg>
+              Iniciar sesión
+            </Link>
+            <Link
+              to="/register"
+              onClick={onClose}
+              className="group relative flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-xl text-sm font-black text-white transition-all shadow-lg overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, ${BRAND.red} 0%, #ff334d 100%)`,
+                boxShadow: `0 10px 25px -8px ${BRAND.red}90`,
+              }}
+            >
+              <svg className="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Publicar propiedad
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
+            </Link>
+          </div>
+        )}
+      </aside>
+    </div>
+  );
+}
 
   /* ============================================================
     FOOTER
@@ -326,23 +446,16 @@ const RED_BACKGROUND_ROUTES = [
               Más opciones, mejores decisiones.
             </p>
             <div className="flex justify-center lg:justify-start gap-4">
-              <SocialIcon href="#">
+              <SocialIcon href="https://www.instagram.com/infocasa.com.ar/">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                 </svg>
               </SocialIcon>
-              <SocialIcon href="#">
+              <SocialIcon href="https://www.facebook.com/profile.php?id=61594163471679">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                </svg>
-              </SocialIcon>
-              <SocialIcon href="#">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                  <rect x="2" y="9" width="4" height="12"></rect>
-                  <circle cx="4" cy="4" r="2"></circle>
                 </svg>
               </SocialIcon>
             </div>
@@ -383,7 +496,7 @@ const RED_BACKGROUND_ROUTES = [
 
         <div className="border-t border-white/10 px-12 py-6 max-w-7xl mx-auto w-full">
           <p className="text-xs text-slate-400 font-medium text-center">
-            © {new Date().getFullYear()} Infocasa. Todos los derechos reservados.
+            © 2026 Infocasa. Todos los derechos reservados.
           </p>
         </div>
       </footer>

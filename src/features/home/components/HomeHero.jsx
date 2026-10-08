@@ -9,7 +9,7 @@ export default function HomeHero() {
   const s = useHomeSearch();
 
   return (
-    <section className="hero-bg-mockup py-20 lg:py-32 px-6 lg:px-12 relative overflow-hidden flex items-center min-h-[620px]">
+    <section className="hero-bg-mockup pt-20 pb-32 md:pt-24 md:pb-40 lg:pt-32 lg:pb-32 px-6 lg:px-12 relative overflow-hidden flex items-center min-h-[600px] md:min-h-[650px] lg:min-h-[620px]">
       <div className="max-w-7xl mx-auto relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center text-left">
         <div className="lg:col-span-7 space-y-6">
           <motion.h1

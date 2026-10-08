@@ -87,10 +87,10 @@ export default function ExplorePage() {
   const opLabel = OPERATION_LABEL[currentFilters.operation] || "Explorá";
 
   return (
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row gap-12 py-12">
+      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 flex flex-col lg:flex-row gap-6 lg:gap-8 py-8 lg:py-12">
         <aside
-          className={`fixed inset-y-0 left-0 z-[100] w-full md:w-80 bg-white shadow-2xl transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-72 lg:shadow-none lg:bg-transparent lg:z-auto ${
-            showMobileFilters ? "translate-x-0" : "-translate-x-full"
+          className={`fixed inset-y-0 left-0 z-[100] w-full md:w-80 bg-white shadow-2xl transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-64 lg:shadow-none lg:bg-transparent lg:z-auto ${
+          showMobileFilters ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           <SearchFilters
@@ -108,8 +108,8 @@ export default function ExplorePage() {
           />
         </aside>
 
-        <section className="flex-1">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <section className="flex-1 min-w-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 lg:mb-8 gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900">{opLabel} en el mapa</h1>
               <p className="text-slate-500 mt-2">
@@ -145,6 +145,7 @@ export default function ExplorePage() {
               properties={properties}
               focus={effectiveFocus}
               onPropertyClick={handlePropertyClick}
+              className="h-[500px] md:h-[600px] lg:h-[750px] xl:h-[850px]"
             />
           )}
         </section>
