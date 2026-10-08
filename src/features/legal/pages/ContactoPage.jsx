@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle2 } from "lucide-react";
 import Layout from "../../../common/components/Layout";
+import { api } from "/src/api/api"; 
 
 const BRAND = {
   red: "#ff0019",
@@ -37,17 +38,26 @@ export default function ContactoPage() {
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validar();
     if (Object.keys(errs).length > 0) {
       setErrores(errs);
       return;
     }
-    // TODO: cuando el backend esté listo:
-    // await fetch('/api/contact', { method: 'POST', body: JSON.stringify(form) })
-    console.log("Formulario listo para enviar:", form);
-    setEnviado(true);
+
+    try {
+      // Usamos tu api.js. Automáticamente usará localhost:8000 en local, 
+      // y la URL de producción cuando lo subas.
+      // Asegúrate de que el archivo en el backend se llame contact.php
+      await api.post("/contact.php", form);
+      
+      // Si llega aquí, la petición fue exitosa (status 200-299)
+      setEnviado(true);
+    } catch (error) {
+      console.error("Error de envío:", error);
+      alert("Hubo un error al enviar el mensaje. Por favor, intentá de nuevo o escribinos por WhatsApp.");
+    }
   };
 
   return (
