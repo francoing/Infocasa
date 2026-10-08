@@ -24,13 +24,43 @@ body {
   background: radial-gradient(circle at 0% 0%, #eff6ff 0%, #ffffff 50%);
 }
 
+/* ============================================================
+   HERO BACKGROUND
+   ============================================================ */
 .hero-bg-mockup {
   background-image: 
     linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
     url('/img/32177974.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  /* 100% = sin zoom, máxima definición */
+  background-size: 100% 100%; 
+  /* "center 75%" muestra más el living (parte inferior) y recorta el techo */
+  background-position: center 75%; 
+  background-repeat: no-repeat;
+}
+
+/* Mobile: 100% también, solo ajustamos posición para mostrar más living */
+@media (max-width: 767px) {
+  .hero-bg-mockup {
+    background-size: 100% 100%;
+    background-position: center 80%; /* ← Más abajo para mostrar más living en pantallas verticales */
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hero-bg-mockup {
+    background-size: 100% 100%;
+    background-position: center 75%;
+  }
+}
+
+/* Desktop con efecto fixed */
+@media (min-width: 1024px) {
+  .hero-bg-mockup {
+    background-size: 100% 100%;
+    background-position: center 70%;
+    background-attachment: fixed; 
+  }
 }
 
 .glass-card {

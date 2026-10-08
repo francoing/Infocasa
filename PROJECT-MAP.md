@@ -24,7 +24,7 @@ src/
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
-│                            useRegisterQrScan
+│                            useRegisterQrScan, useContactForm
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
