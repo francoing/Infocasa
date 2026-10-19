@@ -24,6 +24,7 @@ const PrivacyPage = lazy(() => import('../features/legal/pages/PrivacyPage'));
 const SobreNosotrosPage = lazy(() => import('../features/legal/pages/SobreNosotrosPage'));
 const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
 const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
+const CreateSearchAlertPage = lazy(() => import('../features/searchAlerts/pages/CreateSearchAlertPage'));
 
 // ─── InfoMonedas ────────────────────────────────────────────────────
 const PackageStorePage = lazy(() => import('../features/infocoins/pages/PackageStorePage'));
@@ -101,6 +102,17 @@ const AppRouter = () => {
               }
             />
 
+            {/* ─── Avisos de Búsqueda (SOLO BUYER) ────────────────────── */}
+            <Route
+              path="/dashboard/search-alerts/create"
+              element={
+                <ProtectedRoute allowedRoles={['buyer']}>
+                  <CreateSearchAlertPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* ──────────────────────────────────────────────────────── */}
+
             {/* ─── InfoMonedas ──────────────────────────────────────── */}
             <Route
               path="/infocoins/comprar"
@@ -128,4 +140,3 @@ const AppRouter = () => {
 };
 
 export default AppRouter;
-

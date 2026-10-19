@@ -36,6 +36,9 @@ export default function UserMenu() {
   const initial = user?.name?.charAt(0)?.toUpperCase() || "U";
   const firstName = user?.name?.split(" ")[0] || "";
 
+  // 👇 Identificamos si es buyer (interesado)
+  const isBuyer = user?.role === 'buyer';
+
   const go = (path) => {
     setOpen(false);
     navigate(path);
@@ -54,7 +57,6 @@ export default function UserMenu() {
 
   const handleBuyPackages = () => {
     setWalletOpen(false);
-    // Por ahora navegamos a una ruta de la tienda. La creamos en el 3.7.4.
     navigate("/infocoins/comprar");
   };
 
@@ -97,23 +99,30 @@ export default function UserMenu() {
             </div>
 
             <nav className="p-2">
-              <MenuItem
-                icon={<Wallet className="w-4 h-4" />}
-                label="Mi billetera"
-                onClick={handleOpenWallet}
-              />
+              {/* 👇 Ocultamos la billetera si es buyer */}
+              {!isBuyer && (
+                <MenuItem
+                  icon={<Wallet className="w-4 h-4" />}
+                  label="Mi billetera"
+                  onClick={handleOpenWallet}
+                />
+              )}
+              
               <MenuItem
                 icon={<LayoutDashboard className="w-4 h-4" />}
                 label="Tablero"
                 onClick={() => go("/dashboard")}
               />
-              {isPublisher && (
+              
+              {/* 👇 El botón de Publicar solo lo ven los que no son buyer */}
+              {!isBuyer && isPublisher && (
                 <MenuItem
                   icon={<PlusCircle className="w-4 h-4" />}
                   label="Publicar"
                   onClick={() => go("/dashboard/properties/create")}
                 />
               )}
+              
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
@@ -125,11 +134,14 @@ export default function UserMenu() {
         )}
       </div>
 
-      <WalletModal
-        open={walletOpen}
-        onClose={() => setWalletOpen(false)}
-        onBuyPackages={handleBuyPackages}
-      />
+      {/* El modal de wallet solo se renderiza si no es buyer (por seguridad visual) */}
+      {!isBuyer && (
+        <WalletModal
+          open={walletOpen}
+          onClose={() => setWalletOpen(false)}
+          onBuyPackages={handleBuyPackages}
+        />
+      )}
     </>
   );
 }

@@ -9,6 +9,7 @@
   import UserMenu from "./UserMenu";
   import WhatsAppButton from "./WhatsAppButton";
   import EmailVerificationBanner from "./EmailVerificationBanner";
+  import NotificationBell from "./NotificationBell";
 
   // Paleta corporativa (según manual de marca)
   const BRAND = {
@@ -169,7 +170,10 @@ const RED_BACKGROUND_ROUTES = [
             {/* DERECHA: acciones */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-10">
               {user ? (
-                <UserMenu />
+                <div className="flex items-center gap-2">
+                  {(user.role === 'owner' || user.role === 'agent' || user.role === 'admin') && <NotificationBell />}
+                  <UserMenu hideWallet={user.role === 'buyer'} />
+                </div>
               ) : (
                 <>
                   <Link

@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Eye, Heart, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, TrendingDown, Percent, Loader2, QrCode, Coins } from "lucide-react";
+import { 
+  MapPin, Eye, Heart, ExternalLink, Edit, Trash2, 
+  ChevronDown, ChevronUp, TrendingDown, Percent, 
+  Loader2, QrCode, Coins, Pause, Play 
+} from "lucide-react";
 import QrModal from "./QrModal";
 
 /** Panel expandible de reducción de precio (dentro de PropertyRow). */
@@ -68,70 +72,94 @@ function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, redu
 }
 
 /** Fila de una propiedad publicada: datos, métricas, acciones y reducción de precio. */
-export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, onAssignInfocoins, ...reduction }) {
+export default function PropertyRow({ 
+  prop, expanded, onToggleExpand, onDelete, onAssignInfocoins, 
+  onToggleStatus, // 👈 NUEVA PROP
+  ...reduction 
+}) {
   const [qrOpen, setQrOpen] = useState(false);
+  const isPublished = prop.status === "published";
+
   return (
     <>
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-      <div className="p-4 flex flex-col md:flex-row items-center gap-6">
-        <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden flex-shrink-0">
-          <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-slate-900 text-lg truncate">{prop.title}</h3>
-            {prop.priceHistory?.length > 0 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-green-50 text-green-600 rounded-full uppercase whitespace-nowrap">
-                Precio reducido
-              </span>
-            )}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-4 flex flex-col md:flex-row items-center gap-6">
+          <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden flex-shrink-0">
+            <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
           </div>
-          <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
-            <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
-          </p>
-          <div className="flex items-center gap-4 mt-2">
-            <p className="font-black text-slate-900">USD {prop.price.toLocaleString()}</p>
-            <div className="flex items-center gap-3 ml-2 border-l border-slate-200 pl-4">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Visitas">
-                <Eye className="w-3.5 h-3.5 text-blue-500" /> {prop.viewsCount || 0}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Favoritos">
-                <Heart className="w-3.5 h-3.5 text-red-500" /> {prop.favoritesCount || 0}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Escaneos QR">
-                <QrCode className="w-3.5 h-3.5 text-emerald-500" /> {prop.qrScansCount || 0}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="InfoMonedas asignadas">
-                <Coins className="w-3.5 h-3.5 text-yellow-500" /> {prop.infocoinsCount || 0}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-slate-900 text-lg truncate">{prop.title}</h3>
+              {prop.priceHistory?.length > 0 && (
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-green-50 text-green-600 rounded-full uppercase whitespace-nowrap">
+                  Precio reducido
+                </span>
+              )}
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap ${
+                isPublished ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+              }`}>
+                {isPublished ? "Publicada" : "Pausada"}
               </span>
             </div>
+            <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
+              <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
+            </p>
+            <div className="flex items-center gap-4 mt-2">
+              <p className="font-black text-slate-900">USD {prop.price.toLocaleString()}</p>
+              <div className="flex items-center gap-3 ml-2 border-l border-slate-200 pl-4">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Visitas">
+                  <Eye className="w-3.5 h-3.5 text-blue-500" /> {prop.viewsCount || 0}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Favoritos">
+                  <Heart className="w-3.5 h-3.5 text-red-500" /> {prop.favoritesCount || 0}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Escaneos QR">
+                  <QrCode className="w-3.5 h-3.5 text-emerald-500" /> {prop.qrScansCount || 0}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="InfoMonedas asignadas">
+                  <Coins className="w-3.5 h-3.5 text-yellow-500" /> {prop.infocoinsCount || 0}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
+            {/* 👇 BOTÓN PAUSAR/PUBLICAR */}
+            <button
+              onClick={() => onToggleStatus(prop.id)}
+              className={`p-3 rounded-xl transition-all ${
+                isPublished
+                  ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+              }`}
+              title={isPublished ? "Pausar publicación" : "Publicar"}
+            >
+              {isPublished ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            </button>
+
+            <Link to={`/property/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Ver publicación" target="_blank">
+              <ExternalLink className="w-5 h-5" />
+            </Link>
+            <button onClick={() => setQrOpen(true)} className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="Punto Infocasa (QR)">
+              <QrCode className="w-5 h-5" />
+            </button>
+            <button onClick={() => onAssignInfocoins(prop)} className="p-3 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all" title="Asignar InfoMonedas">
+              <Coins className="w-5 h-5" />
+            </button>
+            <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
+              <Edit className="w-5 h-5" />
+            </Link>
+            <button onClick={() => onDelete(prop.id)} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Eliminar">
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button onClick={() => onToggleExpand(prop.id)} className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all" title="Ajustar Precio">
+              {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <Link to={`/property/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Ver publicación" target="_blank">
-            <ExternalLink className="w-5 h-5" />
-          </Link>
-          <button onClick={() => setQrOpen(true)} className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="Punto Infocasa (QR)">
-            <QrCode className="w-5 h-5" />
-          </button>
-          <button onClick={() => onAssignInfocoins(prop)} className="p-3 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all" title="Asignar InfoMonedas">
-            <Coins className="w-5 h-5" />
-          </button>
-          <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
-            <Edit className="w-5 h-5" />
-          </Link>
-          <button onClick={() => onDelete(prop.id)} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Eliminar">
-            <Trash2 className="w-5 h-5" />
-          </button>
-          <button onClick={() => onToggleExpand(prop.id)} className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all" title="Ajustar Precio">
-            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
 
-      {expanded && <PriceReductionPanel prop={prop} {...reduction} />}
-    </div>
-    {qrOpen && <QrModal property={prop} onClose={() => setQrOpen(false)} />}
+        {expanded && <PriceReductionPanel prop={prop} {...reduction} />}
+      </div>
+      {qrOpen && <QrModal property={prop} onClose={() => setQrOpen(false)} />}
     </>
   );
 }

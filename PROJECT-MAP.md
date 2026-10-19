@@ -25,10 +25,14 @@ src/
 │                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota, useWallet, 
 │                            usePackages, useAssignInfocoins,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
-│                            useRegisterQrScan, useContactForm
-│                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
+│                            useRegisterQrScan, useContactForm,
+│                            useNotifications, usePropertyStatus
+│                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, 
+│                            dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
-│                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, PasswordInput
+│                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, 
+│                            PasswordInput,
+│                            NotificationBell
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado)
 ├── data/provincias.json  ← datos estáticos de provincias
@@ -59,6 +63,7 @@ src/
 | `/dashboard` | DashboardPage | owner / agent / admin / buyer |
 | `/dashboard/properties/create` | CreatePropertyPage | owner / agent / admin |
 | `/dashboard/properties/edit/:id` | EditPropertyPage | owner / agent / admin |
+| `/dashboard/search-alerts/create` | CreateSearchAlertPage | buyer |
 | `/admin` | → redirige a `/dashboard` | — |
 | `*` | HomePage (fallback) | — |
 
