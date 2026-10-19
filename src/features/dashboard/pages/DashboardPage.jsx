@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -15,8 +16,11 @@ import AdminPropertiesTab from "../components/AdminPropertiesTab";
 import CertificationsTab from "../components/CertificationsTab";
 import LeadsTab from "../components/LeadsTab";
 import PlanPickerModal from "../components/PlanPickerModal";
+import AssignInfocoinsModal from "@/features/infocoins/components/AssignInfocoinsModal";
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+
   const {
     user, isAdmin, isBuyer,
     favorites, sentLeads, removeFavorite,
@@ -54,6 +58,9 @@ export default function DashboardPage() {
 
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showPlanPicker, setShowPlanPicker] = useState(false);
+
+  // ─── InfoMonedas: modal de asignación ───
+  const [assignTarget, setAssignTarget] = useState(null);
 
   const applyPropertyFilters = () => {
     setPropSearch(localSearch);
@@ -101,6 +108,13 @@ export default function DashboardPage() {
 
   const toggleExpand = (id) => setExpandedId(expandedId === id ? null : id);
 
+  // Al asignar monedas, refrescamos las queries del dashboard sin recargar la página.
+  // El saldo de la billetera lo refresca el propio modal vía useWallet.refetch().
+  const handleAssignInfocoinsSuccess = () => {
+    setAssignTarget(null);
+    queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  };
+
   const renderTab = () => {
     switch (activeTab) {
       case "favorites":
@@ -125,6 +139,7 @@ export default function DashboardPage() {
             }}
             rowProps={{
               expandedId, onToggleExpand: toggleExpand, onDelete: confirmDeleteProperty,
+              onAssignInfocoins: (prop) => setAssignTarget(prop),   // ← NUEVO
               reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice: handleReducePrice,
             }}
           />
@@ -184,7 +199,6 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* El admin no publica propiedades ni gestiona planes. */}
           {!isBuyer && !isAdmin && (
             userPlan && !noPropsLeft ? (
               <Link
@@ -251,6 +265,14 @@ export default function DashboardPage() {
           onCancel={() => setShowCheckout(false)}
         />
       )}
+
+      {/* ─── Modal de asignación de InfoMonedas ─── */}
+      <AssignInfocoinsModal
+        open={!!assignTarget}
+        property={assignTarget}
+        onClose={() => setAssignTarget(null)}
+        onSuccess={handleAssignInfocoinsSuccess}
+      />
     </>
   );
 }
