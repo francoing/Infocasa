@@ -82,7 +82,7 @@ export default function PaymentResultPage() {
     };
 
     run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const icon = (() => {

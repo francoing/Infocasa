@@ -13,7 +13,7 @@ export default function WalletModal({ open, onClose, onBuyPackages }) {
   // Refresca al abrir (por si compró/asignó monedas mientras estaba cerrado)
   useEffect(() => {
     if (open) refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   if (!open) return null;
