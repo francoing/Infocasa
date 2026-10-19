@@ -1,6 +1,9 @@
+
+import { useTogglePropertyStatus } from "@/hooks/usePropertyStatus";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -15,8 +18,13 @@ import AdminPropertiesTab from "../components/AdminPropertiesTab";
 import CertificationsTab from "../components/CertificationsTab";
 import LeadsTab from "../components/LeadsTab";
 import PlanPickerModal from "../components/PlanPickerModal";
+import AssignInfocoinsModal from "@/features/infocoins/components/AssignInfocoinsModal";
+import MySearchAlertsList from "@/features/searchAlerts/components/MySearchAlertsList";
+import ReceivedSearchAlertsList from "@/features/searchAlerts/components/ReceivedSearchAlertsList";
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+
   const {
     user, isAdmin, isBuyer,
     favorites, sentLeads, removeFavorite,
@@ -30,7 +38,6 @@ export default function DashboardPage() {
     handleAssignPlan, updateUserStatus, deleteUser,
   } = useDashboardData();
 
-  // Cupo de propiedades del plan: si no quedan, se bloquea la creación (el backend valida igual con 403).
   const { data: quota } = usePublicationQuota({ enabled: !isBuyer && !isAdmin });
   const noPropsLeft =
     !!quota?.properties &&
@@ -40,8 +47,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("properties");
 
   useEffect(() => {
-    // El admin no tiene "Mis Propiedades": arranca en moderación de propiedades.
-    setActiveTab(isBuyer ? "favorites" : isAdmin ? "admin_properties" : "properties");
+    setActiveTab(isBuyer ? "search_alerts" : isAdmin ? "admin_properties" : "properties");
   }, [isBuyer, isAdmin]);
 
   const [expandedId, setExpandedId] = useState(null);
@@ -54,6 +60,8 @@ export default function DashboardPage() {
 
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showPlanPicker, setShowPlanPicker] = useState(false);
+
+  const [assignTarget, setAssignTarget] = useState(null);
 
   const applyPropertyFilters = () => {
     setPropSearch(localSearch);
@@ -101,8 +109,25 @@ export default function DashboardPage() {
 
   const toggleExpand = (id) => setExpandedId(expandedId === id ? null : id);
 
+  const handleAssignInfocoinsSuccess = () => {
+    setAssignTarget(null);
+    queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  };
+
+  const { mutate: toggleStatus } = useTogglePropertyStatus();
+
+  const handleToggleStatus = (propertyId) => {
+    toggleStatus(propertyId, {
+      onError: (err) => alert(err.message || "Error al cambiar el estado de la propiedad"),
+    });
+  };
+
   const renderTab = () => {
     switch (activeTab) {
+      case "search_alerts":
+        return <MySearchAlertsList />;
+      case "received_alerts":
+        return <ReceivedSearchAlertsList />;
       case "favorites":
         return <FavoritesTab favorites={favorites} onRemoveFavorite={removeFavorite} />;
       case "sent_leads":
@@ -125,6 +150,8 @@ export default function DashboardPage() {
             }}
             rowProps={{
               expandedId, onToggleExpand: toggleExpand, onDelete: confirmDeleteProperty,
+              onAssignInfocoins: (prop) => setAssignTarget(prop),
+              onToggleStatus: handleToggleStatus, // 👈 NUEVO
               reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice: handleReducePrice,
             }}
           />
@@ -179,32 +206,27 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-slate-900">Panel de Control</h1>
             <p className="text-slate-500">
               {isBuyer
-                ? `Bienvenido, ${user?.name}. Consulta tus favoritos y consultas.`
+                ? `Bienvenido, ${user?.name}. Gestioná tus avisos y consultas.`
                 : `Bienvenido, ${user?.name}. Gestiona tus publicaciones y contactos.`}
             </p>
           </div>
 
-          {/* El admin no publica propiedades ni gestiona planes. */}
           {!isBuyer && !isAdmin && (
             userPlan && !noPropsLeft ? (
-              <Link
-                to="/dashboard/properties/create"
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
-              >
+              <Link to="/dashboard/properties/create" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20">
                 <Plus className="w-5 h-5" /> Nueva Propiedad
               </Link>
             ) : (
-              <span
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm"
-                title={
-                  noPropsLeft
-                    ? "Alcanzaste el límite de propiedades de tu plan"
-                    : "Necesitás un plan activo para publicar"
-                }
-              >
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm" title={noPropsLeft ? "Alcanzaste el límite de propiedades de tu plan" : "Necesitás un plan activo para publicar"}>
                 <Plus className="w-5 h-5" /> Nueva Propiedad
               </span>
             )
+          )}
+
+          {isBuyer && (
+            <Link to="/dashboard/search-alerts/create" className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+              <Search className="w-5 h-5" /> Nuevo Aviso de Búsqueda
+            </Link>
           )}
         </div>
 
@@ -251,6 +273,13 @@ export default function DashboardPage() {
           onCancel={() => setShowCheckout(false)}
         />
       )}
+
+      <AssignInfocoinsModal
+        open={!!assignTarget}
+        property={assignTarget}
+        onClose={() => setAssignTarget(null)}
+        onSuccess={handleAssignInfocoinsSuccess}
+      />
     </>
   );
 }

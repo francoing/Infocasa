@@ -40,6 +40,7 @@ function PropertyFilters({ localSearch, setLocalSearch, localOperation, setLocal
           >
             <option value="">Todos</option>
             <option value="published">Publicado</option>
+            <option value="paused">Pausado</option>
             <option value="draft">Borrador</option>
           </select>
         </div>
@@ -92,6 +93,8 @@ export default function PropertiesTab({ properties, filters, rowProps }) {
               expanded={rowProps.expandedId === prop.id}
               onToggleExpand={rowProps.onToggleExpand}
               onDelete={rowProps.onDelete}
+              onAssignInfocoins={rowProps.onAssignInfocoins}
+              onToggleStatus={rowProps.onToggleStatus}
               reductionPercent={rowProps.reductionPercent}
               setReductionPercent={rowProps.setReductionPercent}
               reductionCustom={rowProps.reductionCustom}

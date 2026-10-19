@@ -24,6 +24,12 @@ const PrivacyPage = lazy(() => import('../features/legal/pages/PrivacyPage'));
 const SobreNosotrosPage = lazy(() => import('../features/legal/pages/SobreNosotrosPage'));
 const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
 const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
+const CreateSearchAlertPage = lazy(() => import('../features/searchAlerts/pages/CreateSearchAlertPage'));
+
+// ─── InfoMonedas ────────────────────────────────────────────────────
+const PackageStorePage = lazy(() => import('../features/infocoins/pages/PackageStorePage'));
+const PaymentResultPage = lazy(() => import('../features/infocoins/pages/PaymentResultPage'));
+// ────────────────────────────────────────────────────────────────────
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
@@ -95,6 +101,31 @@ const AppRouter = () => {
                 </ProtectedRoute>
               }
             />
+
+            {/* ─── Avisos de Búsqueda (SOLO BUYER) ────────────────────── */}
+            <Route
+              path="/dashboard/search-alerts/create"
+              element={
+                <ProtectedRoute allowedRoles={['buyer']}>
+                  <CreateSearchAlertPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* ──────────────────────────────────────────────────────── */}
+
+            {/* ─── InfoMonedas ──────────────────────────────────────── */}
+            <Route
+              path="/infocoins/comprar"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}>
+                  <PackageStorePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/payment/success" element={<PaymentResultPage />} />
+            <Route path="/payment/failure" element={<PaymentResultPage />} />
+            <Route path="/payment/pending" element={<PaymentResultPage />} />
+            {/* ──────────────────────────────────────────────────────── */}
           </Route>
 
           {/* Admin redirige al dashboard */}

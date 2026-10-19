@@ -24,6 +24,8 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
     <div className="flex flex-wrap gap-8 border-b border-slate-200 mb-8">
       {isBuyer ? (
         <>
+          {/* 👇 NUEVA TAB: Mis Avisos de Búsqueda (primera en el orden) */}
+          <TabButton id="search_alerts" {...tabProps}>Mis Avisos de Búsqueda</TabButton>
           <TabButton id="favorites" {...tabProps}>Mis Favoritos</TabButton>
           <TabButton id="sent_leads" {...tabProps}>Mis Consultas</TabButton>
         </>
@@ -31,6 +33,7 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
         <>
           {/* El admin no publica → no tiene "Mis Propiedades". */}
           {!isAdmin && <TabButton id="properties" {...tabProps}>Mis Propiedades</TabButton>}
+          {!isAdmin && <TabButton id="received_alerts" {...tabProps}>Clientes Interesados</TabButton>}
           <TabButton id="leads" {...tabProps}>Consultas Recibidas</TabButton>
           {isAdmin && (
             <>
