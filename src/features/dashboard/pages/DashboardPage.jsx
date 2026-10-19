@@ -1,3 +1,5 @@
+
+import { useTogglePropertyStatus } from "@/hooks/usePropertyStatus";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
@@ -19,7 +21,6 @@ import PlanPickerModal from "../components/PlanPickerModal";
 import AssignInfocoinsModal from "@/features/infocoins/components/AssignInfocoinsModal";
 import MySearchAlertsList from "@/features/searchAlerts/components/MySearchAlertsList";
 import ReceivedSearchAlertsList from "@/features/searchAlerts/components/ReceivedSearchAlertsList";
-import { api } from "@/api/api"; // 👈 para el toggle
 
 export default function DashboardPage() {
   const queryClient = useQueryClient();
@@ -113,14 +114,12 @@ export default function DashboardPage() {
     queryClient.invalidateQueries({ queryKey: ["me_properties"] });
   };
 
-  // 👇 NUEVA FUNCIÓN: toggle de estado
-  const handleToggleStatus = async (propertyId) => {
-    try {
-      await api.patch(`/properties/${propertyId}/toggle-status`);
-      queryClient.invalidateQueries({ queryKey: ["me_properties"] });
-    } catch (err) {
-      alert(err.message || "Error al cambiar el estado de la propiedad");
-    }
+  const { mutate: toggleStatus } = useTogglePropertyStatus();
+
+  const handleToggleStatus = (propertyId) => {
+    toggleStatus(propertyId, {
+      onError: (err) => alert(err.message || "Error al cambiar el estado de la propiedad"),
+    });
   };
 
   const renderTab = () => {

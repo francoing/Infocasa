@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Bell, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from "../../features/notifications/hooks/useNotifications";
+import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from "../../hooks/useNotifications";
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
