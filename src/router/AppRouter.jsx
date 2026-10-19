@@ -25,6 +25,11 @@ const SobreNosotrosPage = lazy(() => import('../features/legal/pages/SobreNosotr
 const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
 const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
 
+// ─── InfoMonedas ────────────────────────────────────────────────────
+const PackageStorePage = lazy(() => import('../features/infocoins/pages/PackageStorePage'));
+const PaymentResultPage = lazy(() => import('../features/infocoins/pages/PaymentResultPage'));
+// ────────────────────────────────────────────────────────────────────
+
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
     <img
@@ -95,6 +100,20 @@ const AppRouter = () => {
                 </ProtectedRoute>
               }
             />
+
+            {/* ─── InfoMonedas ──────────────────────────────────────── */}
+            <Route
+              path="/infocoins/comprar"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}>
+                  <PackageStorePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/payment/success" element={<PaymentResultPage />} />
+            <Route path="/payment/failure" element={<PaymentResultPage />} />
+            <Route path="/payment/pending" element={<PaymentResultPage />} />
+            {/* ──────────────────────────────────────────────────────── */}
           </Route>
 
           {/* Admin redirige al dashboard */}
@@ -109,3 +128,4 @@ const AppRouter = () => {
 };
 
 export default AppRouter;
+

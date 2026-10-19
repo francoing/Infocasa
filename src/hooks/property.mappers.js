@@ -84,7 +84,9 @@ const mapAttributes = (item) => ({
 const mapMeta = (item) => ({
   favoritesCount: item.favorites_count || item.favoritesCount || item.favorites || 0,
   viewsCount: item.views_count || item.viewsCount || item.views || 0,
-  qrScansCount: item.qr_scans_count || 0,  // 👈 NUEVA LÍNEA
+  qrScansCount: item.qr_scans_count || 0,
+  infocoinsCount: item.infocoins_count ?? 0,   // 👈 NUEVO
+  publicationTier: item.publication_tier ?? "comun",   // 👈 NUEVO (opcional)
   isFavorited: item.is_favorited || false,
   status: item.status,
   createdAt: item.created_at,

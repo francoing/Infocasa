@@ -22,7 +22,8 @@ src/
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
-│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota, useWallet, 
+│                            usePackages, useAssignInfocoins,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan, useContactForm
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, dashboardData.helpers)
@@ -50,6 +51,10 @@ src/
 | `/noticias` | NoticiasPage (noticias del NOA inmobiliario, estático) | pública |
 | `/contacto` | ContactoPage (formulario de contacto) | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
+| `/infocoins/comprar` | PurchaseInfocoinsPage (compra de paquetes de infoMonedas) | auth |
+| `/payment/success` | PaymentResultPage (vuelta de MP con pago aprobado, lee `?status`) | auth |
+| `/payment/failure` | PaymentResultPage (vuelta de MP con pago fallido) | auth |
+| `/payment/pending` | PaymentResultPage (vuelta de MP con pago pendiente) | auth |
 | `/profile` | ProfilePage | `auth` (cualquier rol) |
 | `/dashboard` | DashboardPage | owner / agent / admin / buyer |
 | `/dashboard/properties/create` | CreatePropertyPage | owner / agent / admin |

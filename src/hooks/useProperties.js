@@ -143,7 +143,9 @@ export const getPropertiesByUser = async (userId, filters = {}) => {
   if (filters.operation) {
     queryParams.push(`operation=${encodeURIComponent(filters.operation)}`);
   }
-  const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
+  // El backend pagina a 15 por default; pedimos más para traer todas las del usuario.
+  queryParams.push(`per_page=100`);
+  const queryString = `?${queryParams.join("&")}`;
   const res = await api.get(`/me/properties${queryString}`);
   return (res.data || []).map(p => mapProperty(p));
 };

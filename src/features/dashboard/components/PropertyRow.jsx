@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Eye, Heart, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, TrendingDown, Percent, Loader2, QrCode } from "lucide-react";
+import { MapPin, Eye, Heart, ExternalLink, Edit, Trash2, ChevronDown, ChevronUp, TrendingDown, Percent, Loader2, QrCode, Coins } from "lucide-react";
 import QrModal from "./QrModal";
 
 /** Panel expandible de reducción de precio (dentro de PropertyRow). */
@@ -68,7 +68,7 @@ function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, redu
 }
 
 /** Fila de una propiedad publicada: datos, métricas, acciones y reducción de precio. */
-export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, ...reduction }) {
+export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, onAssignInfocoins, ...reduction }) {
   const [qrOpen, setQrOpen] = useState(false);
   return (
     <>
@@ -101,6 +101,9 @@ export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, 
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="Escaneos QR">
                 <QrCode className="w-3.5 h-3.5 text-emerald-500" /> {prop.qrScansCount || 0}
               </span>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg" title="InfoMonedas asignadas">
+                <Coins className="w-3.5 h-3.5 text-yellow-500" /> {prop.infocoinsCount || 0}
+              </span>
             </div>
           </div>
         </div>
@@ -110,6 +113,9 @@ export default function PropertyRow({ prop, expanded, onToggleExpand, onDelete, 
           </Link>
           <button onClick={() => setQrOpen(true)} className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="Punto Infocasa (QR)">
             <QrCode className="w-5 h-5" />
+          </button>
+          <button onClick={() => onAssignInfocoins(prop)} className="p-3 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all" title="Asignar InfoMonedas">
+            <Coins className="w-5 h-5" />
           </button>
           <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
             <Edit className="w-5 h-5" />

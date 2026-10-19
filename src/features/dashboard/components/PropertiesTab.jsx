@@ -92,6 +92,7 @@ export default function PropertiesTab({ properties, filters, rowProps }) {
               expanded={rowProps.expandedId === prop.id}
               onToggleExpand={rowProps.onToggleExpand}
               onDelete={rowProps.onDelete}
+              onAssignInfocoins={rowProps.onAssignInfocoins}
               reductionPercent={rowProps.reductionPercent}
               setReductionPercent={rowProps.setReductionPercent}
               reductionCustom={rowProps.reductionCustom}
