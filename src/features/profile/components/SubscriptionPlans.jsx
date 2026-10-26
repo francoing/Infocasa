@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Crown, Gift, Clock } from "lucide-react";
+import { Check, Crown, Gift, Clock, Sparkles, Star, Zap } from "lucide-react";
 
 const BRAND = {
   red: "#ff0019",
@@ -69,12 +69,16 @@ const buildFeatures = (plan, config) => {
 
   if (plan.featured_limit && plan.featured_limit > 0) {
     features.push(
-      `Hasta ${plan.featured_limit} ${
+      `Incluye ${plan.featured_limit} ${
         plan.featured_limit === 1 ? "destacada" : "destacadas"
       }`
     );
   } else {
-    features.push("Sin destacadas");
+    features.push("Sin destacadas incluidas");
+  }
+
+  if (plan.infocoins_grant && plan.infocoins_grant > 0) {
+    features.push(`Incluye ${plan.infocoins_grant} InfoMonedas`);
   }
 
   if (config.extraFeatures) {
@@ -119,130 +123,115 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
   });
 
   return (
-    <section>
-      <div className="mb-6">
-        <h2 className="text-2xl font-black text-[#4a4a49]">
-          Planes y suscripción
+    <section className="w-full">
+      <div className="mb-10 text-center">
+        <h2 className="text-3xl font-black text-[#4a4a49] flex items-center justify-center gap-2">
+          <Sparkles className="w-7 h-7 text-[#ff0019]" /> Potenciá tu cuenta
         </h2>
-        <p className="text-[#4a4a49]/70 mt-1 text-sm">
-          Elegí el plan que mejor se adapte a tu actividad inmobiliaria.
+        <p className="text-[#4a4a49]/70 mt-2 text-base max-w-lg mx-auto">
+          Elegí el plan que mejor se adapte a tu actividad inmobiliaria y empezá a vender más rápido.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {/* 👇 Grilla: máximo 2 columnas, centrada, y con un ancho máximo para que no se estiren */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
         {visiblePlans.map((plan) => {
           const config = getPlanConfig(plan.name);
           const features = buildFeatures(plan, config);
           const isCurrent = userPlanId && plan.id === userPlanId;
           const isFree = Number(plan.price) === 0;
           const isPromo = !!config.promoNote && promoActive;
-
-          const hasBadgeRow = !!config.badge || isCurrent;
+          
+          const cardStyle = isCurrent
+            ? "bg-gradient-to-b from-white to-red-50/30 border-red-500 shadow-xl shadow-red-500/10 z-10"
+            : "bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-lg";
 
           return (
             <article
               key={plan.id}
-              className="relative bg-white rounded-3xl border-2 p-6 flex flex-col transition-all hover:shadow-xl"
-              style={{
-                borderColor: isCurrent
-                  ? BRAND.red
-                  : isPromo
-                  ? BRAND.gold
-                  : "#e2e8f0",
-              }}
+              className={`relative rounded-3xl border-2 p-6 flex flex-col transition-all duration-300 ${cardStyle}`}
             >
-              {/* FILA DE BADGES — reservamos altura SIEMPRE para alinear títulos */}
-              <div className="flex items-center justify-between gap-2 mb-4 min-h-[24px]">
-                {config.badge && (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap"
-                    style={config.badgeStyle}
-                  >
-                    {config.icon === "crown" ? (
-                      <Crown className="w-3 h-3" />
-                    ) : (
-                      <Gift className="w-3 h-3" />
-                    )}
-                    {config.badge}
-                  </span>
-                )}
-
-                {isCurrent && (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ml-auto"
-                    style={{ background: BRAND.red, color: "#fff" }}
-                  >
-                    Tu Plan
-                  </span>
-                )}
-              </div>
-
-              {/* TÍTULO Y PRECIO */}
-              <h3 className="text-lg font-black text-[#4a4a49]">
-                {plan.name}
-              </h3>
-              <div className="flex items-baseline gap-1 mt-2 mb-5">
+              {config.badge && (
                 <span
-                  className="text-3xl font-black"
-                  style={{ color: isFree ? BRAND.red : BRAND.gray }}
+                  className="absolute -top-3 left-6 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm whitespace-nowrap"
+                  style={config.badgeStyle}
                 >
-                  {formatPrice(plan.price)}
+                  {config.icon === "crown" ? (
+                    <Crown className="w-3 h-3 inline mr-1" />
+                  ) : (
+                    <Gift className="w-3 h-3 inline mr-1" />
+                  )}
+                  {config.badge}
                 </span>
-                <span className="text-sm font-bold text-[#4a4a49]/60">/mes</span>
+              )}
+
+              {isCurrent && (
+                <span
+                  className="absolute -top-3 right-6 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm whitespace-nowrap flex items-center gap-1"
+                  style={{ background: BRAND.red, color: "#fff" }}
+                >
+                  <Star className="w-3 h-3 fill-white" /> Tu Plan
+                </span>
+              )}
+
+              <div className="flex justify-between items-start mt-2">
+                <div>
+                  <h3 className="text-xl font-black text-[#4a4a49] uppercase tracking-wide">
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className={`text-4xl font-black ${isFree ? 'text-green-600' : 'text-[#1a1a1a]'}`}>
+                      {formatPrice(plan.price)}
+                    </span>
+                    <span className="text-sm font-bold text-slate-400">/mes</span>
+                  </div>
+                </div>
               </div>
 
-              {/* FEATURES */}
+              <div className="h-px w-full bg-slate-100 my-5" />
+
               <ul className="space-y-2.5 mb-6 flex-1">
-                {features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-2 text-sm text-[#4a4a49]/85"
-                  >
-                    <span
-                      className="w-4 h-4 mt-0.5 rounded-full flex items-center justify-center shrink-0"
-                      style={{
-                        background: `${BRAND.gold}80`,
-                        color: BRAND.red,
-                      }}
-                    >
-                      <Check className="w-2.5 h-2.5" strokeWidth={4} />
+                {features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-[#4a4a49]/90">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-[#4a4a49]" strokeWidth={3} />
                     </span>
-                    <span className="font-medium">{f}</span>
+                    <span className="font-semibold leading-tight">{f}</span>
                   </li>
                 ))}
               </ul>
 
-              {/* NOTA DE PROMO */}
-              {isPromo && (
-                <div
-                  className="flex items-center gap-2 text-xs font-bold rounded-xl px-3 py-2 mb-4"
-                  style={{ background: `${BRAND.gold}40`, color: BRAND.gray }}
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  {config.promoNote}
-                </div>
-              )}
+              <div className="mt-auto">
+                {isPromo && (
+                  <div
+                    className="flex items-center justify-center gap-2 text-[11px] font-bold rounded-xl px-3 py-2 mb-4"
+                    style={{ background: `${BRAND.gold}40`, color: BRAND.gray }}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    {config.promoNote}
+                  </div>
+                )}
 
-              {/* BOTÓN */}
-              {isCurrent ? (
-                <button
-                  disabled
-                  className="w-full py-3 rounded-xl text-sm font-black bg-slate-100 text-slate-400 cursor-default select-none"
-                >
-                  Plan Seleccionado
-                </button>
-              ) : (
-                <button
-                  onClick={() => onChoose(plan)}
-                  className="w-full py-3 rounded-xl text-sm font-black text-white transition-all active:scale-[0.98]"
-                  style={{
-                    background: BRAND.red,
-                    boxShadow: `0 8px 20px -8px ${BRAND.red}80`,
-                  }}
-                >
-                  Elegir Plan
-                </button>
-              )}
+                {isCurrent ? (
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-xl text-sm font-black bg-slate-100 text-slate-400 cursor-default select-none border border-slate-200"
+                  >
+                    Plan Activo
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onChoose(plan)}
+                    className="w-full py-3 rounded-xl text-sm font-black text-white transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl"
+                    style={{
+                      background: `linear-gradient(to right, ${BRAND.red}, #cc0014)`,
+                      boxShadow: `0 8px 20px -8px ${BRAND.red}80`,
+                    }}
+                  >
+                    <Zap className="w-4 h-4 fill-white" /> Elegir Plan
+                  </button>
+                )}
+              </div>
             </article>
           );
         })}

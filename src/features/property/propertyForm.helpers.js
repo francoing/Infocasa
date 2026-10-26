@@ -23,6 +23,7 @@ export const INITIAL_STATE = {
   longitude: null,
   showExactAddress: true,
   publication_type: "basic",
+  infocoins: 0,
   address: "",
   expenses_amount: "",
   expenses_currency: "ARS",
@@ -84,10 +85,8 @@ export const mapInitialToForm = (initialData) => ({
   area: initialData.areaTotal ?? "",
   area_covered: initialData.areaCovered ?? "",
   imageUrl: initialData.imageUrl || "",
-  // Imágenes existentes: preservar { id, url } para poder borrar/reordenar (spec property/image_management).
   gallery: initialData.images?.map((img) => ({ id: img.id, url: img.url, is_cover: img.is_cover })) || [],
   featured: !!initialData.featured,
-  // Coordenadas propias de la propiedad primero (marca exacta); el centroide del barrio es fallback.
   latitude: toNum(initialData.latitude ?? initialData.locationDetails?.latitude),
   longitude: toNum(initialData.longitude ?? initialData.locationDetails?.longitude),
   showExactAddress: initialData.showExactAddress !== undefined ? !!initialData.showExactAddress : true,
@@ -123,7 +122,10 @@ export const buildPropertyPayload = (formData, selectedProvince, selectedDepartm
   fd.append("province", selectedProvince || "");
   fd.append("department", selectedDepartment || "");
   fd.append("property_type_id", Number(formData.property_type_id));
-  fd.append("zone_id", Number(formData.zone_id));
+  
+  // 👇 LA SOLUCIÓN: Solo enviamos zone_id si tiene un valor válido
+  appendIfSet(fd, "zone_id", formData.zone_id, Number);
+
   fd.append("operation", OPERATION_BY_STATUS[formData.status] || "sale");
 
   appendIfSet(fd, "bedrooms", formData.bedrooms, Number);
@@ -147,7 +149,11 @@ export const buildPropertyPayload = (formData, selectedProvince, selectedDepartm
   fd.append("pets_allowed", formData.pets_allowed ? "1" : "0");
   fd.append("professional_use", formData.professional_use ? "1" : "0");
   fd.append("status", "published");
-  fd.append("publication_type", formData.publication_type);
+  fd.append("publication_type", formData.publication_type || "basic");
+  
+  // Enviamos las InfoMonedas al backend
+  fd.append("infocoins_amount", formData.infocoins || 0); 
+
   formData.features.forEach((f) => fd.append("features[]", f));
   if (formData.certification_document instanceof File) {
     fd.append("certification_document", formData.certification_document);
