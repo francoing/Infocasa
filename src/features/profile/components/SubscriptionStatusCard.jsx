@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Calendar, RefreshCw, PauseCircle, PlayCircle, AlertCircle } from 'lucide-react';
-import { api } from '@/api/api';
-import { useQueryClient } from '@tanstack/react-query';
+import { useToggleAutoRenew } from '@/hooks/useQrStats';
 import { useToast } from '@/hooks/useToast';
 
 export default function SubscriptionStatusCard({ user }) {
   const toast = useToast();
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
+  const { mutate: toggleAutoRenew, isPending: loading } = useToggleAutoRenew();
 
   const subscription = user?.subscription;
   if (!subscription || !subscription.active) return null;
@@ -16,22 +14,16 @@ export default function SubscriptionStatusCard({ user }) {
   const autoRenew = subscription.auto_renew ?? false;
   const expiresAt = subscription.end_date;
 
-  const handleToggleAutoRenew = async () => {
-    if (loading) return;
-    try {
-      setLoading(true);
-      const res = await api.patch('/subscriptions/toggle-auto-renew');
-      
-      // Refrescamos el usuario para que la tarjeta se entere del cambio
-      queryClient.invalidateQueries({ queryKey: ['auth_me'] });
-      
-      toast.success(res.message || "Preferencia de renovación actualizada");
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || "No se pudo actualizar la renovación automática");
-    } finally {
-      setLoading(false);
-    }
+  const handleToggleAutoRenew = () => {
+    toggleAutoRenew(undefined, {
+      onSuccess: (res) => {
+        toast.success(res.message || "Preferencia de renovación actualizada");
+      },
+      onError: (err) => {
+        console.error(err);
+        toast.error(err.message || "No se pudo actualizar la renovación automática");
+      }
+    });
   };
 
   return (

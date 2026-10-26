@@ -1,57 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { X, Download, Printer, Loader2, BarChart3, FileText } from "lucide-react";
-import QRCode from "qrcode";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // 👈 Importación directa
-import { api } from "../../../api/api"; // Ajustá la ruta si es necesario
-
-// Genera la imagen del "Punto Infocasa" en alta resolución (2480 x 3508)
-function buildPuntoInfocasaCanvas(propertyId) {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    const width = 2480;
-    const height = 3508;
-    canvas.width = width;
-    canvas.height = height;
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = "/img/punto-infocasa-base.jpg";
-
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const qrSize = 450;
-      const x = width - qrSize;
-      const y = height - qrSize;
-      const shortUrl = `${window.location.origin}/property/${propertyId}?ref=qr`;
-
-      QRCode.toCanvas(
-        document.createElement("canvas"),
-        shortUrl,
-        {
-          width: qrSize,
-          margin: 0,
-          errorCorrectionLevel: "L",
-          color: { dark: "#000000", light: "#ffffff" },
-        },
-        (error, qrCanvas) => {
-          if (error) {
-            console.error("Error al generar QR:", error);
-            reject(error);
-            return;
-          }
-          ctx.drawImage(qrCanvas, x, y, qrSize, qrSize);
-          resolve(canvas);
-        }
-      );
-    };
-
-    img.onerror = () => reject(new Error("No se pudo cargar la imagen base"));
-  });
-}
+import autoTable from "jspdf-autotable";
+import { useQrStats } from "../../../hooks/useQrStats";
+import { buildPuntoInfocasaCanvas } from "./qr.helpers";
 
 export default function QrModal({ property, onClose }) {
   const [activeTab, setActiveTab] = useState("design");
@@ -60,8 +12,7 @@ export default function QrModal({ property, onClose }) {
   const [previewImage, setPreviewImage] = useState(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(true);
 
-  const [stats, setStats] = useState(null);
-  const [loadingStats, setLoadingStats] = useState(false);
+  const { mutate: fetchStats, data: stats, isPending: loadingStats } = useQrStats();
 
   useEffect(() => {
     const generatePreview = async () => {
@@ -81,30 +32,22 @@ export default function QrModal({ property, onClose }) {
 
   useEffect(() => {
     if (activeTab === "stats" && !stats) {
-      setLoadingStats(true);
-      api
-        .get(`/properties/${property.id}/qr-stats`)
-        .then((res) => setStats(res))
-        .catch((err) => console.error("Error cargando estadísticas", err))
-        .finally(() => setLoadingStats(false));
+      fetchStats(property.id);
     }
-  }, [activeTab, property.id, stats]);
+  }, [activeTab, property.id, stats, fetchStats]);
 
-  // 👇 1. Descargar el cartel en PDF
   const handleDownloadPDF = async () => {
     try {
       setIsLoading(true);
       const canvas = await buildPuntoInfocasaCanvas(property.id);
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
-      // Tamaño A4 en milímetros (210 x 297)
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
 
-      // Insertamos la imagen ocupando toda la hoja A4
       pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
       pdf.save(`punto-infocasa-${property.id}.pdf`);
     } catch (error) {
@@ -166,7 +109,6 @@ export default function QrModal({ property, onClose }) {
     }
   };
 
-  // 👇 2. Exportar estadísticas en PDF (usando la nueva forma de llamar a autoTable)
   const handleExportStatsPDF = () => {
     if (!stats) return;
     try {
@@ -188,7 +130,6 @@ export default function QrModal({ property, onClose }) {
         scan.user_agent ? scan.user_agent.substring(0, 30) + "..." : "Desconocido",
       ]);
 
-      // 👇 Usamos la función autoTable importada directamente
       autoTable(doc, {
         startY: 50,
         head: [["Fecha", "Hora", "IP", "Dispositivo"]],

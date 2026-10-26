@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
-import { Calendar, CheckCircle2, AlertCircle, RefreshCw, PauseCircle, PlayCircle } from 'lucide-react';
-import { api } from '../../api/api'; // 👈 Ajustá la ruta si es necesario (ej: "@/api/api")
-import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '../../hooks/useToast'; // 👈 Ajustá la ruta si es necesario
+import React from "react";
+import { Calendar, CheckCircle2, AlertCircle, RefreshCw, PauseCircle, PlayCircle } from "lucide-react";
+import { useToggleAutoRenew } from "../../hooks/useQrStats";
+import { useToast } from "../../hooks/useToast";
 
 export default function PlanStatusCard({ plan, usage, limit, expiresAt, onUpgrade, isAutoRenew, isFreePlan }) {
   const toast = useToast();
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
+  const { mutate: toggleAutoRenew, isPending: loading } = useToggleAutoRenew();
 
   if (!plan) return null;
 
@@ -16,23 +14,16 @@ export default function PlanStatusCard({ plan, usage, limit, expiresAt, onUpgrad
   const expiry = expiresAt !== undefined ? expiresAt : plan.expiryDate;
   const isExpired = expiry && new Date(expiry) < new Date();
 
-  const handleToggleAutoRenew = async () => {
-    if (loading) return;
-    try {
-      setLoading(true);
-      const res = await api.patch('/subscriptions/toggle-auto-renew');
-      
-      // Refrescamos los datos del usuario para que la tarjeta se actualice
-      queryClient.invalidateQueries({ queryKey: ['auth_me'] }); // Ajustá la queryKey según tu proyecto
-      queryClient.invalidateQueries({ queryKey: ['userPlan'] });
-      
-      toast.success(res.message || "Preferencia de renovación actualizada");
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || "No se pudo actualizar la renovación automática");
-    } finally {
-      setLoading(false);
-    }
+  const handleToggleAutoRenew = () => {
+    toggleAutoRenew(undefined, {
+      onSuccess: (res) => {
+        toast.success(res.message || "Preferencia de renovación actualizada");
+      },
+      onError: (err) => {
+        console.error(err);
+        toast.error(err.message || "No se pudo actualizar la renovación automática");
+      }
+    });
   };
 
   return (
@@ -75,7 +66,6 @@ export default function PlanStatusCard({ plan, usage, limit, expiresAt, onUpgrad
           )}
         </div>
 
-        {/* 👇 SECCIÓN DE RENOVACIÓN AUTOMÁTICA */}
         {!isFreePlan && (
           <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2">
             <div className="flex items-center gap-2">
