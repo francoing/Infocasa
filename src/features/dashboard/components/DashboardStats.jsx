@@ -14,7 +14,19 @@ const StatCard = ({ icon, iconClass, label, value }) => (
 
 /** Fila de stats del dashboard: variante comprador (favoritos/consultas) vs vendedor (plan + totales).
  *  El admin no publica ni gestiona planes → no ve esta fila (plan/publicación no aplican). */
-export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads, userPlan, properties, leads, planExpiresAt, onUpgrade }) {
+export default function DashboardStats({ 
+  isBuyer, 
+  isAdmin, 
+  favorites, 
+  sentLeads, 
+  userPlan, 
+  properties, 
+  leads, 
+  planExpiresAt, 
+  onUpgrade,
+  isAutoRenew,   // 👈 NUEVO
+  isFreePlan     // 👈 NUEVO
+}) {
   if (isAdmin) return null;
 
   if (isBuyer) {
@@ -40,7 +52,15 @@ export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads,
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
       <div className="lg:col-span-4">
         {userPlan ? (
-          <PlanStatusCard plan={userPlan} usage={properties.length} limit={userPlan.details.limit} expiresAt={planExpiresAt} onUpgrade={onUpgrade} />
+          <PlanStatusCard 
+            plan={userPlan} 
+            usage={properties.length} 
+            limit={userPlan.details.limit} 
+            expiresAt={planExpiresAt} 
+            onUpgrade={onUpgrade} 
+            isAutoRenew={isAutoRenew} // 👈 PASAMOS LA PROP
+            isFreePlan={isFreePlan}   // 👈 PASAMOS LA PROP
+          />
         ) : (
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tu Plan Actual</h4>
@@ -74,3 +94,4 @@ export default function DashboardStats({ isBuyer, isAdmin, favorites, sentLeads,
     </div>
   );
 }
+  

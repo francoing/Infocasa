@@ -30,9 +30,6 @@ function LocationMarker({ position, onClick }) {
   );
 }
 
-// Reencuadra el mapa: si hay marcador, centra en él (zoom cercano); si no,
-// centra en el área de provincia/departamento seleccionada. Depende de primitivas
-// para no reencuadrar en cada render (dejaría al usuario sin poder navegar).
 function MapController({ markerLat, markerLng, focusLat, focusLng }) {
   const map = useMap();
   const hasMarker = markerLat != null && markerLng != null;
@@ -54,8 +51,6 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
   const [resolving, setResolving] = useState(false);
   const { suggestions, loading, error, setQuery, clearSuggestions } = useGeoapifyAutocomplete();
 
-  // Reflejar la dirección del form en el buscador: se puebla al editar (llega async)
-  // y se limpia al cambiar de provincia/departamento (se resetea la ubicación).
   useEffect(() => {
     setInput(address);
   }, [address]);
@@ -66,8 +61,7 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
   const handleMapClick = async (latlng) => {
     const latitude = Number(latlng.lat.toFixed(6));
     const longitude = Number(latlng.lng.toFixed(6));
-    onChange({ latitude, longitude }); // pin inmediato
-    // Autocompletar la dirección (escrita + buscador del mapa) desde el punto marcado.
+    onChange({ latitude, longitude });
     setResolving(true);
     try {
       const addr = await reverseGeocode(latitude, longitude);
@@ -80,7 +74,7 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
     const value = e.target.value;
     setInput(value);
     setOpen(true);
-    // Sesga las sugerencias por provincia/departamento seleccionados.
+    // Sesgamos la búsqueda del mapa con el contexto elegido
     setQuery([value, department, province].filter(Boolean).join(', '));
   };
 
@@ -88,8 +82,6 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
     setInput(s.formatted);
     setOpen(false);
     clearSuggestions();
-    // El autocomplete devuelve el punto del TRAMO de calle; para fijar la altura exacta
-    // reconsultamos estructurado con la calle canónica + número. Si no hay dato, usamos su punto.
     let coords = { latitude: Number(s.lat.toFixed(6)), longitude: Number(s.lon.toFixed(6)) };
     if (s.housenumber && s.street) {
       setResolving(true);
@@ -104,11 +96,10 @@ export default function MapLocationSelector({ latitude, longitude, address = '',
 
   return (
     <div className="w-full space-y-3">
-      {/* autocomplete de dirección */}
       <div className="relative">
         <input
           type="text"
-          placeholder="Escribí la dirección (ej: Av. Aconquija 1200)"
+          placeholder="Buscá la dirección exacta (Ej: Av. Aconquija 1200)"
           className="w-full pl-11 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all outline-none font-semibold text-slate-700 placeholder-slate-400"
           value={input}
           onChange={handleInputChange}

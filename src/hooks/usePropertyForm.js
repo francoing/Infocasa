@@ -8,24 +8,29 @@ import {
   buildImageOps,
 } from "../features/property/propertyForm.helpers";
 
-/**
- * Controlador del formulario de propiedad: estado, cascada provincia→departamento→ubicación,
- * handlers y armado del payload. La transformación pesada vive en propertyForm.helpers
- * para mantener este hook fino. Los datos de referencia vienen de usePropertyFormRefs.
- */
 export const usePropertyForm = ({ initialData, onSubmit }) => {
-  const [formData, setFormData] = useState(INITIAL_STATE);
-  const { locations, propertyTypes, zones, availableFeatures, loadingRefs } = usePropertyFormRefs();
+  // Agregamos infocoins al INITIAL_STATE
+  const [formData, setFormData] = useState({
+    ...INITIAL_STATE,
+    infocoins: 0,
+  });
+  
+  // 👇 Quitamos 'zones' de la desestructuración
+  const { locations, propertyTypes, availableFeatures, loadingRefs } = usePropertyFormRefs();
+  
   const [formError, setFormError] = useState("");
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
 
-  // Poblar el form al editar.
   useEffect(() => {
-    if (initialData) setFormData(mapInitialToForm(initialData));
+    if (initialData) {
+      setFormData({
+        ...mapInitialToForm(initialData),
+        infocoins: 0, // No se edita infocoins al editar
+      });
+    }
   }, [initialData]);
 
-  // Al cargar locations con initialData → derivar provincia/departamento.
   useEffect(() => {
     if (!initialData || locations.length === 0) return;
     const locId = initialData.locationDetails?.id || initialData.location_id;
@@ -36,8 +41,6 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     }
   }, [initialData, locations]);
 
-  // Si la ubicación elegida ya no cabe en provincia/departamento → resetear.
-  // (La zona es un campo independiente; NO filtra ubicaciones.)
   useEffect(() => {
     if (locations.length === 0 || !formData.location_id) return;
     const stillExists = locations.some((l) => {
@@ -53,8 +56,6 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-  // Cambiar de área invalida la ubicación previa: se limpia el pin y la dirección
-  // para reencuadrar el mapa en la nueva zona; el pin vuelve al elegir una dirección.
   const resetLocation = { location_id: "", latitude: null, longitude: null, address: "" };
 
   const handleProvinceChange = (e) => {
@@ -71,7 +72,6 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
   const handleMapLocationChange = ({ latitude, longitude, address }) => {
     setFormData((prev) => ({ ...prev, latitude, longitude, ...(address != null ? { address } : {}) }));
     if (latitude == null || longitude == null || locations.length === 0) return;
-    // Respetar provincia/departamento ya elegidos: buscar la ubicación más cercana dentro de ese ámbito.
     const scoped = locations.filter(
       (l) =>
         (!selectedProvince || l.province === selectedProvince) &&
@@ -79,7 +79,6 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     );
     const closest = findClosestLocation(latitude, longitude, scoped.length > 0 ? scoped : locations);
     if (!closest) return;
-    // Solo autocompletar los selects que el usuario aún no fijó (no pisar su elección).
     if (!selectedProvince) setSelectedProvince(closest.province);
     if (!selectedDepartment) setSelectedDepartment(closest.department);
     setFormData((prev) => ({ ...prev, location_id: closest.id }));
@@ -98,6 +97,8 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
   const clearCertDoc = () => setFormData((prev) => ({ ...prev, certification_document: null }));
 
   const setPublicationType = (type) => setFormData((prev) => ({ ...prev, publication_type: type }));
+  
+  const setInfocoins = (value) => setFormData((prev) => ({ ...prev, infocoins: value }));
 
   const handleFeatureToggle = (featureName) => {
     setFormData((prev) => {
@@ -117,16 +118,22 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
       return setFormError("Para Alquiler Temporario es obligatorio adjuntar un comprobante de servicio que acredite el domicilio.");
     }
     setFormError("");
+    
     const fd = buildPropertyPayload(formData, selectedProvince, selectedDepartment);
+    
+    // Inyectar infocoins en el payload
+    fd.infocoins_amount = formData.infocoins || 0;
+
     const { imageFiles, ops } = buildImageOps(formData.gallery, initialData);
     onSubmit(fd, imageFiles, ops);
   };
 
-  // Cascada derivada provincia → departamento → ubicación.
   const provinces = [...new Set(locations.map((l) => l.province))].sort();
+  
   const departments = [...new Set(
     locations.filter((l) => !selectedProvince || l.province === selectedProvince).map((l) => l.department),
   )].sort();
+  
   const filteredLocations = locations.filter((l) => {
     if (selectedProvince && l.province !== selectedProvince) return false;
     if (selectedDepartment && l.department !== selectedDepartment) return false;
@@ -140,7 +147,7 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     isTempRent,
     loadingRefs,
     propertyTypes,
-    zones,
+    // 👇 Quitamos zones del return
     availableFeatures,
     selectedProvince,
     selectedDepartment,
@@ -155,6 +162,7 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     handleCertDocChange,
     clearCertDoc,
     setPublicationType,
+    setInfocoins,
     handleFeatureToggle,
     handleSubmit,
   };

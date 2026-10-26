@@ -12,7 +12,7 @@ import CertificationSection from "./form/CertificationSection";
 import AmenitiesSection from "./form/AmenitiesSection";
 import PublicationTypeSelector from "./form/PublicationTypeSelector";
 
-export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false, userPlan = null }) {
+export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false }) {
   const form = usePropertyForm({ initialData, onSubmit });
 
   if (form.loadingRefs) {
@@ -33,14 +33,14 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Columna izquierda: información y detalles técnicos */}
+        {/* Columna izquierda */}
         <div className="space-y-10">
           <MainInfoSection formData={formData} handleChange={handleChange} propertyTypes={form.propertyTypes} />
           <TechnicalDetailsSection formData={formData} handleChange={handleChange} />
           <ConditionSection formData={formData} handleChange={handleChange} />
         </div>
 
-        {/* Columna derecha: ubicación, gastos y servicios */}
+        {/* Columna derecha */}
         <div className="space-y-10">
           <LocationSection
             formData={formData}
@@ -75,7 +75,12 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
 
       {/* Tipo de publicación — solo al crear */}
       {!initialData && (
-        <PublicationTypeSelector userPlan={userPlan} value={formData.publication_type} onChange={form.setPublicationType} />
+        <PublicationTypeSelector 
+          value={formData.publication_type} 
+          onChange={form.setPublicationType} 
+          infocoins={formData.infocoins}
+          setInfocoins={form.setInfocoins}
+        />
       )}
 
       {/* Acciones */}

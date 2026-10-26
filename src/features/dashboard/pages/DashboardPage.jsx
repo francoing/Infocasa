@@ -1,4 +1,3 @@
-
 import { useTogglePropertyStatus } from "@/hooks/usePropertyStatus";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -151,7 +150,7 @@ export default function DashboardPage() {
             rowProps={{
               expandedId, onToggleExpand: toggleExpand, onDelete: confirmDeleteProperty,
               onAssignInfocoins: (prop) => setAssignTarget(prop),
-              onToggleStatus: handleToggleStatus, // 👈 NUEVO
+              onToggleStatus: handleToggleStatus,
               reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice: handleReducePrice,
             }}
           />
@@ -198,6 +197,10 @@ export default function DashboardPage() {
     }
   };
 
+  // 👇 NUEVO: Extraemos los datos de auto-renovación del usuario
+  const isAutoRenew = user?.subscription?.auto_renew ?? false;
+  const isFreePlan = Number(user?.subscription?.plan?.price) === 0;
+
   return (
     <>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
@@ -240,6 +243,9 @@ export default function DashboardPage() {
           leads={leads}
           planExpiresAt={quota?.expires_at}
           onUpgrade={() => setShowPlanPicker(true)}
+          // 👇 NUEVAS PROPS
+          isAutoRenew={isAutoRenew}
+          isFreePlan={isFreePlan}
         />
 
         <DashboardTabs

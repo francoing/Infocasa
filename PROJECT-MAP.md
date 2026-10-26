@@ -26,7 +26,7 @@ src/
 │                            usePackages, useAssignInfocoins,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan, useContactForm,
-│                            useNotifications, usePropertyStatus
+│                            useNotifications, usePropertyStatus, useQrStats
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, 
 │                            dashboardData.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
