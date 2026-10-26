@@ -7,6 +7,7 @@ import { createAgency, updateAgency } from '@/hooks/useAgencies';
 import CheckoutModal from '@/features/dashboard/components/CheckoutModal';
 import ProfileAvatarCard from '../components/ProfileAvatarCard';
 import SubscriptionPlans from '../components/SubscriptionPlans';
+import SubscriptionStatusCard from '../components/SubscriptionStatusCard'; // 👈 NUEVO
 import PersonalInfoForm from '../components/PersonalInfoForm';
 import AgencyForm from '../components/AgencyForm';
 import PasswordForm from '../components/PasswordForm';
@@ -175,6 +176,9 @@ export default function ProfilePage() {
           <ProfileAvatarCard user={user} loadingAvatar={loadingAvatar} onAvatarChange={handleAvatarChange} />
 
           <div className="md:col-span-2 space-y-8">
+            {/* 👇 NUEVA TARJETA DE ESTADO DE SUSCRIPCIÓN */}
+            <SubscriptionStatusCard user={user} />
+            
             <SubscriptionPlans plans={plansList} user={user} onChoose={choosePlan} />
             <PersonalInfoForm form={infoForm} setForm={setInfoForm} loading={loadingInfo} onSubmit={handleInfoSubmit} />
             {user?.role === 'agent' && (

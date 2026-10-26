@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Lock } from "lucide-react";
 import MapLocationSelector from "../MapLocationSelector";
 
 const LABEL = "text-xs font-black text-slate-400 uppercase tracking-widest ml-1";
-const SELECT = "w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white";
+const SELECT = "w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors";
 
 /** Centroide de las ubicaciones del área elegida, para reencuadrar el mapa. */
 const areaCenter = (locs) => {
@@ -13,11 +13,10 @@ const areaCenter = (locs) => {
   return { lat: sum.lat / pts.length, lng: sum.lng / pts.length };
 };
 
-/** Sección "Ubicación y Dirección": cascada provincia→depto→ubicación/zona, dirección y mapa. */
 export default function LocationSection({
   formData, handleChange,
   selectedProvince, onProvinceChange, selectedDepartment, onDepartmentChange,
-  provinces, departments, filteredLocations, zones, onMapLocationChange,
+  provinces, departments, filteredLocations, onMapLocationChange,
 }) {
   const hasCoords =
     formData.latitude !== null && formData.latitude !== undefined &&
@@ -36,62 +35,66 @@ export default function LocationSection({
         <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Ubicación y Dirección</h3>
       </div>
 
-      <div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
-          <label className={LABEL}>Provincia</label>
-          <label className={LABEL}>Departamento</label>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <select required value={selectedProvince} onChange={onProvinceChange} className={SELECT}>
+      <div className="space-y-4">
+        {/* PROVINCIA */}
+        <div>
+          <label className={LABEL}>1. Provincia</label>
+          <select 
+            required 
+            value={selectedProvince} 
+            onChange={onProvinceChange} 
+            className={SELECT}
+          >
             <option value="">Selecciona provincia...</option>
             {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          <select required value={selectedDepartment} onChange={onDepartmentChange} className={SELECT}>
-            <option value="">Selecciona departamento...</option>
+        </div>
+
+        {/* DEPARTAMENTO */}
+        <div>
+          <label className={LABEL}>2. Departamento</label>
+          <select 
+            required 
+            value={selectedDepartment} 
+            onChange={onDepartmentChange} 
+            className={SELECT}
+            disabled={!selectedProvince}
+          >
+            <option value="">{selectedProvince ? "Selecciona departamento..." : "Primero elegí una provincia"}</option>
             {departments.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
-      </div>
 
-      <div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 mb-2">
-          <label className={LABEL}>Ubicación</label>
-          <label className={LABEL}>Zona</label>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <select required name="location_id" value={formData.location_id} onChange={handleChange} className={SELECT}>
-            <option value="">Selecciona ubicación...</option>
+        {/* UBICACIÓN (Barrio/Ciudad) */}
+        <div>
+          <label className={LABEL}>3. Ubicación (Barrio / Ciudad)</label>
+          <select 
+            required 
+            name="location_id" 
+            value={formData.location_id} 
+            onChange={handleChange} 
+            className={SELECT}
+            disabled={!selectedDepartment}
+          >
+            <option value="">{selectedDepartment ? "Selecciona ubicación..." : "Primero elegí un departamento"}</option>
             {filteredLocations.map((loc) => (
               <option key={loc.id} value={loc.id}>{loc.neighborhood}, {loc.city}</option>
             ))}
           </select>
-          <select required name="zone_id" value={formData.zone_id} onChange={handleChange} className={SELECT}>
-            <option value="">Selecciona zona...</option>
-            {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
-          </select>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <label className={LABEL}>Dirección Escrita</label>
-        <input
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          className="w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold"
-          placeholder="Ej: Av. Aconquija 1200, Yerba Buena"
-        />
-      </div>
-
-      <div className="space-y-4">
+      {/* DIRECCIÓN Y MAPA */}
+      <div className="space-y-4 pt-4 border-t border-slate-100">
         <div className="flex justify-between items-center">
-          <label className={LABEL}>Ubicación en el mapa</label>
+          <label className={LABEL}>Dirección Exacta y Mapa</label>
           {hasCoords && (
             <span className="text-xs font-bold text-blue-600">
               {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}
             </span>
           )}
         </div>
+        
         <MapLocationSelector
           latitude={formData.latitude}
           longitude={formData.longitude}
@@ -102,7 +105,9 @@ export default function LocationSection({
           focusLng={focus.lng}
           onChange={onMapLocationChange}
         />
-        <p className="text-[10px] text-slate-400 italic">Haz clic en el mapa para marcar la ubicación exacta de la propiedad.</p>
+        <p className="text-[10px] text-slate-400 italic">
+          Usá el buscador de arriba para escribir la dirección y el mapa se moverá automáticamente.
+        </p>
       </div>
 
       <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">

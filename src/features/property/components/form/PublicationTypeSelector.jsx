@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { Zap, Star, Crown, Loader2 } from "lucide-react";
-import { usePublicationQuota } from "@/hooks/usePublicationQuota";
+import { Zap, Star, Crown, Loader2, Coins } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const LockIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -10,45 +10,80 @@ const LockIcon = () => (
 );
 
 const PLAN_DEFS = [
-  { type: "basic", label: "Básica", desc: "Listado estándar en los resultados de búsqueda.", icon: <Zap className="w-6 h-6" />, quotaKey: "properties", color: "border-slate-600 hover:border-slate-400", active: "border-blue-500 bg-blue-500/10", dotColor: "#3b82f6", iconColor: "text-slate-400" },
-  { type: "featured", label: "Destacada", desc: "Aparece en la sección principal del Home.", icon: <Star className="w-6 h-6" />, quotaKey: "featured", color: "border-slate-600 hover:border-amber-400", active: "border-amber-400 bg-amber-400/10", dotColor: "#fbbf24", iconColor: "text-amber-400" },
-  { type: "premium", label: "Premium", desc: "Máxima visibilidad: portada del home + badge especial.", icon: <Crown className="w-6 h-6" />, quotaKey: "premium", color: "border-slate-600 hover:border-purple-400", active: "border-purple-400 bg-purple-400/10", dotColor: "#a855f7", iconColor: "text-purple-400" },
+  { 
+    type: "basic", 
+    label: "Básica", 
+    desc: "Listado estándar en los resultados de búsqueda.", 
+    icon: <Zap className="w-6 h-6" />, 
+    color: "border-slate-600 hover:border-slate-400", 
+    active: "border-blue-500 bg-blue-500/10", 
+    dotColor: "#3b82f6", 
+    iconColor: "text-slate-400" 
+  },
+  { 
+    type: "featured", 
+    label: "Destacada", 
+    desc: "Aparece en la sección principal del Home.", 
+    icon: <Star className="w-6 h-6" />, 
+    color: "border-slate-600 hover:border-amber-400", 
+    active: "border-amber-400 bg-amber-400/10", 
+    dotColor: "#fbbf24", 
+    iconColor: "text-amber-400" 
+  },
+  { 
+    type: "premium", 
+    label: "Súper Destacado", 
+    desc: "Máxima visibilidad. Se activa usando InfoMonedas.", 
+    icon: <Crown className="w-6 h-6" />, 
+    color: "border-slate-600 hover:border-purple-400", 
+    active: "border-purple-400 bg-purple-400/10", 
+    dotColor: "#a855f7", 
+    iconColor: "text-purple-400" 
+  },
 ];
 
-/**
- * Estado del cupo para una tarjeta a partir del quota del backend.
- * Devuelve { disabled, loading, text }. `available === null` = ilimitado.
- */
-const cardQuota = (def, quota, loading) => {
-  if (!def.quotaKey) return { disabled: false, loading: false, text: null }; // básica: siempre
-  if (loading) return { disabled: true, loading: true, text: null };
-  const q = quota?.[def.quotaKey];
-  if (!q) return { disabled: true, loading: false, text: "Sin cupo disponible" };
-  if (q.available === null) return { disabled: false, loading: false, text: "Cupo ilimitado" };
-  const available = q.available ?? 0;
-  return {
-    disabled: available <= 0,
-    loading: false,
-    text: available > 0 ? `Te quedan ${available}` : "Sin cupo disponible",
+export default function PublicationTypeSelector({ 
+  value, 
+  onChange,
+  infocoins,           
+  setInfocoins        
+}) {
+  const { user } = useAuth();
+
+  const userBalance = user?.infocoins_balance ?? 0; 
+  const userFeatured = user?.featured_balance ?? 0; 
+
+  const getCardState = (def) => {
+    if (def.type === "premium") {
+      return { 
+        disabled: userBalance <= 0, 
+        loading: false, 
+        text: userBalance > 0 ? `Saldo: ${userBalance}` : "Sin InfoMonedas" 
+      };
+    }
+
+    if (def.type === "featured") {
+      return {
+        disabled: userFeatured <= 0,
+        loading: false,
+        text: userFeatured > 0 ? `Te quedan ${userFeatured}` : "Sin destacados"
+      };
+    }
+
+    return { disabled: false, loading: false, text: "Siempre disponible" };
   };
-};
 
-const cardClass = (def, selected, disabled) =>
-  disabled ? "border-slate-700 opacity-50 cursor-not-allowed" : selected ? def.active : def.color;
-
-const iconClass = (def, selected, disabled) =>
-  disabled ? "text-slate-600" : selected ? def.iconColor : "text-slate-500";
-
-/** Selector de tipo de publicación (solo al crear). Muestra y respeta el cupo del plan. */
-export default function PublicationTypeSelector({ userPlan, value, onChange }) {
-  const { data: quota, isLoading, isError } = usePublicationQuota();
-
-  // Si la opción elegida quedó sin cupo, volver a Básica. El backend valida igual con 403.
   useEffect(() => {
-    if (isLoading) return;
-    const def = PLAN_DEFS.find((p) => p.type === value);
-    if (def && cardQuota(def, quota, false).disabled) onChange("basic");
-  }, [quota, isLoading, value, onChange]);
+    if (value === "premium") {
+      if (infocoins === 0 && userBalance > 0) {
+        setInfocoins(1);
+      }
+    } else {
+      if (infocoins !== 0) {
+        setInfocoins(0);
+      }
+    }
+  }, [value, infocoins, setInfocoins, userBalance]);
 
   return (
     <section className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] border border-slate-700 shadow-xl space-y-6">
@@ -57,53 +92,78 @@ export default function PublicationTypeSelector({ userPlan, value, onChange }) {
         <h3 className="text-xl font-black text-white uppercase tracking-tighter">Tipo de Publicación</h3>
       </div>
       <p className="text-slate-400 text-sm font-medium -mt-4">
-        Elige cómo quieres que aparezca tu propiedad. Tu plan actual: <span className="text-white font-bold">{userPlan?.name || "Sin plan"}</span>
+        Elige cómo quieres que aparezca tu propiedad.
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      
+      {/* 👇 Agregamos items-start para que las tarjetas no se estiren entre sí */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
         {PLAN_DEFS.map((def) => {
-          const state = cardQuota(def, quota, isLoading);
+          const state = getCardState(def);
           const selected = value === def.type && !state.disabled;
+          const isPremium = def.type === "premium";
+
           return (
-            <button
+            <div
               key={def.type}
-              type="button"
-              disabled={state.disabled}
               onClick={() => !state.disabled && onChange(def.type)}
-              className={`relative p-6 rounded-2xl border-2 transition-all text-left ${cardClass(def, selected, state.disabled)}`}
+              className={`relative p-6 rounded-2xl border-2 transition-all text-left flex flex-col ${
+                state.disabled ? "border-slate-700 opacity-50 cursor-not-allowed" : 
+                selected ? def.active : `${def.color} cursor-pointer`
+              }`}
             >
-              <div className={`mb-3 ${iconClass(def, selected, state.disabled)}`}>{def.icon}</div>
+              <div className={`mb-3 ${state.disabled ? "text-slate-600" : selected ? def.iconColor : "text-slate-500"}`}>{def.icon}</div>
               <p className="text-white font-black text-base">{def.label}</p>
               <p className="text-slate-400 text-xs font-medium mt-1 leading-relaxed">{def.desc}</p>
 
-              {def.quotaKey && state.loading && (
+              {state.loading && (
                 <div className="mt-3 flex items-center gap-1.5 text-slate-500 text-xs font-bold">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Cargando cupo…
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Cargando...
                 </div>
               )}
-              {def.quotaKey && !state.loading && state.disabled && (
+              {!state.loading && state.disabled && (
                 <div className="mt-3 flex items-center gap-1.5 text-slate-500 text-xs font-bold">
                   <LockIcon /> {state.text}
                 </div>
               )}
-              {def.quotaKey && !state.loading && !state.disabled && (
+              {!state.loading && !state.disabled && !isPremium && (
                 <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-black" style={{ color: def.dotColor }}>
                   {state.text}
+                </div>
+              )}
+
+              {isPremium && (
+                <div className={`mt-3 inline-flex items-center gap-1.5 text-xs font-black ${state.disabled ? 'text-slate-500' : 'text-purple-400'}`}>
+                  Saldo: {userBalance}
+                </div>
+              )}
+
+              {/* 👇 Ajustamos el contenedor del input para que no deforme la tarjeta */}
+              {isPremium && selected && (
+                <div className="mt-4 pt-4 border-t border-purple-500/30 w-full">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-purple-300 flex items-center gap-1">
+                      <Coins className="w-3.5 h-3.5" /> Asignar
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max={userBalance}
+                    value={infocoins || ""}
+                    onChange={(e) => setInfocoins(Math.min(Number(e.target.value), userBalance))}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-3 py-2 rounded-lg border border-purple-500/50 focus:border-purple-400 outline-none text-sm font-bold text-white bg-slate-900/50"
+                  />
                 </div>
               )}
 
               {!state.disabled && selected && (
                 <div className="absolute top-3 right-3 w-3 h-3 rounded-full" style={{ backgroundColor: def.dotColor }} />
               )}
-            </button>
+            </div>
           );
         })}
       </div>
-
-      {isError && (
-        <p className="text-xs text-slate-400 font-medium">
-          No se pudo cargar el cupo. Podés publicar como Básica; las opciones destacadas se validan al publicar.
-        </p>
-      )}
     </section>
   );
 }

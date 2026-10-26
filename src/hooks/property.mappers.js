@@ -5,16 +5,13 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1564013799919-ab600027
 const OPERATION_LABEL = { sale: "Venta", rent: "Alquiler", development: "Desarrollo", temporary_rent: "Temporario" };
 
 const mapImageUrl = (item) => {
-  // 1. Preferir `images[]` (payload completo de /properties/{id}).
   if (item.images && item.images.length > 0) {
     const cover = item.images.find((img) => img.is_cover) || item.images[0];
     return cover.url;
   }
-  // 2. Fallback: `image_url` (payload liviano de /properties/map, sin images[]).
   if (item.image_url) {
     return item.image_url;
   }
-  // 3. Último recurso: imagen genérica.
   return FALLBACK_IMAGE;
 };
 
@@ -51,7 +48,7 @@ const mapClassification = (item) => ({
   zoneId: item.zone_id || item.zone?.id || null,
   zone: item.zone || null,
   agency: item.agency,
-  owner: item.owner,
+  owner: item.owner || item.user, // Mapeamos user u owner
 });
 
 const mapMedia = (item) => ({
@@ -85,8 +82,11 @@ const mapMeta = (item) => ({
   favoritesCount: item.favorites_count || item.favoritesCount || item.favorites || 0,
   viewsCount: item.views_count || item.viewsCount || item.views || 0,
   qrScansCount: item.qr_scans_count || 0,
-  infocoinsCount: item.infocoins_count ?? 0,   // 👈 NUEVO
-  publicationTier: item.publication_tier ?? "comun",   // 👈 NUEVO (opcional)
+  infocoinsCount: item.infocoins_count ?? 0,
+  
+  // 👇 USAMOS CAMEL CASE PARA QUE COINCIDA CON LA TARJETA
+  publicationType: item.publication_type ?? "basic", 
+  
   isFavorited: item.is_favorited || false,
   status: item.status,
   createdAt: item.created_at,
@@ -95,7 +95,6 @@ const mapMeta = (item) => ({
   certificationDocumentUrl: item.certification_document_url || null,
 });
 
-/** Ensambla el shape de propiedad que consume la UI a partir del item crudo del backend. */
 export const buildProperty = (item) => ({
   ...mapCore(item),
   ...mapDimensions(item),
@@ -107,11 +106,6 @@ export const buildProperty = (item) => ({
   ...mapMeta(item),
 });
 
-/**
- * Marcador del mapa (GET /properties/map). Mismo shape de UI que buildProperty, pero
- * las coordenadas vienen en `coordinates.{lat,lng,exact}`. `exact === false` = ubicación
- * del barrio (aproximada), no la dirección exacta → el mapa la plotea como área.
- */
 export const buildMapMarker = (item) => ({
   ...buildProperty(item),
   latitude: item.coordinates?.lat ?? item.coordinates?.latitude ?? null,
