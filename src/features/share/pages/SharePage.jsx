@@ -40,11 +40,6 @@ const SOCIAL_PLATFORMS = [
   { id: "telegram", name: "Telegram", color: "bg-[#0088CC]", icon: telegramIcon },
 ];
 
-// 👇 URL BASE DE LA API (BACKEND)
-// En local: http://localhost:8000
-// En producción: https://api.infocasa.com.ar
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.infocasa.com.ar";
-
 export default function SharePage() {
   const { propertyId } = useParams();
   const { state } = useLocation();
@@ -52,9 +47,11 @@ export default function SharePage() {
 
   const propertyTitle = state?.propertyTitle || `Propiedad en InfoCasa #${propertyId}`;
   
-  // 👇 El link de compartir apunta al BACKEND, no al frontend
-  const propertyUrl = `${API_BASE_URL}/share/${propertyId}`;
+  // Usamos el backend en producción o localhost en desarrollo
+  const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const shareBaseUrl = isLocal ? "http://localhost:8000" : "https://api.infocasa.com.ar";
   
+  const propertyUrl = `${shareBaseUrl}/share/${propertyId}`;
   const shareText = `¡Mirá esta propiedad en InfoCasa! ${propertyTitle}`;
 
   const handleCopyLink = async (platformId) => {
@@ -63,6 +60,7 @@ export default function SharePage() {
       setCopiedId(platformId);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
+      // Fallback
       const textarea = document.createElement("textarea");
       textarea.value = propertyUrl;
       document.body.appendChild(textarea);
@@ -89,7 +87,10 @@ export default function SharePage() {
           url: propertyUrl,
         });
         return;
-      } catch {}
+      } catch (error) {
+        // 👇 CORRECCIÓN: El catch ya no está vacío, logueamos el error (o lo ignoramos)
+        console.log("Share cancelado o fallido:", error);
+      }
     }
 
     const shareUrl = buildShareUrl(platform.id, { url: propertyUrl, text: shareText });
