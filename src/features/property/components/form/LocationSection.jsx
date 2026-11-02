@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
-import { MapPin, Lock } from "lucide-react";
+import { MapPin } from "lucide-react";
 import MapLocationSelector from "../MapLocationSelector";
 
 const LABEL = "text-xs font-black text-slate-400 uppercase tracking-widest ml-1";
 const SELECT = "w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors";
+const INPUT = "w-full px-6 py-4 rounded-2xl border border-slate-200 focus:border-blue-600 outline-none font-bold bg-white transition-colors";
 
 /** Centroide de las ubicaciones del área elegida, para reencuadrar el mapa. */
 const areaCenter = (locs) => {
@@ -36,7 +37,7 @@ export default function LocationSection({
       </div>
 
       <div className="space-y-4">
-        {/* PROVINCIA */}
+        {/* 1. PROVINCIA */}
         <div>
           <label className={LABEL}>1. Provincia</label>
           <select 
@@ -50,7 +51,7 @@ export default function LocationSection({
           </select>
         </div>
 
-        {/* DEPARTAMENTO */}
+        {/* 2. DEPARTAMENTO */}
         <div>
           <label className={LABEL}>2. Departamento</label>
           <select 
@@ -65,29 +66,39 @@ export default function LocationSection({
           </select>
         </div>
 
-        {/* UBICACIÓN (Barrio/Ciudad) */}
+        {/* 3. DIRECCIÓN ESCRITA (Texto libre) */}
         <div>
-          <label className={LABEL}>3. Ubicación (Barrio / Ciudad)</label>
-          <select 
-            required 
-            name="location_id" 
-            value={formData.location_id} 
-            onChange={handleChange} 
-            className={SELECT}
+          <label className={LABEL}>3. Dirección exacta</label>
+          <input
+            type="text"
+            required
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Ej: Av. Aconquija 1200"
+            className={INPUT}
+          />
+        </div>
+
+        {/* 4. UBICACIÓN INTERNA (ESCRITA POR EL USUARIO) */}
+        <div>
+          <label className={LABEL}>4. Barrio / Ciudad</label>
+          <input
+            type="text"
+            name="neighborhood"
+            value={formData.neighborhood || ""}
+            onChange={handleChange}
+            placeholder="Ej: Barrio Norte"
+            className={INPUT}
             disabled={!selectedDepartment}
-          >
-            <option value="">{selectedDepartment ? "Selecciona ubicación..." : "Primero elegí un departamento"}</option>
-            {filteredLocations.map((loc) => (
-              <option key={loc.id} value={loc.id}>{loc.neighborhood}, {loc.city}</option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 
-      {/* DIRECCIÓN Y MAPA */}
+      {/* 5. MAPA (Solo coordenadas) */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <div className="flex justify-between items-center">
-          <label className={LABEL}>Dirección Exacta y Mapa</label>
+          <label className={LABEL}>5. Ubicación en el mapa</label>
           {hasCoords && (
             <span className="text-xs font-bold text-blue-600">
               {Number(formData.latitude).toFixed(5)}, {Number(formData.longitude).toFixed(5)}
@@ -98,15 +109,15 @@ export default function LocationSection({
         <MapLocationSelector
           latitude={formData.latitude}
           longitude={formData.longitude}
-          address={formData.address}
+          address="" // 👈 Le pasamos vacío para que no muestre la dirección escrita
           province={selectedProvince}
           department={selectedDepartment}
           focusLat={focus.lat}
           focusLng={focus.lng}
-          onChange={onMapLocationChange}
+          onChange={onMapLocationChange} // Solo devuelve lat/lng
         />
         <p className="text-[10px] text-slate-400 italic">
-          Usá el buscador de arriba para escribir la dirección y el mapa se moverá automáticamente.
+          Arrastrá el pin en el mapa para marcar la ubicación exacta. Esto no modificará los datos que escribiste arriba.
         </p>
       </div>
 
