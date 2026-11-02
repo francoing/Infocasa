@@ -7,15 +7,14 @@ import {
   buildPropertyPayload,
   buildImageOps,
 } from "../features/property/propertyForm.helpers";
+import { UBICACIONES_NOA } from "../data/ubicacionesNOA"; // 👈 Importamos el archivo estático
 
 export const usePropertyForm = ({ initialData, onSubmit }) => {
-  // Agregamos infocoins al INITIAL_STATE
   const [formData, setFormData] = useState({
     ...INITIAL_STATE,
     infocoins: 0,
   });
   
-  // 👇 Quitamos 'zones' de la desestructuración
   const { locations, propertyTypes, availableFeatures, loadingRefs } = usePropertyFormRefs();
   
   const [formError, setFormError] = useState("");
@@ -26,18 +25,27 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     if (initialData) {
       setFormData({
         ...mapInitialToForm(initialData),
-        infocoins: 0, // No se edita infocoins al editar
+        infocoins: 0,
       });
     }
   }, [initialData]);
 
+  // Cuando se edita, precargamos provincia y departamento
   useEffect(() => {
-    if (!initialData || locations.length === 0) return;
-    const locId = initialData.locationDetails?.id || initialData.location_id;
-    const loc = locId && locations.find((l) => l.id == locId);
-    if (loc) {
-      setSelectedProvince(loc.province);
-      setSelectedDepartment(loc.department);
+    if (!initialData) return;
+    
+    // Si vienen directo en la data, los usamos
+    if (initialData.province) setSelectedProvince(initialData.province);
+    if (initialData.department) setSelectedDepartment(initialData.department);
+    
+    // Fallback por si vienen desde locationDetails
+    if (!initialData.province && locations.length > 0) {
+        const locId = initialData.locationDetails?.id || initialData.location_id;
+        const loc = locId && locations.find((l) => l.id == locId);
+        if (loc) {
+          setSelectedProvince(loc.province);
+          setSelectedDepartment(loc.department);
+        }
     }
   }, [initialData, locations]);
 
@@ -56,21 +64,21 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const resetLocation = { location_id: "", latitude: null, longitude: null, address: "" };
-
   const handleProvinceChange = (e) => {
     setSelectedProvince(e.target.value);
     setSelectedDepartment("");
-    setFormData((prev) => ({ ...prev, ...resetLocation }));
+    // NO borramos la dirección ni las coordenadas
   };
 
   const handleDepartmentChange = (e) => {
     setSelectedDepartment(e.target.value);
-    setFormData((prev) => ({ ...prev, ...resetLocation }));
+    // NO borramos la dirección ni las coordenadas
   };
 
-  const handleMapLocationChange = ({ latitude, longitude, address }) => {
-    setFormData((prev) => ({ ...prev, latitude, longitude, ...(address != null ? { address } : {}) }));
+  // 👇 El mapa SOLO actualiza latitud y longitud
+  const handleMapLocationChange = ({ latitude, longitude }) => {
+    setFormData((prev) => ({ ...prev, latitude, longitude }));
+    
     if (latitude == null || longitude == null || locations.length === 0) return;
     const scoped = locations.filter(
       (l) =>
@@ -78,10 +86,10 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
         (!selectedDepartment || l.department === selectedDepartment),
     );
     const closest = findClosestLocation(latitude, longitude, scoped.length > 0 ? scoped : locations);
-    if (!closest) return;
-    if (!selectedProvince) setSelectedProvince(closest.province);
-    if (!selectedDepartment) setSelectedDepartment(closest.department);
-    setFormData((prev) => ({ ...prev, location_id: closest.id }));
+    
+    if (closest) {
+        setFormData((prev) => ({ ...prev, location_id: closest.id }));
+    }
   };
 
   const handleImagesChange = (images) => {
@@ -114,6 +122,7 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     e.preventDefault();
     if (!selectedProvince) return setFormError("Debes seleccionar una provincia.");
     if (!selectedDepartment) return setFormError("Debes seleccionar un departamento.");
+    if (!formData.address) return setFormError("Debes escribir la dirección."); // Validación extra
     if (isTempRent && !formData.certification_document) {
       return setFormError("Para Alquiler Temporario es obligatorio adjuntar un comprobante de servicio que acredite el domicilio.");
     }
@@ -121,18 +130,17 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     
     const fd = buildPropertyPayload(formData, selectedProvince, selectedDepartment);
     
-    // Inyectar infocoins en el payload
     fd.infocoins_amount = formData.infocoins || 0;
 
     const { imageFiles, ops } = buildImageOps(formData.gallery, initialData);
     onSubmit(fd, imageFiles, ops);
   };
 
-  const provinces = [...new Set(locations.map((l) => l.province))].sort();
+  // 👇 Usamos las provincias estáticas
+  const provinces = Object.keys(UBICACIONES_NOA).sort();
   
-  const departments = [...new Set(
-    locations.filter((l) => !selectedProvince || l.province === selectedProvince).map((l) => l.department),
-  )].sort();
+  // 👇 Los departamentos dependen de la provincia elegida
+  const departments = selectedProvince ? UBICACIONES_NOA[selectedProvince] : [];
   
   const filteredLocations = locations.filter((l) => {
     if (selectedProvince && l.province !== selectedProvince) return false;
@@ -147,7 +155,6 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     isTempRent,
     loadingRefs,
     propertyTypes,
-    // 👇 Quitamos zones del return
     availableFeatures,
     selectedProvince,
     selectedDepartment,

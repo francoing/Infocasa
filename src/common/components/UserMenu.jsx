@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, PlusCircle, LogOut, ChevronDown, Wallet } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogOut, ChevronDown, Wallet, User } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import WalletModal from "../../features/infocoins/components/WalletModal";
 
 /**
  * Avatar del usuario logueado en el header. Al hacer click despliega un card con
- * accesos: Mi billetera, Tablero, Publicar (solo owner/agent) y Cerrar sesión.
+ * accesos: Mi billetera, Perfil, Tablero, Publicar (solo owner/agent) y Cerrar sesión.
  */
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -107,6 +107,13 @@ export default function UserMenu() {
                   onClick={handleOpenWallet}
                 />
               )}
+
+              {/* 👇 NUEVO: Link al Perfil */}
+              <MenuItem
+                icon={<User className="w-4 h-4" />}
+                label="Mi perfil"
+                onClick={() => go("/profile")}
+              />
               
               <MenuItem
                 icon={<LayoutDashboard className="w-4 h-4" />}

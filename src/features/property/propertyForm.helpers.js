@@ -25,6 +25,7 @@ export const INITIAL_STATE = {
   publication_type: "basic",
   infocoins: 0,
   address: "",
+  neighborhood: "", // 👈 AGREGADO
   expenses_amount: "",
   expenses_currency: "ARS",
   parking_spaces: "",
@@ -76,7 +77,7 @@ export const mapInitialToForm = (initialData) => ({
   price: initialData.price || "",
   price_currency: initialData.priceCurrency || "USD",
   location_id: initialData.locationDetails?.id || initialData.location_id || "",
-  property_type_id: initialData.typeId || initialData.property_type_id || "",
+  property_type_id: initialData.propertyType?.id || initialData.typeId || initialData.property_type_id || "",
   zone_id: initialData.zoneId || initialData.zone?.id || initialData.zone_id || "",
   status: STATUS_BY_OPERATION[initialData.operationRaw] || "venta",
   bedrooms: initialData.bedrooms ?? "",
@@ -91,6 +92,7 @@ export const mapInitialToForm = (initialData) => ({
   longitude: toNum(initialData.longitude ?? initialData.locationDetails?.longitude),
   showExactAddress: initialData.showExactAddress !== undefined ? !!initialData.showExactAddress : true,
   address: initialData.address || "",
+  neighborhood: initialData.neighborhood || "", // 👈 AGREGADO
   expenses_amount: initialData.expenses?.amount ?? "",
   expenses_currency: initialData.expenses?.currency || "ARS",
   parking_spaces: initialData.parkingSpaces ?? initialData.parking_spaces ?? "",
@@ -121,9 +123,13 @@ export const buildPropertyPayload = (formData, selectedProvince, selectedDepartm
   fd.append("location_id", Number(formData.location_id));
   fd.append("province", selectedProvince || "");
   fd.append("department", selectedDepartment || "");
-  fd.append("property_type_id", Number(formData.property_type_id));
   
-  // 👇 LA SOLUCIÓN: Solo enviamos zone_id si tiene un valor válido
+  // 👇 Enviamos dirección y barrio
+  fd.append("address", formData.address || "");
+  fd.append("neighborhood", formData.neighborhood || "");
+
+  appendIfSet(fd, "property_type_id", formData.property_type_id, Number);
+  
   appendIfSet(fd, "zone_id", formData.zone_id, Number);
 
   fd.append("operation", OPERATION_BY_STATUS[formData.status] || "sale");
@@ -136,7 +142,7 @@ export const buildPropertyPayload = (formData, selectedProvince, selectedDepartm
   appendIfSet(fd, "latitude", formData.latitude, Number);
   appendIfSet(fd, "longitude", formData.longitude, Number);
   fd.append("show_exact_address", formData.showExactAddress ? "1" : "0");
-  appendIfSet(fd, "address", formData.address);
+  
   if (formData.expenses_amount !== "") {
     fd.append("expenses_amount", Number(formData.expenses_amount));
     fd.append("expenses_currency", formData.expenses_currency);

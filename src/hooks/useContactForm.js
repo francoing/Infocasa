@@ -1,6 +1,6 @@
 // src/hooks/useContactForm.js
 import { useState } from "react";
-import { api } from "../api/api"; // Ajusta la ruta si tu api.js está en otro lado
+import { api } from "../api/api";
 
 export function useContactForm() {
   const [enviado, setEnviado] = useState(false);
@@ -11,12 +11,13 @@ export function useContactForm() {
     setLoading(true);
     setError(null);
     try {
-      await api.post("/contact.php", formData);
+      // 👇 Ruta correcta de Laravel
+      await api.post("/contact", formData);
       setEnviado(true);
     } catch (err) {
       console.error("Error de envío:", err);
       setError(err.message || "Error al enviar el mensaje");
-      throw err; // Re-lanzamos para que la página pueda mostrar un alert si quiere
+      throw err;
     } finally {
       setLoading(false);
     }
