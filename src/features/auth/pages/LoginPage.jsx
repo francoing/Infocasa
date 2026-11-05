@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Mail, Lock, ArrowRight, Chrome, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../hooks/useAuth";
-import Layout from "../../../common/components/Layout";
 import PasswordInput from "../../../common/components/PasswordInput";
 
 export default function LoginPage() {
@@ -34,12 +33,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = async (role) => {
-    setEmail(role === 'admin' ? 'admin@inmob.com' : 'pedro@inmob.com');
-    setPassword('123456');
-    // El usuario tendrá que hacer click en el botón de login
   };
 
   return (
@@ -99,21 +92,6 @@ export default function LoginPage() {
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Iniciar Sesión <ArrowRight className="w-5 h-5" /></>}
             </button>
           </form>
-
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <button 
-              onClick={() => handleQuickLogin('publisher')}
-              className="text-[10px] uppercase tracking-widest font-bold py-2 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors"
-            >
-              Demo Publisher
-            </button>
-            <button 
-              onClick={() => handleQuickLogin('admin')}
-              className="text-[10px] uppercase tracking-widest font-bold py-2 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors"
-            >
-              Demo Admin
-            </button>
-          </div>
 
           <p className="mt-10 text-center text-sm text-slate-500 font-medium">
             ¿No tienes una cuenta?{" "}
