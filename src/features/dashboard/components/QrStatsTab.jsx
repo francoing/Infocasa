@@ -16,16 +16,22 @@ export default function QrStatsTab({ stats, loadingStats, propertyTitle, propert
       doc.text(`Total de escaneos: ${stats.total_scans}`, 14, 36);
       doc.text(`Fecha del reporte: ${new Date().toLocaleString()}`, 14, 42);
 
-      const tableData = stats.history.map((scan) => [
-        new Date(scan.created_at).toLocaleDateString(),
-        new Date(scan.created_at).toLocaleTimeString(),
-        scan.ip_address || "Desconocida",
-        scan.user_agent ? scan.user_agent.substring(0, 30) + "..." : "Desconocido",
-      ]);
+      const tableData = stats.history.map((scan) => {
+        // Armamos la ubicación combinando ciudad y región
+        const location = scan.city && scan.region 
+          ? `${scan.city}, ${scan.region}` 
+          : "Desconocida";
+
+        return [
+          new Date(scan.created_at).toLocaleDateString(),
+          new Date(scan.created_at).toLocaleTimeString(),
+          location, // 👈 Reemplazamos la IP por la Ubicación
+        ];
+      });
 
       autoTable(doc, {
         startY: 50,
-        head: [["Fecha", "Hora", "IP", "Dispositivo"]],
+        head: [["Fecha", "Hora", "Ubicación (Aprox.)"]], // 👈 Cambiamos la columna
         body: tableData,
         theme: "grid",
         headStyles: { fillColor: [255, 0, 25] },
@@ -72,17 +78,23 @@ export default function QrStatsTab({ stats, loadingStats, propertyTitle, propert
             <tr>
               <th className="px-4 py-3 font-bold">Fecha</th>
               <th className="px-4 py-3 font-bold">Hora</th>
-              <th className="px-4 py-3 font-bold">IP</th>
+              <th className="px-4 py-3 font-bold">Ubicación (Aprox.)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {stats.history.map((scan) => (
-              <tr key={scan.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-700">{new Date(scan.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-slate-700">{new Date(scan.created_at).toLocaleTimeString()}</td>
-                <td className="px-4 py-3 text-slate-500 text-xs">{scan.ip_address || "-"}</td>
-              </tr>
-            ))}
+            {stats.history.map((scan) => {
+              const location = scan.city && scan.region 
+                ? `${scan.city}, ${scan.region}` 
+                : "Desconocida";
+
+              return (
+                <tr key={scan.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-700">{new Date(scan.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-slate-700">{new Date(scan.created_at).toLocaleTimeString()}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{location}</td>
+                </tr>
+              );
+            })}
             {stats.history.length === 0 && (
               <tr>
                 <td colSpan="3" className="px-4 py-8 text-center text-slate-500">
