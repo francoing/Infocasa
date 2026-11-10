@@ -26,6 +26,10 @@ const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
 const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
 const CreateSearchAlertPage = lazy(() => import('../features/searchAlerts/pages/CreateSearchAlertPage'));
 
+// 👇 NUEVAS LANDING PAGES (Corregidas para auth/pages)
+const PublicarGratisPage = lazy(() => import('../features/auth/pages/PublicarGratisPage'));
+const PlanFundadorPage = lazy(() => import('../features/auth/pages/PlanFundadorPage'));
+
 // ─── InfoMonedas ────────────────────────────────────────────────────
 const PackageStorePage = lazy(() => import('../features/infocoins/pages/PackageStorePage'));
 const PaymentResultPage = lazy(() => import('../features/infocoins/pages/PaymentResultPage'));
@@ -67,6 +71,10 @@ const AppRouter = () => {
             <Route path="/share/:propertyId?" element={<SharePage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:operation" element={<ExplorePage />} />
+
+            {/* 👇 NUEVAS LANDINGS PÚBLICAS */}
+            <Route path="/publicar-gratis" element={<PublicarGratisPage />} />
+            <Route path="/plan-fundador" element={<PlanFundadorPage />} />
 
             {/* Rutas protegidas que usan el mismo Layout */}
             <Route
