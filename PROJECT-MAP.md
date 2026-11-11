@@ -57,6 +57,7 @@ src/
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/publicar-gratis` | PublicarGratisPage | pública |
 | `/plan-fundador` | PlanFundadorPage | pública |
+| `/welcome` | WelcomePage (bienvenida post-registro) | auth |
 | `/infocoins/comprar` | PurchaseInfocoinsPage (compra de paquetes de infoMonedas) | auth |
 | `/payment/success` | PaymentResultPage (vuelta de MP con pago aprobado, lee `?status`) | auth |
 | `/payment/failure` | PaymentResultPage (vuelta de MP con pago fallido) | auth |
