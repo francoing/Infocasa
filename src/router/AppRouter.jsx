@@ -4,7 +4,7 @@ import ProtectedRoute from './ProtectedRoute';
 import Layout from '../common/components/Layout';
 import loadingIcon from '../assets/img/Icono.png';
 
-// Lazy load pages for code splitting
+// Lazy load pages
 const HomePage = lazy(() => import('../features/home/pages/HomePage'));
 const SearchPage = lazy(() => import('../features/search/pages/SearchPage'));
 const PropertyDetailPage = lazy(() => import('../features/property/pages/PropertyDetailPage'));
@@ -26,25 +26,19 @@ const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
 const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
 const CreateSearchAlertPage = lazy(() => import('../features/searchAlerts/pages/CreateSearchAlertPage'));
 
-// 👇 NUEVAS LANDING PAGES (Corregidas para auth/pages)
+// LANDINGS Y BIENVENIDA
 const PublicarGratisPage = lazy(() => import('../features/auth/pages/PublicarGratisPage'));
 const PlanFundadorPage = lazy(() => import('../features/auth/pages/PlanFundadorPage'));
+const WelcomePage = lazy(() => import('../features/auth/pages/WelcomePage')); // 👈 NUEVO
 
-// ─── InfoMonedas ────────────────────────────────────────────────────
+// InfoMonedas
 const PackageStorePage = lazy(() => import('../features/infocoins/pages/PackageStorePage'));
 const PaymentResultPage = lazy(() => import('../features/infocoins/pages/PaymentResultPage'));
-// ────────────────────────────────────────────────────────────────────
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-    <img
-      src={loadingIcon}
-      alt="Cargando..."
-      className="w-20 h-20 object-contain animate-heartbeat mb-4"
-    />
-    <p className="text-slate-500 font-black animate-pulse uppercase tracking-widest text-[10px]">
-      Cargando InfoCasa...
-    </p>
+    <img src={loadingIcon} alt="Cargando..." className="w-20 h-20 object-contain animate-heartbeat mb-4" />
+    <p className="text-slate-500 font-black animate-pulse uppercase tracking-widest text-[10px]">Cargando InfoCasa...</p>
   </div>
 );
 
@@ -53,7 +47,6 @@ const AppRouter = () => {
     <BrowserRouter>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          {/* RUTAS CON LAYOUT PÚBLICO (header + footer) */}
           <Route element={<Layout><Outlet /></Layout>}>
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
@@ -72,74 +65,35 @@ const AppRouter = () => {
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:operation" element={<ExplorePage />} />
 
-            {/* 👇 NUEVAS LANDINGS PÚBLICAS */}
+            {/* LANDINGS PÚBLICAS */}
             <Route path="/publicar-gratis" element={<PublicarGratisPage />} />
             <Route path="/plan-fundador" element={<PlanFundadorPage />} />
 
-            {/* Rutas protegidas que usan el mismo Layout */}
+            {/* RUTA PROTEGIDA PARA BIENVENIDA */}
             <Route
-              path="/profile"
+              path="/welcome"
               element={
                 <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/properties/create"
-              element={
-                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
-                  <CreatePropertyPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/properties/edit/:id"
-              element={
-                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}>
-                  <EditPropertyPage />
+                  <WelcomePage />
                 </ProtectedRoute>
               }
             />
 
-            {/* ─── Avisos de Búsqueda (SOLO BUYER) ────────────────────── */}
-            <Route
-              path="/dashboard/search-alerts/create"
-              element={
-                <ProtectedRoute allowedRoles={['buyer']}>
-                  <CreateSearchAlertPage />
-                </ProtectedRoute>
-              }
-            />
-            {/* ──────────────────────────────────────────────────────── */}
+            {/* RUTAS PROTEGIDAS */}
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}><DashboardPage /></ProtectedRoute>} />
+            <Route path="/dashboard/properties/create" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}><CreatePropertyPage /></ProtectedRoute>} />
+            <Route path="/dashboard/properties/edit/:id" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}><EditPropertyPage /></ProtectedRoute>} />
+            <Route path="/dashboard/search-alerts/create" element={<ProtectedRoute allowedRoles={['buyer']}><CreateSearchAlertPage /></ProtectedRoute>} />
 
-            {/* ─── InfoMonedas ──────────────────────────────────────── */}
-            <Route
-              path="/infocoins/comprar"
-              element={
-                <ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}>
-                  <PackageStorePage />
-                </ProtectedRoute>
-              }
-            />
+            {/* INFOMONEDAS */}
+            <Route path="/infocoins/comprar" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}><PackageStorePage /></ProtectedRoute>} />
             <Route path="/payment/success" element={<PaymentResultPage />} />
             <Route path="/payment/failure" element={<PaymentResultPage />} />
             <Route path="/payment/pending" element={<PaymentResultPage />} />
-            {/* ──────────────────────────────────────────────────────── */}
           </Route>
 
-          {/* Admin redirige al dashboard */}
           <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
-
-          {/* Fallback */}
           <Route path="*" element={<HomePage />} />
         </Routes>
       </Suspense>
