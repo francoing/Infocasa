@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../../hooks/useAuth";
 import PasswordInput from "../../../common/components/PasswordInput";
 import { formatCuit } from "../../../lib/utils";
+import { markJustRegistered } from "../../../lib/tracking";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -54,6 +55,7 @@ export default function RegisterPage() {
       // 👇 LÓGICA DE REDIRECCIÓN
       if (fromLanding) {
         // Si venía de /publicar-gratis o /plan-fundador, va a bienvenida
+        markJustRegistered();
         navigate("/welcome", { replace: true });
       } else if (role === "owner" || role === "agent") {
         navigate("/dashboard");
@@ -306,3 +308,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+  
