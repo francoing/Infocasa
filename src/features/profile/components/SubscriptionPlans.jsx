@@ -7,16 +7,13 @@ const BRAND = {
   gray: "#4a4a49",
 };
 
-const PROMO_END_DATE = new Date("2026-11-10T23:59:59");
-const PROMO_END_LABEL = "10/11/2026";
-
 const PLAN_CONFIG = [
   {
     match: ["fundador", "lanzamiento"],
     badge: "Plan Fundador",
     badgeStyle: { bg: BRAND.gold, color: BRAND.gray },
     icon: "gift",
-    promoNote: `Promoción válida hasta el ${PROMO_END_LABEL}`,
+    promoNote: "Duración: 6 meses",
     extraFeatures: ["Soporte 24/7", "Asignación directa de leads"],
   },
   {
@@ -113,8 +110,6 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
     user?.subscription?.plan?.id ||
     user?.plan_id;
 
-  const promoActive = new Date() < PROMO_END_DATE;
-
   const visiblePlans = plans.filter((plan) => {
     if (user?.role === "admin") return true;
     if (!plan.target_role) return true;
@@ -140,7 +135,7 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
           const features = buildFeatures(plan, config);
           const isCurrent = userPlanId && plan.id === userPlanId;
           const isFree = Number(plan.price) === 0;
-          const isPromo = !!config.promoNote && promoActive;
+          const isPromo = !!config.promoNote;
           
           const cardStyle = isCurrent
             ? "bg-gradient-to-b from-white to-red-50/30 border-red-500 shadow-xl shadow-red-500/10 z-10"
