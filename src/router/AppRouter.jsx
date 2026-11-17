@@ -24,6 +24,7 @@ const PrivacyPage = lazy(() => import('../features/legal/pages/PrivacyPage'));
 const SobreNosotrosPage = lazy(() => import('../features/legal/pages/SobreNosotrosPage'));
 const NoticiasPage = lazy(() => import('../features/legal/pages/NoticiasPage'));
 const ContactoPage = lazy(() => import('../features/legal/pages/ContactoPage'));
+const VersionesPage = lazy(() => import('../features/legal/pages/VersionesPage'));
 const CreateSearchAlertPage = lazy(() => import('../features/searchAlerts/pages/CreateSearchAlertPage'));
 
 // LANDINGS Y BIENVENIDA
@@ -61,6 +62,7 @@ const AppRouter = () => {
             <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />
             <Route path="/noticias" element={<NoticiasPage />} />
             <Route path="/contacto" element={<ContactoPage />} />
+            <Route path="/versiones" element={<VersionesPage />} />
             <Route path="/share/:propertyId?" element={<SharePage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:operation" element={<ExplorePage />} />

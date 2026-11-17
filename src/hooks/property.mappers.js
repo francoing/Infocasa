@@ -54,6 +54,7 @@ const mapClassification = (item) => ({
 const mapMedia = (item) => ({
   imageUrl: mapImageUrl(item),
   images: item.images || [],
+  videos: item.videos || [],
   priceHistory: (item.price_history || []).map((h) => ({
     oldPrice: parseFloat(h.old_price),
     newPrice: parseFloat(h.new_price),
