@@ -54,6 +54,7 @@ src/
 | `/sobre-nosotros` | SobreNosotrosPage (contenido institucional estático) | pública |
 | `/noticias` | NoticiasPage (noticias del NOA inmobiliario, estático) | pública |
 | `/contacto` | ContactoPage (formulario de contacto) | pública |
+| `/versiones` | VersionesPage (historial de versiones, estático en `data/versions.js`; la 1ª es la actual y se muestra en el footer) | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/publicar-gratis` | PublicarGratisPage | pública |
 | `/plan-fundador` | PlanFundadorPage | pública |
@@ -97,10 +98,17 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `setup.js` (97 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `setup.js` (97 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-11-17 (versiones de la plataforma)
+- ✅ **Versiones** — página `/versiones` (`VersionesPage`) con el historial cargado en `src/data/versions.js` (`VERSIONS`, la primera es la actual → `CURRENT_VERSION`). El footer muestra "Versión X" con link y suma "Versiones" en la columna Empresa. Arranca en **1.0** (lanzamiento). `package.json` → `1.0.0`. Para una versión nueva: agregarla arriba de `VERSIONS`. Test `components/VersionesPage`.
+
+### Ciclo 2026-11-17 (videos de propiedades + 30 fotos)
+- ✅ **Videos** (spec backend `properties/property_videos`) — `VideoUploader` en `PropertyForm` (hasta 3 videos, 200 MB c/u, MP4/MOV/WEBM). Al guardar, `uploadPropertyVideos` (hooks/useProperties) los sube **en partes de 5 MB** (`POST properties/{id}/videos` con `upload_id`/`chunk_index`/`total_chunks`) y muestra el avance (`uploadStatus` en el form). El backend los comprime a 720p en segundo plano: en edición se ven "Procesando…"/"falló"; en la ficha pública `PropertyVideos` muestra solo los `ready` (`preload="none"`). Al editar, los videos quitados se borran (`deletePropertyVideo`). Helpers puros en `features/property/videoUpload.helpers.js` (test `helpers/videoUpload`).
+- ✅ **Fotos: tope 30** (`ImageUploader maxImages`) y subida **en tandas de 3** (`uploadPropertyImages`) para no pasar los 20 MB por request del nginx de prod ni los 20 archivos de PHP. Fix: el endpoint de imágenes devuelve un array plano y antes se leía `res.data` (quedaba `[]` → el orden de fotos nuevas al editar no se aplicaba).
 
 ### Ciclo 2026-10-06 (header de marca, planes, noticias NOA, amenities)
 - ✅ **Header de marca (Layout)** — rediseño completo del header público con paleta corporativa (dorado `#ffda31` + rojo `#ff0019` + gris `#4a4a49`): fondo dorado, franja roja inferior, nav centrado con hover rojo, logo a la izquierda en desktop / centrado en mobile/tablet, sombra reforzada en páginas con fondo rojo (`RED_BACKGROUND_ROUTES = ["/sobre-nosotros", "/noticias", "/contacto"]`). Footer pasado a gris oscuro `#1a1a1a`. `AdminLayout` con logo agrandado (desktop `h-20`, mobile `h-14`, header mobile `h-10`). `Logo.jsx` apunta al nuevo imagotipo horizontal (`/img/imagotipo-horizontal.png`).

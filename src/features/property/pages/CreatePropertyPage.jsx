@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
-import { createProperty, uploadPropertyImages } from "../../../hooks/useProperties";
+import { createProperty, uploadPropertyImages, uploadPropertyVideos } from "../../../hooks/useProperties";
 import { createPublication } from "../../../hooks/usePublications";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 
 export default function CreatePropertyPage() {
   const [loading, setLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -16,7 +17,7 @@ export default function CreatePropertyPage() {
   // Extract the user's active subscription plan for the publication type selector
   const userPlan = user?.subscription?.plan || null;
 
-  const handleSubmit = async (formData, imageFiles) => {
+  const handleSubmit = async (formData, imageFiles, _imageOps, videoOps = {}) => {
     try {
       setLoading(true);
 
@@ -36,6 +37,18 @@ export default function CreatePropertyPage() {
         } catch (imgErr) {
           console.error("Error subiendo imágenes:", imgErr);
           toast.error("La propiedad se creó, pero hubo un problema al subir algunas fotos.");
+        }
+      }
+
+      // Videos: se suben en partes y el servidor los comprime a 720p en segundo plano.
+      const videoFiles = videoOps.videoFiles || [];
+      if (videoFiles.length > 0) {
+        const failed = await uploadPropertyVideos(newProperty.id, videoFiles, (n, total, fraction) =>
+          setUploadStatus(`Subiendo video ${n} de ${total}… ${Math.round(fraction * 100)}%`),
+        );
+        setUploadStatus("");
+        if (failed > 0) {
+          toast.error("La propiedad se creó, pero no se pudieron subir algunos videos. Podés volver a intentarlo editándola.");
         }
       }
 
@@ -59,6 +72,7 @@ export default function CreatePropertyPage() {
       toast.error(err.message || "Error al crear la propiedad.");
     } finally {
       setLoading(false);
+      setUploadStatus("");
     }
   };
 
@@ -73,6 +87,7 @@ export default function CreatePropertyPage() {
           onSubmit={handleSubmit} 
           onCancel={() => navigate("/dashboard")} 
           loading={loading}
+          uploadStatus={uploadStatus}
           userPlan={userPlan}
         />
       </div>

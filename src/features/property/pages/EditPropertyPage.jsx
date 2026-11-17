@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import Loader from "../../../common/components/Loader";
 import PropertyForm from "../components/PropertyForm";
-import { getPropertyById, updateProperty, uploadPropertyImages, deletePropertyImage, updatePropertyImagesOrder } from "../../../hooks/useProperties";
+import { getPropertyById, updateProperty, uploadPropertyImages, deletePropertyImage, updatePropertyImagesOrder, uploadPropertyVideos, deletePropertyVideo } from "../../../hooks/useProperties";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 
@@ -12,6 +12,7 @@ export default function EditPropertyPage() {
   const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -38,7 +39,7 @@ export default function EditPropertyPage() {
     fetchProperty();
   }, [id, user?.id, user?.role, navigate]);
 
-  const handleSubmit = async (formData, imageFiles, imageOps = {}) => {
+  const handleSubmit = async (formData, imageFiles, imageOps = {}, videoOps = {}) => {
     try {
       setSubmitting(true);
 
@@ -77,6 +78,20 @@ export default function EditPropertyPage() {
         toast.error("La propiedad se actualizó, pero hubo un problema al guardar algunas fotos.");
       }
 
+      // Videos: borrar los quitados y subir los nuevos (se comprimen a 720p en el servidor).
+      try {
+        for (const videoId of videoOps.deletedVideoIds || []) {
+          await deletePropertyVideo(id, videoId);
+        }
+        const failed = await uploadPropertyVideos(id, videoOps.videoFiles || [], (n, total, fraction) =>
+          setUploadStatus(`Subiendo video ${n} de ${total}… ${Math.round(fraction * 100)}%`),
+        );
+        if (failed > 0) throw new Error(`${failed} video(s) no se pudieron subir`);
+      } catch (videoErr) {
+        console.error("Error gestionando videos:", videoErr);
+        toast.error("La propiedad se actualizó, pero hubo un problema al guardar algunos videos.");
+      }
+
       toast.success("Propiedad actualizada correctamente.");
       navigate("/dashboard");
     } catch (err) {
@@ -84,6 +99,7 @@ export default function EditPropertyPage() {
       toast.error("Error al actualizar la propiedad.");
     } finally {
       setSubmitting(false);
+      setUploadStatus("");
     }
   };
 
@@ -104,6 +120,7 @@ export default function EditPropertyPage() {
           onSubmit={handleSubmit} 
           onCancel={() => navigate("/dashboard")} 
           loading={submitting}
+          uploadStatus={uploadStatus}
         />
       </div>
   );

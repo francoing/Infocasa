@@ -3,6 +3,7 @@ import { api } from "../api/api";
 import { queryClient } from "../lib/queryClient";
 import { buildProperty, buildMapMarker } from "./property.mappers";
 import { buildSearchQueryString, buildMapQueryString } from "./properties.query";
+import { chunkRanges, newUploadId } from "../features/property/videoUpload.helpers";
 
 /** Normaliza una propiedad del backend (o `{data}`) al shape que consume la UI. */
 export const mapProperty = (p) => {
@@ -102,15 +103,71 @@ export const updateProperty = async (id, propertyData) => {
  * Devuelve el array de imágenes creadas (en el orden enviado, cada una con `id`) para poder
  * mapear los Files nuevos a sus IDs al fijar el orden. Ver spec property/image_management.
  */
+// Se sube de a tandas: con hasta 30 fotos un solo request supera los límites del servidor
+// (nginx de prod: 20 MB por request; PHP: 20 archivos). 3 fotos × 5 MB = 15 MB por tanda.
+// Las tandas van en orden para respetar order_index.
+const IMAGE_UPLOAD_BATCH_SIZE = 3;
+
 export const uploadPropertyImages = async (propertyId, files) => {
   if (!files || files.length === 0) return [];
-  const fd = new FormData();
-  files.forEach(file => fd.append("files[]", file));
-  const res = await api.post(`/properties/${propertyId}/images`, fd);
+  const created = [];
+  for (let i = 0; i < files.length; i += IMAGE_UPLOAD_BATCH_SIZE) {
+    const fd = new FormData();
+    files.slice(i, i + IMAGE_UPLOAD_BATCH_SIZE).forEach(file => fd.append("files[]", file));
+    const res = await api.post(`/properties/${propertyId}/images`, fd);
+    // El endpoint devuelve un array plano (sin `data`); se acepta ambos por compatibilidad.
+    created.push(...(Array.isArray(res) ? res : res?.data || []));
+  }
   queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
   queryClient.invalidateQueries({ queryKey: ["properties"] });
   queryClient.invalidateQueries({ queryKey: ["me_properties"] });
-  return res.data || [];
+  return created;
+};
+
+/**
+ * Sube un video en partes de 5 MB (ver spec backend properties/property_videos).
+ * `onProgress(fraccion 0..1)` se llama después de cada parte. Devuelve el video creado
+ * (status `processing`: el backend lo comprime a 720p en segundo plano).
+ */
+const uploadPropertyVideo = async (propertyId, file, onProgress) => {
+  const ranges = chunkRanges(file.size);
+  const uploadId = newUploadId();
+  let created = null;
+  for (let i = 0; i < ranges.length; i++) {
+    const [start, end] = ranges[i];
+    const fd = new FormData();
+    fd.append("upload_id", uploadId);
+    fd.append("chunk_index", i);
+    fd.append("total_chunks", ranges.length);
+    fd.append("chunk", file.slice(start, end), file.name);
+    created = await api.post(`/properties/${propertyId}/videos`, fd);
+    onProgress?.((i + 1) / ranges.length);
+  }
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  return created;
+};
+
+/**
+ * Sube varios videos uno detrás de otro. `onProgress(n, total, fraccion)` informa el avance
+ * del video n (1-based). Si uno falla sigue con los demás; devuelve cuántos fallaron.
+ */
+export const uploadPropertyVideos = async (propertyId, files = [], onProgress) => {
+  let failed = 0;
+  for (let i = 0; i < files.length; i++) {
+    try {
+      await uploadPropertyVideo(propertyId, files[i], (fraction) => onProgress?.(i + 1, files.length, fraction));
+    } catch (err) {
+      console.error("Error subiendo video:", err);
+      failed++;
+    }
+  }
+  return failed;
+};
+
+/** Borra un video de una propiedad (y sus archivos en el servidor). */
+export const deletePropertyVideo = async (propertyId, videoId) => {
+  await api.delete(`/properties/${propertyId}/videos/${videoId}`);
+  queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
 };
 
 /** Borra una imagen existente de una propiedad. El backend promueve otra a portada si hacía falta. */

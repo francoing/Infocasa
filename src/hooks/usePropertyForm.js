@@ -7,6 +7,7 @@ import {
   buildPropertyPayload,
   buildImageOps,
 } from "../features/property/propertyForm.helpers";
+import { buildVideoOps } from "../features/property/videoUpload.helpers";
 import { UBICACIONES_NOA } from "../data/ubicacionesNOA"; // 👈 Importamos el archivo estático
 
 export const usePropertyForm = ({ initialData, onSubmit }) => {
@@ -98,6 +99,8 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     setFormData((prev) => ({ ...prev, imageUrl: firstUrl, gallery: images }));
   };
 
+  const handleVideosChange = (videos) => setFormData((prev) => ({ ...prev, videos }));
+
   const handleCertDocChange = (e) => {
     setFormData((prev) => ({ ...prev, certification_document: e.target.files?.[0] || null }));
   };
@@ -133,7 +136,7 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     fd.infocoins_amount = formData.infocoins || 0;
 
     const { imageFiles, ops } = buildImageOps(formData.gallery, initialData);
-    onSubmit(fd, imageFiles, ops);
+    onSubmit(fd, imageFiles, ops, buildVideoOps(formData.videos, initialData));
   };
 
   // 👇 Usamos las provincias estáticas
@@ -166,6 +169,7 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     handleDepartmentChange,
     handleMapLocationChange,
     handleImagesChange,
+    handleVideosChange,
     handleCertDocChange,
     clearCertDoc,
     setPublicationType,

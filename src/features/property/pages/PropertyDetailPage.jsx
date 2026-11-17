@@ -8,6 +8,7 @@ import PropertyMap from "../components/PropertyMap";
 import PropertyGalleryGrid from "../components/detail/PropertyGalleryGrid";
 import PropertyGalleryLightbox from "../components/detail/PropertyGalleryLightbox";
 import PropertySpecs from "../components/detail/PropertySpecs";
+import PropertyVideos from "../components/detail/PropertyVideos";
 import PropertyTechnicalDetails from "../components/detail/PropertyTechnicalDetails";
 import PropertyPriceBox from "../components/detail/PropertyPriceBox";
 import PropertyContactForm from "../components/detail/PropertyContactForm";
@@ -139,6 +140,8 @@ export default function PropertyDetailPage() {
                 {property.description}
               </p>
             </div>
+
+            <PropertyVideos videos={property.videos} />
 
             <PropertyTechnicalDetails property={property} />
 
