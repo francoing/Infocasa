@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 
-export default function ImageUploader({ images = [], onChange, maxImages = 10 }) {
+export default function ImageUploader({ images = [], onChange, maxImages = 30 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
@@ -102,7 +102,7 @@ export default function ImageUploader({ images = [], onChange, maxImages = 10 })
           {uploading ? 'Procesando imágenes...' : 'Arrastrá tus fotos aquí'}
         </p>
         <p className="text-slate-500 text-sm mt-1">O hacé clic para buscar en tu equipo</p>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">JPG, PNG hasta 5MB</p>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">JPG, PNG hasta 5MB · máximo {maxImages} fotos ({images.length}/{maxImages})</p>
       </div>
 
       {/* Preview Grid — arrastrá para reordenar; la 1ª es la portada */}
