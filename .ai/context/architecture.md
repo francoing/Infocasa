@@ -20,7 +20,7 @@ Definir las reglas de arquitectura del frontend. Cualquier dev o agente de IA qu
 - **Separación de estado:**
   - **Estado de servidor** (todo lo que viene del backend) lo posee **TanStack Query**. **Nunca** se copia una respuesta del backend dentro de un store Zustand.
   - **Estado de cliente** (token, filtros de búsqueda, toasts, UI efímera) vive en **Zustand**.
-- **Cliente HTTP único:** existe un solo `api/api.js`. Nada de `fetch` suelto ni instancias paralelas.
+- **Cliente HTTP único:** existe un solo `api/api.js`. Nada de `fetch` suelto ni instancias paralelas. Puede haber **módulos de endpoints** en `src/api/` (ej. `api/infocoins.js`) que solo envuelven `api.js` con nombres; siguen la misma regla: se importan únicamente desde `src/hooks/`.
 
 ---
 
@@ -60,7 +60,7 @@ src/lib/        # Helpers puros (sin estado, sin HTTP)
 
 ## Prohibiciones estrictas
 
-1. **No `api.*` ni `fetch` fuera de `hooks/`.** Componentes y páginas acceden a datos solo vía hooks. *(Enforced en `features/**` + `common/**`: `no-restricted-imports` prohíbe importar `api/api.js`, y `no-restricted-syntax` prohíbe `fetch(...)` y `new XMLHttpRequest()` — mové la llamada de red a un hook. Servicios externos (Nominatim, Geoapify) también van por hook: `useGeocodeSearch`, `useGeoapifyPlaces`, `useUserProvince`.)*
+1. **No `api.*` ni `fetch` fuera de `hooks/`.** Componentes y páginas acceden a datos solo vía hooks. *(Enforced en `features/**` + `common/**`: `no-restricted-imports` prohíbe importar cualquier módulo de `src/api/`, y `no-restricted-syntax` prohíbe `fetch(...)` y `new XMLHttpRequest()` — mové la llamada de red a un hook. Servicios externos (Nominatim, Geoapify) también van por hook: `useGeocodeSearch`, `useGeoapifyPlaces`, `useUserProvince`.)*
 2. **No duplicar estado de servidor en Zustand.** React Query es el dueño; Zustand es solo cliente.
 3. **No lógica de negocio en JSX.** Cálculos, formateos y reglas van en hooks o `lib/`.
 4. **No re-implementar ordenamiento de resultados.** El backend ordena (destacadas primero, INVIOLABLE). El front respeta el orden recibido; el `sort` de cliente no puede ocultar destacadas.

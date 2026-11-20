@@ -1,33 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { infocoinsApi } from "../api/infocoins";
 
 /**
- * Hook para el catálogo de paquetes de InfoMonedas.
+ * Hook para el catálogo de paquetes de InfoMonedas (react-query).
  *
  * Uso:
  *   const { packages, loading, error, refetch } = usePackages();
  */
 export function usePackages({ enabled = true } = {}) {
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const query = useQuery({
+    queryKey: ["infocoins_packages"],
+    queryFn: () => infocoinsApi.getPackages(),
+    enabled,
+  });
 
-  const fetchPackages = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await infocoinsApi.getPackages();
-      setPackages(data?.packages ?? []);
-    } catch (err) {
-      setError(err?.message || "No se pudieron cargar los paquetes.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (enabled) fetchPackages();
-  }, [enabled, fetchPackages]);
-
-  return { packages, loading, error, refetch: fetchPackages };
+  return {
+    packages: query.data?.packages ?? [],
+    loading: query.isLoading,
+    error: query.error ? query.error.message || "No se pudieron cargar los paquetes." : null,
+    refetch: query.refetch,
+  };
 }

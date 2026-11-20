@@ -1,5 +1,5 @@
 import React from 'react';
-import { useMySearchAlerts, useDeleteSearchAlert } from '../hooks/useSearchAlerts';
+import { useMySearchAlerts, useDeleteSearchAlert } from '@/hooks/useSearchAlerts';
 import { Link } from 'react-router-dom';
 
 export default function MySearchAlertsList() {
