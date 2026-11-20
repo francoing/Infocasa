@@ -111,6 +111,9 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Deuda técnica / drift conocido
 
+### Ciclo 2026-11-20 (knip roto en CI)
+- ✅ **`npm run knip` volvió a verde.** `vite.config.js` usaba `__dirname` para el alias `@`; como el proyecto es ESM (`"type": "module"`), knip no podía cargar el config, perdía el entry `index.html → src/main.jsx` y reportaba ~28 archivos "sin usar" y exports falsos (exit ≠ 0 en CI). El alias ahora sale de `fileURLToPath(new URL('./src', import.meta.url))`. Vite y Vitest siguen funcionando igual. Bug-card: `specs/quality/knip_vite_config/bug-knip-vite-dirname.md`.
+
 ### Ciclo 2026-11-20 (limpieza)
 - ✅ **`vite.config.js` sin host de ngrok hardcodeado** — `server.allowedHosts` = `localhost` + la lista de `VITE_DEV_ALLOWED_HOSTS` (separada por comas) del `.env.local` de cada uno, p. ej. `VITE_DEV_ALLOWED_HOSTS=mi-tunel.ngrok-free.dev,.ngrok-free.dev`.
 - ✅ Borrados los archivos basura de la raíz (`archivo1.txt` y los vacíos de comandos mal tipeados).

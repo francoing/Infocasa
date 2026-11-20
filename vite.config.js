@@ -1,7 +1,7 @@
   /// <reference types="vitest" />
   import { defineConfig, loadEnv } from 'vite'
   import react from '@vitejs/plugin-react'
-  import path from 'path'
+  import { fileURLToPath, URL } from 'node:url'
 
   // Hosts extra para el dev server (p. ej. un túnel de ngrok), desde tu .env local:
   //   VITE_DEV_ALLOWED_HOSTS=mi-tunel.ngrok-free.dev,.ngrok-free.dev
@@ -22,7 +22,9 @@
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        // import.meta.url (no __dirname): el proyecto es ESM ("type": "module") y knip
+        // carga este config como ESM puro, donde __dirname no existe.
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
     test: {
