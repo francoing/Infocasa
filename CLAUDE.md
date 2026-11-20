@@ -44,6 +44,8 @@ Capa 4 · ESTADO     (memoria viva)          → PROJECT-MAP.md
 
 ## El ecosistema (back ↔ front)
 
+- **Dónde está el backend:** se cita como `Backend-Inmobiliaria/`; en la máquina de desarrollo el clon local se llama `backend-infocasa-production` (hermano de este repo). Mismas rutas internas (`.ai/contracts/api-contract.md`, `.ai/product/`).
+
 - **`product/` es único y vive en el backend.** El front NO lo duplica: lo consume vía [.ai/product/README.md](.ai/product/README.md). Las reglas de negocio, actores y visión son las mismas para ambos.
 - **El contrato de API** (`Backend-Inmobiliaria/.ai/contracts/api-contract.md`) es el límite. El backend lo mantiene; el front lo **respeta**. Si algo del front no calza con el contrato, el contrato manda (o se abre un cambio en el backend).
 - **El orden de resultados lo impone el backend** (destacadas primero, INVIOLABLE). El front nunca reordena para ocultarlas.
@@ -59,7 +61,7 @@ Código real  >  PROJECT-MAP.md  >  api-contract.md (backend)  >  specs/{feature
 1. **Clasificá el trabajo primero** (triage.md). El tier determina todo lo que sigue.
 2. **Leé `PROJECT-MAP.md` antes de tocar nada**; no re-explores todo el repo salvo que sea necesario.
 3. **Spec/bug-card antes que código.** TIER 3 → spec completa (STOP RULE). TIER 2 → bug-card. TIER 1 → sin doc.
-4. **Datos solo por `hooks/`.** Ningún componente/página llama a `api/api.js` ni hace `fetch` directo (ver `.ai/context/architecture.md`).
-5. **Actualizá `PROJECT-MAP.md`** al terminar (es lo primero que driftea; el pre-commit te lo recuerda).
+4. **Datos solo por `hooks/`.** Ningún componente/página importa nada de `src/api/` (ni `api.js` ni los módulos de endpoints como `api/infocoins.js`) ni hace `fetch` directo; el lint lo bloquea (ver `.ai/context/architecture.md`). Los hooks viven en `src/hooks/`, no dentro de `features/`.
+5. **Actualizá `PROJECT-MAP.md`** al terminar (es lo primero que driftea; el pre-commit te lo recuerda). `map:check` solo verifica rutas, hooks, stores y componentes comunes: los **endpoints nuevos** (sección "Contrato con backend") y los **archivos nuevos de `src/api/`** se agregan a mano.
 6. Antes de finalizar, los **gates duros** (todos corren en CI): `npm run lint` (fitness function) · `npm run knip` (código muerto) · `npm run map:check` (exactitud del PROJECT-MAP) · `npm run test` (Vitest sobre happy-dom). **Los tests son gate:** toda **funcionalidad importante nueva** (botón con lógica de navegación/acción, componente nuevo, hook nuevo, helper con lógica) **suma su test**; no se baja el gate para "pasar" (detalle en [architecture-policies.yaml](.ai/policies/architecture-policies.yaml) → `testing.reglas`).
 7. **Armá PR según el criterio** (ver [conventions.md](.ai/context/conventions.md) → "Criterio para armar PR"): directo a `QA` si el cambio es ≤3 archivos y 1 módulo; **PR** si es más grande, cruza módulos, o toca contrato de API / seguridad-auth / deploy-infra. **`production` solo por promoción vía PR.**
