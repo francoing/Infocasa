@@ -111,6 +111,10 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Deuda técnica / drift conocido
 
+### Ciclo 2026-11-20 (limpieza)
+- ✅ **`vite.config.js` sin host de ngrok hardcodeado** — `server.allowedHosts` = `localhost` + la lista de `VITE_DEV_ALLOWED_HOSTS` (separada por comas) del `.env.local` de cada uno, p. ej. `VITE_DEV_ALLOWED_HOSTS=mi-tunel.ngrok-free.dev,.ngrok-free.dev`.
+- ✅ Borrados los archivos basura de la raíz (`archivo1.txt` y los vacíos de comandos mal tipeados).
+
 ### Ciclo 2026-11-20 (pausar/reanudar sin saltear la moderación)
 - ✅ **Botón pausar/reanudar** (`dashboard/PropertyRow`) — solo aparece para propiedades `published` o `paused`. Antes también ofrecía "Publicar" en borradores y pendientes, y el backend los publicaba sin moderación; ahora el backend responde `422` en esos casos (spec backend `properties/toggle_status_guard`). La etiqueta de estado muestra el estado real (Borrador / En revisión) en vez de "Pausada" para todo lo no publicado.
 - Backend también: `/share/{id}` responde `404` si la propiedad no está publicada.
