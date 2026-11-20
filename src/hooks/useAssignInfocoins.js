@@ -1,11 +1,25 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { infocoinsApi } from "../api/infocoins";
+import { useAuthStore } from "../store/useAuthStore";
 import { WALLET_QUERY_KEY } from "./useWallet";
 
 /**
+ * Invalida todo lo que cambia al asignar destacados o InfoMonedas: billetera, mis
+ * propiedades, el marketplace/home (cambia el orden) y el detalle; y refresca los
+ * saldos del usuario logueado.
+ */
+export function invalidateAfterVisibilityChange(queryClient, propertyId) {
+  queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY });
+  queryClient.invalidateQueries({ queryKey: ["me_properties"] });
+  queryClient.invalidateQueries({ queryKey: ["publication_quota"] });
+  queryClient.invalidateQueries({ queryKey: ["properties"] });
+  if (propertyId) queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+  useAuthStore.getState().refreshUser?.();
+}
+
+/**
  * Hook para asignar infomonedas a una propiedad (react-query).
- * Al éxito invalida la billetera y el listado de "mis propiedades" (contador de monedas).
  *
  * Uso:
  *   const { assign, loading, error } = useAssignInfocoins();
@@ -16,10 +30,7 @@ export function useAssignInfocoins() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: ({ propertyId, amount }) => infocoinsApi.assignToProperty(propertyId, amount),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["me_properties"] });
-    },
+    onSuccess: (_data, { propertyId }) => invalidateAfterVisibilityChange(queryClient, propertyId),
   });
 
   const { mutateAsync } = mutation;

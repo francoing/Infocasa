@@ -1,6 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import OneTimePaymentNote from "@/common/components/OneTimePaymentNote";
+import ArchivePolicyNote from "@/common/components/ArchivePolicyNote";
 
 /** Modal de selección de plan (upgrade de suscripción). */
 export default function PlanPickerModal({ plans, userPlan, onChoose, onClose }) {
@@ -12,7 +13,8 @@ export default function PlanPickerModal({ plans, userPlan, onChoose, onClose }) 
       <div className="bg-white w-full max-w-2xl rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         <h3 className="text-2xl font-black text-slate-900 mb-2">Elegí tu Plan</h3>
         <p className="text-slate-500 font-medium mb-4">Seleccioná el plan que mejor se adapte a tus necesidades.</p>
-        <OneTimePaymentNote className="mb-6" detail="Los planes pagos duran 30 días y se pagan una sola vez." />
+        <OneTimePaymentNote className="mb-3" detail="Los planes pagos duran 30 días y se pagan una sola vez." />
+        <ArchivePolicyNote variant="plan" className="mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {plans.map((plan) => {
             const isCurrent = userPlan?.planId === plan.id;

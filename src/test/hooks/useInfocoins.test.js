@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useWallet } from "@/hooks/useWallet";
 import { usePackages } from "@/hooks/usePackages";
 import { useAssignInfocoins } from "@/hooks/useAssignInfocoins";
+import { useFeatureProperty } from "@/hooks/useFeatureProperty";
 import { useInfocoinCheckout, useInfocoinPaymentResult } from "@/hooks/useInfocoinPurchase";
 import { api } from "@/api/api";
 
@@ -28,6 +29,12 @@ describe("useWallet", () => {
     await waitFor(() => expect(result.current.balance).toBe(30));
     expect(result.current.transactions).toEqual([{ id: 1 }]);
     expect(api.get).toHaveBeenCalledWith("/infocoins/wallet");
+  });
+
+  it("expone el saldo de destacados", async () => {
+    api.get.mockResolvedValueOnce({ balance: 1, featured_balance: 3, transactions: [] });
+    const { result } = renderHook(() => useWallet(), { wrapper });
+    await waitFor(() => expect(result.current.featuredBalance).toBe(3));
   });
 
   it("con enabled:false no pide nada", () => {
@@ -66,6 +73,9 @@ describe("useAssignInfocoins", () => {
     expect(res.balance).toBe(5);
     expect(spy).toHaveBeenCalledWith({ queryKey: ["infocoins_wallet"] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ["me_properties"] });
+    // el orden del marketplace cambia: se refresca el listado y el detalle
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["properties"] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["property", 8] });
   });
 
   it("si falla, relanza con el mensaje y lo expone en error", async () => {
@@ -125,5 +135,34 @@ describe("useInfocoinPaymentResult", () => {
     expect(result.current.status).toBe("rejected");
     await waitFor(() => expect(sessionStorage.getItem("pending_infocoin_purchase")).toBeNull());
     expect(api.get).not.toHaveBeenCalled();
+  });
+});
+
+describe("useFeatureProperty", () => {
+  it("destaca la propiedad e invalida billetera, mis propiedades y marketplace", async () => {
+    api.post.mockResolvedValueOnce({ featured_at: "2026-11-20T00:00:00Z", featured_balance: 1 });
+    const spy = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useFeatureProperty(), { wrapper });
+
+    let res;
+    await act(async () => {
+      res = await result.current.feature(4);
+    });
+
+    expect(api.post).toHaveBeenCalledWith("/properties/4/featured");
+    expect(res.featured_balance).toBe(1);
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["infocoins_wallet"] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["me_properties"] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["properties"] });
+  });
+
+  it("si falla (ya destacada / sin saldo), expone el mensaje del back", async () => {
+    api.post.mockRejectedValueOnce(new Error("Esta propiedad ya está destacada."));
+    const { result } = renderHook(() => useFeatureProperty(), { wrapper });
+
+    await act(async () => {
+      await expect(result.current.feature(4)).rejects.toThrow("Esta propiedad ya está destacada.");
+    });
+    await waitFor(() => expect(result.current.error).toBe("Esta propiedad ya está destacada."));
   });
 });

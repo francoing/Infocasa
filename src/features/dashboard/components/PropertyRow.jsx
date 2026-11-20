@@ -3,11 +3,16 @@ import { Link } from "react-router-dom";
 import { 
   MapPin, Eye, Heart, ExternalLink, Edit, Trash2, 
   ChevronDown, ChevronUp, TrendingDown, Percent, 
-  Loader2, QrCode, Coins, Pause, Play 
+  Loader2, QrCode, Coins, Pause, Play, Star, Archive 
 } from "lucide-react";
 import QrModal from "./QrModal";
 
-const STATUS_LABELS = { published: "Publicada", paused: "Pausada", draft: "Borrador", pending_approval: "En revisión" };
+const STATUS_LABELS = { published: "Publicada", paused: "Pausada", draft: "Borrador", pending_approval: "En revisión", archived: "Archivada" };
+
+const TIER_BADGES = {
+  premium: { label: "Súper destacada", className: "bg-red-50 text-red-600" },
+  featured: { label: "Destacada", className: "bg-amber-50 text-amber-600" },
+};
 
 /** Panel expandible de reducción de precio (dentro de PropertyRow). */
 function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice }) {
@@ -73,16 +78,53 @@ function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, redu
   );
 }
 
+function TierBadge({ type }) {
+  const badge = TIER_BADGES[type];
+  if (!badge) return null;
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap ${badge.className}`}>
+      {badge.label}
+    </span>
+  );
+}
+
+function ArchivedNotice({ deletesAt }) {
+  return (
+    <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-700">
+      <Archive className="w-3.5 h-3.5" />
+      Archivada por suscripción vencida.
+      {deletesAt && ` Se elimina el ${new Date(deletesAt).toLocaleDateString()} si no renovás.`}
+    </p>
+  );
+}
+
+/** Destacar (si todavía no lo está) y asignar InfoMonedas: solo publicadas o pausadas (spec backend featured_and_archive). */
+function BoostActions({ prop, onFeature, onAssignInfocoins }) {
+  return (
+    <>
+      {!prop.isFeatured && (
+        <button onClick={() => onFeature?.(prop)} className="p-3 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all" title="Destacar (usa 1 destacado)">
+          <Star className="w-5 h-5" />
+        </button>
+      )}
+      <button onClick={() => onAssignInfocoins(prop)} className="p-3 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all" title="Asignar InfoMonedas">
+        <Coins className="w-5 h-5" />
+      </button>
+    </>
+  );
+}
+
 /** Fila de una propiedad publicada: datos, métricas, acciones y reducción de precio. */
 export default function PropertyRow({ 
-  prop, expanded, onToggleExpand, onDelete, onAssignInfocoins, 
-  onToggleStatus, // 👈 NUEVA PROP
+  prop, expanded, onToggleExpand, onDelete, onAssignInfocoins, onFeature,
+  onToggleStatus,
   ...reduction 
 }) {
   const [qrOpen, setQrOpen] = useState(false);
   const isPublished = prop.status === "published";
   // Pausar/reanudar solo aplica a publicadas o pausadas; borradores y pendientes van por moderación.
   const canToggleStatus = isPublished || prop.status === "paused";
+  const isArchived = prop.status === "archived";
 
   return (
     <>
@@ -104,7 +146,9 @@ export default function PropertyRow({
               }`}>
                 {STATUS_LABELS[prop.status] ?? prop.status}
               </span>
+              <TierBadge type={prop.publicationType} />
             </div>
+            {isArchived && <ArchivedNotice deletesAt={prop.archiveDeletesAt} />}
             <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
               <MapPin className="w-4 h-4 text-slate-400" /> {prop.location}
             </p>
@@ -147,12 +191,12 @@ export default function PropertyRow({
             <button onClick={() => setQrOpen(true)} className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="Punto Infocasa (QR)">
               <QrCode className="w-5 h-5" />
             </button>
-            <button onClick={() => onAssignInfocoins(prop)} className="p-3 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all" title="Asignar InfoMonedas">
-              <Coins className="w-5 h-5" />
-            </button>
-            <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
-              <Edit className="w-5 h-5" />
-            </Link>
+            {canToggleStatus && <BoostActions prop={prop} onFeature={onFeature} onAssignInfocoins={onAssignInfocoins} />}
+            {!isArchived && (
+              <Link to={`/dashboard/properties/edit/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
+                <Edit className="w-5 h-5" />
+              </Link>
+            )}
             <button onClick={() => onDelete(prop.id)} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Eliminar">
               <Trash2 className="w-5 h-5" />
             </button>

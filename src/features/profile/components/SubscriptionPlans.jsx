@@ -1,6 +1,7 @@
 import React from "react";
 import { Check, Crown, Gift, Clock, Sparkles, Star, Zap } from "lucide-react";
 import OneTimePaymentNote from "@/common/components/OneTimePaymentNote";
+import ArchivePolicyNote from "@/common/components/ArchivePolicyNote";
 
 const BRAND = {
   red: "#ff0019",
@@ -127,6 +128,7 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
         <p className="text-[#4a4a49]/70 mt-2 text-base max-w-lg mx-auto">
           Elegí el plan que mejor se adapte a tu actividad inmobiliaria y empezá a vender más rápido.
         </p>
+        <ArchivePolicyNote variant="plan" className="mt-4 max-w-2xl mx-auto" />
       </div>
 
       {/* 👇 Grilla: máximo 2 columnas, centrada, y con un ancho máximo para que no se estiren */}

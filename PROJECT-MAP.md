@@ -23,7 +23,7 @@ src/
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
-│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota, useWallet, 
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublicationQuota, useWallet, useFeatureProperty, 
 │                            usePackages, useAssignInfocoins, useInfocoinPurchase (checkout + vuelta de MP), useSearchAlerts,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan, useContactForm,
@@ -32,7 +32,7 @@ src/
 │                            dashboardData.helpers, infocoinPurchase.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, 
-│                            PasswordInput, OneTimePaymentNote,
+│                            PasswordInput, OneTimePaymentNote, ArchivePolicyNote,
 │                            NotificationBell
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado)
@@ -90,8 +90,8 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`, `/{id}/images` (+ `order`, DELETE), `/{id}/videos` (por partes, DELETE), `/{id}/toggle-status` (pausar/reactivar, `usePropertyStatus`), `/{id}/qr-scan` (público, `useRegisterQrScan`), `/{id}/qr-stats` (`useQrStats`).
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
 - **Admin:** `admin/properties`, `admin/properties/{id}/verify`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
-- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `publications`, `me/publication-quota`.
-- **InfoMonedas** (vía `api/infocoins.js`): `infocoins/wallet`, `infocoins/packages`, `infocoins/purchase/preference`, `infocoins/purchase/verify`, `properties/{id}/infocoins` (POST). Hooks: `useWallet`, `usePackages`, `useAssignInfocoins`, `useInfocoinPurchase`.
+- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota` (`POST publications` ya no existe).
+- **InfoMonedas** (vía `api/infocoins.js`): `infocoins/wallet`, `infocoins/packages`, `infocoins/purchase/preference`, `infocoins/purchase/verify`, `properties/{id}/infocoins` (POST), `properties/{id}/featured` (POST, destacar). Hooks: `useWallet` (saldo + `featuredBalance`), `usePackages`, `useAssignInfocoins`, `useFeatureProperty`, `useInfocoinPurchase`.
 - **Alertas de búsqueda** (vía `api/searchAlerts.js`): `search-alerts` (CRUD), `my-received-alerts`. Hook: `useSearchAlerts`.
 - **Notificaciones:** `notifications`, `notifications/unread-count`, `notifications/{id}/read`, `notifications/read-all` (polling 30 s, `useNotifications`).
 - **Contacto:** `contact` (POST público, `useContactForm`). ⚠️ `api:surface` lo marca como no documentado en el contrato del backend.
@@ -119,6 +119,14 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Botón pausar/reanudar** (`dashboard/PropertyRow`) — solo aparece para propiedades `published` o `paused`. Antes también ofrecía "Publicar" en borradores y pendientes, y el backend los publicaba sin moderación; ahora el backend responde `422` en esos casos (spec backend `properties/toggle_status_guard`). La etiqueta de estado muestra el estado real (Borrador / En revisión) en vez de "Pausada" para todo lo no publicado.
 - Backend también: `/share/{id}` responde `404` si la propiedad no está publicada.
 - Bug-card `quality/toggle_status/bug-toggle-publishes-drafts`. Test `components/PropertyRow`.
+
+### Ciclo 2026-11-20 (destacados permanentes, súper destacadas y archivo por vencimiento)
+- ✅ **Reglas nuevas** (spec backend `monetization/featured_and_archive`): destacar cuesta 1 destacado de la billetera, es permanente y una sola vez; con 1+ InfoMonedas la propiedad es **súper destacada** (`publication_type: "premium"`, calculado por el back); orden del marketplace: súper (más monedas primero) → destacadas → comunes. Se quitó el tipo "premium" elegible y `POST publications`.
+- ✅ **Alta de propiedad** — `PublicationTypeSelector` ahora es "Visibilidad": Común/Destacada (según `user.featured_balance`) + InfoMonedas opcionales (hasta `user.infocoins_balance`). Todo viaja en el mismo `POST properties`; se borró `hooks/usePublications` (el front creaba una segunda publicación después del alta → 403 engañoso). Tras crear se hace `refreshUser()`.
+- ✅ **Panel** — `PropertyRow`: botón **Destacar** (`FeaturePropertyModal` + `useFeatureProperty`) si no está destacada, badge Destacada/Súper destacada, estado **Archivada** con fecha de borrado y sin editar/destacar/asignar. Filtro "Archivado" en `PropertiesTab`. `AssignInfocoinsModal` lee `infocoinsCount` del objeto mapeado. `WalletModal` muestra destacados.
+- ✅ **Refresco** — asignar monedas o destacar invalida billetera, `me_properties`, `publication_quota`, `["properties"]` (marketplace/home) y el detalle, y refresca el usuario (`invalidateAfterVisibilityChange`).
+- ✅ **Aviso de archivo** — componente común `ArchivePolicyNote` (vence la suscripción → archivadas 30 días → se borran; con `variant="plan"` explica el límite del plan al volver): en `CreatePropertyPage`, `profile/SubscriptionPlans` y `PlanPickerModal`.
+- Mappers: `isFeatured`, `archivedAt`, `archiveDeletesAt`. Tests `components/PropertyRow`, `components/PublicationTypeSelector`, `hooks/useInfocoins`, `hooks/propertyMappers`.
 
 ### Ciclo 2026-11-20 (suscripción = pago único, sin renovación automática)
 - ✅ **Sin renovación automática** — decisión de producto: el plan pago es un **pago único** de Checkout Pro (30 días) y no se renueva solo. Se quitó el toggle "Pausar/Reactivar renovación" de `profile/SubscriptionStatusCard` y `common/PlanStatusCard`, el hook `useToggleAutoRenew` (de `useQrStats`) y la prop `isAutoRenew` (`DashboardPage` → `DashboardStats`). El backend quitó `PATCH subscriptions/toggle-auto-renew` y `user.subscription.auto_renew`.
@@ -161,7 +169,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Verdes de CI** — knip: se quitaron deps muertas (`html2canvas`, `qrcode.react`) y el export sin uso `fetchPublicationQuota`; tests: se neutralizó el animador WAAPI de framer-motion en el setup (ver sección Tests). `npm run knip`/`test` vuelven a salir con código 0.
 
 ### Ciclo 2026-09-09 (cupo de publicaciones en el selector)
-- ✅ **Cupo destacadas/premium en "Tipo de Publicación"** — nuevo hook `usePublicationQuota` (`GET /me/publication-quota` → `{ plan, properties, featured, premium }`, cada uno `{ limit, used, available }`; `available === null` = ilimitado). `PublicationTypeSelector` lo consume: por tarjeta muestra "Te quedan N" (o "Cupo ilimitado") y **deshabilita** Destacada/Premium cuando `available <= 0`; Básica ahora también usa el bucket `properties` (muestra "Te quedan N" y se deshabilita si `properties.available <= 0`). Si la opción elegida se queda sin cupo, vuelve a Básica. Además el botón **"Nueva Propiedad"** del `DashboardPage` se deshabilita cuando `properties.available <= 0`. El backend sigue validando con **403** al publicar (no se confía solo en el front). Se recalcula en cada apertura (`staleTime: 0`) → descuenta tras publicar. Nota: el contador "X/Y" de `PlanStatusCard` sigue saliendo de `properties.length` (incluye borradores); migrarlo al endpoint es una mejora pendiente.
+- ✅ **(Superado 2026-11-20 por destacados permanentes: el selector usa la billetera, ya no los cupos featured/premium)** **Cupo destacadas/premium en "Tipo de Publicación"** — nuevo hook `usePublicationQuota` (`GET /me/publication-quota` → `{ plan, properties, featured, premium }`, cada uno `{ limit, used, available }`; `available === null` = ilimitado). `PublicationTypeSelector` lo consume: por tarjeta muestra "Te quedan N" (o "Cupo ilimitado") y **deshabilita** Destacada/Premium cuando `available <= 0`; Básica ahora también usa el bucket `properties` (muestra "Te quedan N" y se deshabilita si `properties.available <= 0`). Si la opción elegida se queda sin cupo, vuelve a Básica. Además el botón **"Nueva Propiedad"** del `DashboardPage` se deshabilita cuando `properties.available <= 0`. El backend sigue validando con **403** al publicar (no se confía solo en el front). Se recalcula en cada apertura (`staleTime: 0`) → descuenta tras publicar. Nota: el contador "X/Y" de `PlanStatusCard` sigue saliendo de `properties.length` (incluye borradores); migrarlo al endpoint es una mejora pendiente.
 
 ### Ciclo 2026-09-09 (Punto Infocasa / QR + limpieza de merge regresivo)
 - ✅ **Punto Infocasa (QR) por propiedad** — `features/dashboard/components/QrModal.jsx`: genera **client-side** (canvas + `qrcode`) una imagen "Punto Infocasa" en alta resolución (2480×3508) con el QR de la propiedad embebido sobre `public/img/punto-infocasa-base.jpg`, con descargar (JPG) e imprimir. Se dispara desde un botón en `PropertyRow` (estado local `qrOpen`). Dep nueva: `qrcode`. Sin cambios de API (todo local).

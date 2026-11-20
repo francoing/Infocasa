@@ -5,10 +5,10 @@ import { infocoinsApi } from "../api/infocoins";
 export const WALLET_QUERY_KEY = ["infocoins_wallet"];
 
 /**
- * Hook para la billetera del usuario: saldo + transacciones (react-query).
+ * Hook para la billetera del usuario: InfoMonedas, destacados y transacciones (react-query).
  *
  * Uso:
- *   const { balance, transactions, loading, error, refetch } = useWallet();
+ *   const { balance, featuredBalance, transactions, loading, error, refetch } = useWallet();
  *
  * - `enabled: false` evita el fetch (por ej. con el modal cerrado).
  * - `staleTime: 0`: al montar/abrir siempre trae el saldo fresco; como el cache es
@@ -24,6 +24,7 @@ export function useWallet({ enabled = true } = {}) {
 
   return {
     balance: query.data?.balance ?? 0,
+    featuredBalance: query.data?.featured_balance ?? 0,
     transactions: query.data?.transactions ?? [],
     loading: query.isFetching,
     error: query.error ? query.error.message || "No se pudo cargar la billetera." : null,
