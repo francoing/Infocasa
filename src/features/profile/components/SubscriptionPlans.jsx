@@ -1,5 +1,6 @@
 import React from "react";
 import { Check, Crown, Gift, Clock, Sparkles, Star, Zap } from "lucide-react";
+import OneTimePaymentNote from "@/common/components/OneTimePaymentNote";
 
 const BRAND = {
   red: "#ff0019",
@@ -178,7 +179,7 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
                     <span className={`text-4xl font-black ${isFree ? 'text-green-600' : 'text-[#1a1a1a]'}`}>
                       {formatPrice(plan.price)}
                     </span>
-                    <span className="text-sm font-bold text-slate-400">/mes</span>
+                    {!isFree && <span className="text-sm font-bold text-slate-400">por 30 días</span>}
                   </div>
                 </div>
               </div>
@@ -197,6 +198,8 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
               </ul>
 
               <div className="mt-auto">
+                {!isFree && <OneTimePaymentNote className="mb-4" />}
+
                 {isPromo && (
                   <div
                     className="flex items-center justify-center gap-2 text-[11px] font-bold rounded-xl px-3 py-2 mb-4"

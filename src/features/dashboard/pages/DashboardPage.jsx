@@ -197,8 +197,6 @@ export default function DashboardPage() {
     }
   };
 
-  // 👇 NUEVO: Extraemos los datos de auto-renovación del usuario
-  const isAutoRenew = user?.subscription?.auto_renew ?? false;
   const isFreePlan = Number(user?.subscription?.plan?.price) === 0;
 
   return (
@@ -243,8 +241,6 @@ export default function DashboardPage() {
           leads={leads}
           planExpiresAt={quota?.expires_at}
           onUpgrade={() => setShowPlanPicker(true)}
-          // 👇 NUEVAS PROPS
-          isAutoRenew={isAutoRenew}
           isFreePlan={isFreePlan}
         />
 

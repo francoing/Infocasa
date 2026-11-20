@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, CreditCard, ShieldCheck, CheckCircle, QrCode, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Loader from '@/common/components/Loader';
+import OneTimePaymentNote from '@/common/components/OneTimePaymentNote';
 
 export default function CheckoutModal({ plan, onConfirm, onCancel }) {
   const [step, setStep] = useState('form'); // 'form', 'processing', 'success', 'error'
@@ -86,12 +87,13 @@ export default function CheckoutModal({ plan, onConfirm, onCancel }) {
                   <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 space-y-4">
                     <div className="flex items-center justify-between font-bold text-slate-700">
                       <span>Total a pagar:</span>
-                      <span className="text-2xl font-black text-slate-900">${plan.price}/mes</span>
+                      <span className="text-2xl font-black text-slate-900">${plan.price}</span>
                     </div>
                     <p className="text-xs text-slate-500 text-left leading-relaxed">
-                      Serás redirigido de forma segura al sandbox de Mercado Pago para completar tu pago con tarjeta o saldo de prueba.
+                      Serás redirigido de forma segura a Mercado Pago para completar tu pago.
                     </p>
                   </div>
+                  <OneTimePaymentNote detail="El plan dura 30 días. Cuando venza, podés volver a contratarlo desde tu perfil." />
                   <button 
                     onClick={handlePay}
                     className="w-full bg-[#009EE3] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#008CD0] shadow-xl shadow-blue-500/10 transition-all active:scale-[0.98] flex items-center justify-center gap-2"

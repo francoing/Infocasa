@@ -51,6 +51,17 @@ describe("PlanStatusCard component", () => {
     expect(screen.getByText(/plan sin vencimiento/i)).toBeInTheDocument();
   });
 
+  it("should show the one-time payment note (and no renewal toggle) for paid plans", () => {
+    renderWithQueryClient(<PlanStatusCard plan={mockPlan} usage={5} limit={30} isFreePlan={false} />);
+    expect(screen.getByRole("note")).toHaveTextContent(/no se renueva/i);
+    expect(screen.queryByRole("button", { name: /pausar|reactivar/i })).not.toBeInTheDocument();
+  });
+
+  it("should not show the one-time payment note for free plans", () => {
+    renderWithQueryClient(<PlanStatusCard plan={mockPlan} usage={5} limit={30} isFreePlan />);
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
   it("should render the Upgrade button if onUpgrade is provided and trigger it on click", () => {
     const onUpgrade = vi.fn();
     renderWithQueryClient(
