@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import QrModal from "./QrModal";
 
+const STATUS_LABELS = { published: "Publicada", paused: "Pausada", draft: "Borrador", pending_approval: "En revisión" };
+
 /** Panel expandible de reducción de precio (dentro de PropertyRow). */
 function PriceReductionPanel({ prop, reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice }) {
   const isReducing = reducingId === prop.id;
@@ -79,6 +81,8 @@ export default function PropertyRow({
 }) {
   const [qrOpen, setQrOpen] = useState(false);
   const isPublished = prop.status === "published";
+  // Pausar/reanudar solo aplica a publicadas o pausadas; borradores y pendientes van por moderación.
+  const canToggleStatus = isPublished || prop.status === "paused";
 
   return (
     <>
@@ -98,7 +102,7 @@ export default function PropertyRow({
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase whitespace-nowrap ${
                 isPublished ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
               }`}>
-                {isPublished ? "Publicada" : "Pausada"}
+                {STATUS_LABELS[prop.status] ?? prop.status}
               </span>
             </div>
             <p className="text-slate-500 text-sm flex items-center gap-1 mt-1">
@@ -123,7 +127,7 @@ export default function PropertyRow({
             </div>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
-            {/* 👇 BOTÓN PAUSAR/PUBLICAR */}
+            {canToggleStatus && (
             <button
               onClick={() => onToggleStatus(prop.id)}
               className={`p-3 rounded-xl transition-all ${
@@ -131,10 +135,11 @@ export default function PropertyRow({
                   ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                   : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
               }`}
-              title={isPublished ? "Pausar publicación" : "Publicar"}
+              title={isPublished ? "Pausar publicación" : "Reanudar publicación"}
             >
               {isPublished ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
             </button>
+            )}
 
             <Link to={`/property/${prop.id}`} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Ver publicación" target="_blank">
               <ExternalLink className="w-5 h-5" />
