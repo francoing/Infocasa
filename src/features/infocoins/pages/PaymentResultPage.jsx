@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { CheckCircle2, XCircle, Clock, Loader2, Coins } from "lucide-react";
-import { infocoinsApi } from "@/api/infocoins";
+import { useInfocoinPaymentResult } from "@/hooks/useInfocoinPurchase";
 
 /**
  * Página de retorno del checkout de MP.
@@ -9,81 +9,14 @@ import { infocoinsApi } from "@/api/infocoins";
  * Rutas: /payment/success, /payment/failure, /payment/pending
  *
  * MP agrega a la URL: payment_id, status, external_reference, preference_id, ...
- * Llamamos a verify (idempotente) para asegurar que las monedas se acrediten
- * incluso si el webhook async no llegó todavía.
+ * La verificación (idempotente, acredita las monedas aunque el webhook no haya llegado)
+ * vive en el hook `useInfocoinPaymentResult` (capa de datos).
  */
 export default function PaymentResultPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [state, setState] = useState({ loading: true, message: "", balance: null, status: null });
-
   const variant = location.pathname.split("/").pop(); // success | failure | pending
-
-  useEffect(() => {
-    const paymentId = searchParams.get("payment_id");
-    const externalRef = searchParams.get("external_reference");
-    const preferenceId = searchParams.get("preference_id");
-    const status = searchParams.get("status");
-
-    const pending = (() => {
-      try {
-        return JSON.parse(sessionStorage.getItem("pending_infocoin_purchase") || "null");
-      } catch {
-        return null;
-      }
-    })();
-
-    const run = async () => {
-      // Si MP marcó el pago como rechazado, no hace falta llamar al back.
-      if (status === "rejected" || variant === "failure") {
-        setState({
-          loading: false,
-          message: "El pago fue rechazado o cancelado.",
-          balance: null,
-          status: "rejected",
-        });
-        sessionStorage.removeItem("pending_infocoin_purchase");
-        return;
-      }
-
-      if (!paymentId && !externalRef && !preferenceId && !pending?.purchase_id) {
-        setState({
-          loading: false,
-          message: "No recibimos datos del pago.",
-          balance: null,
-          status: "unknown",
-        });
-        return;
-      }
-
-      try {
-        const res = await infocoinsApi.verifyPurchase({
-          paymentId: paymentId || undefined,
-          externalReference: externalRef || (pending ? `infocoin_${pending.purchase_id}` : undefined),
-          preferenceId: preferenceId || pending?.preference_id || undefined,
-          purchaseId: pending?.purchase_id || undefined,
-        });
-
-        setState({
-          loading: false,
-          message: res?.message || "Pago procesado.",
-          balance: res?.balance ?? null,
-          status: res?.purchase_status || status || null,
-        });
-        sessionStorage.removeItem("pending_infocoin_purchase");
-      } catch (err) {
-        setState({
-          loading: false,
-          message: err?.message || "No pudimos verificar el pago.",
-          balance: null,
-          status: "error",
-        });
-      }
-    };
-
-    run();
-     
-  }, []);
+  const state = useInfocoinPaymentResult({ variant, query: searchParams });
 
   const icon = (() => {
     if (state.loading) return <Loader2 className="w-14 h-14 text-blue-600 animate-spin" />;

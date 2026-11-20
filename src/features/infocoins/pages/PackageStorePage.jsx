@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingCart, Loader2, Coins } from "lucide-react";
 import { usePackages } from "@/hooks/usePackages";
-import { infocoinsApi } from "@/api/infocoins";
+import { useInfocoinCheckout } from "@/hooks/useInfocoinPurchase";
 import Loader from "@/common/components/Loader";
 
 export default function PackageStorePage() {
   const navigate = useNavigate();
   const { packages, loading, error } = usePackages();
+  const { startCheckout } = useInfocoinCheckout();
   const [buyingId, setBuyingId] = useState(null);
   const [buyError, setBuyError] = useState(null);
 
@@ -15,17 +16,8 @@ export default function PackageStorePage() {
     setBuyingId(pkg.id);
     setBuyError(null);
     try {
-      const res = await infocoinsApi.createPurchasePreference(pkg.id);
-      // Guardamos el purchase_id para que la página de retorno lo pueda usar
-      // si MP no lo manda en la URL (por si el back_urls lo perdió).
-      sessionStorage.setItem(
-        "pending_infocoin_purchase",
-        JSON.stringify({
-          purchase_id: res.purchase_id,
-          preference_id: res.preference_id,
-          infocoins: pkg.infocoins,
-        })
-      );
+      // El hook guarda la compra pendiente (por si MP no devuelve los datos en la URL).
+      const res = await startCheckout(pkg);
       // Redirigimos al checkout de MP
       window.location.href = res.redirect_url;
     } catch (err) {

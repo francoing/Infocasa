@@ -2,7 +2,6 @@ import { useTogglePropertyStatus } from "@/hooks/usePropertyStatus";
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -18,11 +17,11 @@ import CertificationsTab from "../components/CertificationsTab";
 import LeadsTab from "../components/LeadsTab";
 import PlanPickerModal from "../components/PlanPickerModal";
 import AssignInfocoinsModal from "@/features/infocoins/components/AssignInfocoinsModal";
+import FeaturePropertyModal from "@/features/infocoins/components/FeaturePropertyModal";
 import MySearchAlertsList from "@/features/searchAlerts/components/MySearchAlertsList";
 import ReceivedSearchAlertsList from "@/features/searchAlerts/components/ReceivedSearchAlertsList";
 
 export default function DashboardPage() {
-  const queryClient = useQueryClient();
 
   const {
     user, isAdmin, isBuyer,
@@ -61,6 +60,7 @@ export default function DashboardPage() {
   const [showPlanPicker, setShowPlanPicker] = useState(false);
 
   const [assignTarget, setAssignTarget] = useState(null);
+  const [featureTarget, setFeatureTarget] = useState(null);
 
   const applyPropertyFilters = () => {
     setPropSearch(localSearch);
@@ -108,10 +108,9 @@ export default function DashboardPage() {
 
   const toggleExpand = (id) => setExpandedId(expandedId === id ? null : id);
 
-  const handleAssignInfocoinsSuccess = () => {
-    setAssignTarget(null);
-    queryClient.invalidateQueries({ queryKey: ["me_properties"] });
-  };
+  // Las invalidaciones (mis propiedades, marketplace, billetera) las hacen los hooks de mutación.
+  const handleAssignInfocoinsSuccess = () => setAssignTarget(null);
+  const handleFeatureSuccess = () => setFeatureTarget(null);
 
   const { mutate: toggleStatus } = useTogglePropertyStatus();
 
@@ -150,6 +149,7 @@ export default function DashboardPage() {
             rowProps={{
               expandedId, onToggleExpand: toggleExpand, onDelete: confirmDeleteProperty,
               onAssignInfocoins: (prop) => setAssignTarget(prop),
+              onFeature: (prop) => setFeatureTarget(prop),
               onToggleStatus: handleToggleStatus,
               reductionPercent, setReductionPercent, reductionCustom, setReductionCustom, reducingId, onReducePrice: handleReducePrice,
             }}
@@ -197,8 +197,6 @@ export default function DashboardPage() {
     }
   };
 
-  // 👇 NUEVO: Extraemos los datos de auto-renovación del usuario
-  const isAutoRenew = user?.subscription?.auto_renew ?? false;
   const isFreePlan = Number(user?.subscription?.plan?.price) === 0;
 
   return (
@@ -243,8 +241,6 @@ export default function DashboardPage() {
           leads={leads}
           planExpiresAt={quota?.expires_at}
           onUpgrade={() => setShowPlanPicker(true)}
-          // 👇 NUEVAS PROPS
-          isAutoRenew={isAutoRenew}
           isFreePlan={isFreePlan}
         />
 
@@ -285,6 +281,13 @@ export default function DashboardPage() {
         property={assignTarget}
         onClose={() => setAssignTarget(null)}
         onSuccess={handleAssignInfocoinsSuccess}
+      />
+
+      <FeaturePropertyModal
+        open={!!featureTarget}
+        property={featureTarget}
+        onClose={() => setFeatureTarget(null)}
+        onSuccess={handleFeatureSuccess}
       />
     </>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
-import { MapPin, Bed, Bath, Maximize, Heart, Calendar, Car, Crown, Star, Coins } from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, Heart, Calendar, Car, Crown, Star, Coins, Video } from "lucide-react";
 import { setPropertyFavorite } from "../../hooks/useFavorites";
 import { useToast } from "../../hooks/useToast";
 
@@ -17,6 +17,14 @@ const locationText = (property) => {
   return [property.location?.neighborhood, property.location?.city].filter(Boolean).join(', ');
 };
 
+// Misma regla que la ficha pública (PropertyVideos): solo cuentan los videos ya comprimidos.
+const hasVideo = (property) =>
+  Array.isArray(property.videos) && property.videos.some((v) => v.status === 'ready' && v.url);
+
+// Foto de perfil de quien publica (dueño directo o inmobiliaria). null si no tiene.
+// `avatar_url` es la URL completa; `avatar` es solo la ruta relativa en storage y no sirve como src.
+const sellerAvatar = (property) => property.owner?.avatar_url || null;
+
 function formatDate(dateStr) {
   if (!dateStr) return null;
   return new Date(dateStr).toLocaleDateString('es-AR', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -24,8 +32,45 @@ function formatDate(dateStr) {
 
 // --- Sub-componentes ---
 
-function CardMedia({ property, isFavorited, loading, onFavorite }) {
+// Franja inferior de la foto: ícono de video + condición a la izquierda, avatar de quien publica a la derecha.
+function MediaBottomBar({ property }) {
   const condLabel = conditionBadge(property.condition);
+  const avatar = sellerAvatar(property);
+  const video = hasVideo(property);
+
+  if (!condLabel && !avatar && !video) return null;
+
+  return (
+    <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2 pointer-events-none">
+      <div className="flex items-center gap-2">
+        {video && (
+          <span
+            aria-label="Tiene video"
+            title="Tiene video"
+            className="w-8 h-8 rounded-lg bg-white/95 text-slate-700 flex items-center justify-center shadow-md"
+          >
+            <Video className="w-4 h-4" />
+          </span>
+        )}
+        {condLabel && (
+          <div className="bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider">
+            {condLabel}
+          </div>
+        )}
+      </div>
+      {avatar && (
+        <img
+          src={avatar}
+          alt={`Foto de ${property.owner?.name || 'quien publica'}`}
+          className="w-10 h-10 rounded-full border-2 border-white bg-white object-cover shadow-md"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CardMedia({ property, isFavorited, loading, onFavorite }) {
   const isPremium = property.publicationType === 'premium';
   const isFeatured = property.publicationType === 'featured';
 
@@ -49,11 +94,8 @@ function CardMedia({ property, isFavorited, loading, onFavorite }) {
         </div>
       )}
       
-      {condLabel && (
-        <div className="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider">
-          {condLabel}
-        </div>
-      )}
+      <MediaBottomBar property={property} />
+
       <button
         onClick={onFavorite}
         disabled={loading}

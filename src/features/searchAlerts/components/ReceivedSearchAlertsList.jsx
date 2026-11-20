@@ -1,5 +1,5 @@
 import React from 'react';
-import { useReceivedSearchAlerts } from '../hooks/useSearchAlerts';
+import { useReceivedSearchAlerts } from '@/hooks/useSearchAlerts';
 import { Link } from 'react-router-dom';
 import { Mail, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '../../../store/useAuthStore';

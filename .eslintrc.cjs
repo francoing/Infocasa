@@ -32,7 +32,8 @@ const sizeRules = (scope) => ({
 });
 
 // Boundary: la capa UI (features/, common/) NO puede tocar la red directamente:
-//  - no importar el cliente HTTP (api/api.js), y
+//  - no importar NADA de src/api/ (ni el cliente api/api.js ni los módulos de endpoints
+//    como api/infocoins.js o api/searchAlerts.js, que lo envuelven), y
 //  - no hacer `fetch(...)` ni `new XMLHttpRequest()` sueltos.
 // Toda llamada de red va en la capa de datos (hooks/); el arranque de sesión (store/useAuthStore)
 // y api/api.js sí pueden; los tests lo mockean. Ver .ai/context/architecture.md.
@@ -42,9 +43,9 @@ const apiBoundary = {
     {
       patterns: [
         {
-          group: ['**/api/api', '**/api/api.js'],
+          group: ['**/api/*', '@/api/*'],
           message:
-            'El cliente HTTP (api/api.js) solo puede importarse desde src/hooks/** — mové la llamada a un hook (ver .ai/context/architecture.md).',
+            'src/api/* (cliente HTTP y módulos de endpoints) solo puede importarse desde src/hooks/** — mové la llamada a un hook (ver .ai/context/architecture.md).',
         },
       ],
     },

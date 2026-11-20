@@ -53,10 +53,12 @@ export default function AssignInfocoinsModal({ open, property, onClose, onSucces
     }
   };
 
+  // La fila del panel trae el objeto mapeado (camelCase); se acepta también el crudo.
+  const currentCoins = property.infocoinsCount ?? property.infocoins_count ?? 0;
   const maxHint =
-    property?.infocoins_count > 0
-      ? `Ya tenés ${property.infocoins_count} asignada${property.infocoins_count === 1 ? "" : "s"}.`
-      : "Todavía no tiene infomonedas asignadas.";
+    currentCoins > 0
+      ? `Ya tiene ${currentCoins} asignada${currentCoins === 1 ? "" : "s"}. Con 1 o más es Súper Destacada.`
+      : "Con 1 InfoMoneda o más pasa a Súper Destacada y aparece primero en el marketplace.";
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
@@ -99,7 +101,7 @@ export default function AssignInfocoinsModal({ open, property, onClose, onSucces
                 En esta propiedad
               </p>
               <p className="text-xl font-black text-slate-900">
-                {property.infocoins_count ?? 0}
+                {currentCoins}
               </p>
             </div>
           </div>

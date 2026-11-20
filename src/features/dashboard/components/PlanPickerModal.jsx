@@ -1,5 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
+import OneTimePaymentNote from "@/common/components/OneTimePaymentNote";
+import ArchivePolicyNote from "@/common/components/ArchivePolicyNote";
 
 /** Modal de selección de plan (upgrade de suscripción). */
 export default function PlanPickerModal({ plans, userPlan, onChoose, onClose }) {
@@ -10,16 +12,19 @@ export default function PlanPickerModal({ plans, userPlan, onChoose, onClose }) 
     >
       <div className="bg-white w-full max-w-2xl rounded-3xl sm:rounded-[2.5rem] shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
         <h3 className="text-2xl font-black text-slate-900 mb-2">Elegí tu Plan</h3>
-        <p className="text-slate-500 font-medium mb-8">Seleccioná el plan que mejor se adapte a tus necesidades.</p>
+        <p className="text-slate-500 font-medium mb-4">Seleccioná el plan que mejor se adapte a tus necesidades.</p>
+        <OneTimePaymentNote className="mb-3" detail="Los planes pagos duran 30 días y se pagan una sola vez." />
+        <ArchivePolicyNote variant="plan" className="mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {plans.map((plan) => {
             const isCurrent = userPlan?.planId === plan.id;
+            const isPaid = Number(plan.price) > 0;
             return (
               <div key={plan.id} className={`p-6 rounded-2xl border-2 transition-all flex flex-col ${isCurrent ? "border-blue-600 bg-blue-50/50" : "border-slate-100 hover:border-blue-200 bg-white"}`}>
                 <h4 className="text-lg font-black text-slate-900 uppercase mb-1">{plan.name}</h4>
                 <div className="flex items-baseline gap-1 mb-4">
                   <span className="text-2xl font-black text-slate-900">${plan.price}</span>
-                  <span className="text-xs text-slate-400 font-bold">/ mes</span>
+                  {isPaid && <span className="text-xs text-slate-400 font-bold">por 30 días</span>}
                 </div>
                 <ul className="space-y-2 mb-6 flex-1">
                   {plan.features?.map((f, i) => (
