@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { searchAlertsApi } from '../../../api/searchAlerts';
+import { searchAlertsApi } from '../api/searchAlerts';
 
 export const useMySearchAlerts = () => {
   return useQuery({

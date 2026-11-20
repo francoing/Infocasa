@@ -37,9 +37,10 @@ scopes:
 
 # Boundaries estructurales (mapea a "no queries en controllers" del backend).
 boundaries:
-  # El cliente HTTP único solo puede importarse desde la capa de datos (hooks).
+  # El cliente HTTP único y los módulos de endpoints de src/api/ solo pueden importarse
+  # desde la capa de datos (hooks).
   api_client:
-    module: "api/api"          # se matchea contra el import (…/api/api.js)
+    module: "api/*"            # se matchea contra el import (…/api/api.js, @/api/infocoins, …)
     allowed_importers:
       - "src/hooks/**"
 

@@ -28,4 +28,7 @@ export const infocoinsApi = {
   /** Asigna N infomonedas a una propiedad propia y activa. */
   assignToProperty: (propertyId, amount) =>
     api.post(`/properties/${propertyId}/infocoins`, { amount }),
+
+  /** Destaca una propiedad propia usando 1 destacado (permanente). */
+  featureProperty: (propertyId) => api.post(`/properties/${propertyId}/featured`),
 };

@@ -46,3 +46,27 @@ describe("buildMapMarker — miniatura del mapa (image_url)", () => {
     expect(html).not.toContain(FALLBACK);
   });
 });
+
+describe("buildProperty — visibilidad (spec backend featured_and_archive)", () => {
+  it("mapea nivel, destacado y archivo", () => {
+    const p = buildProperty({
+      publication_type: "premium",
+      is_featured: true,
+      infocoins_count: 4,
+      status: "archived",
+      archived_at: "2026-11-20T00:00:00.000Z",
+      archive_deletes_at: "2026-12-20T00:00:00.000Z",
+    });
+    expect(p.publicationType).toBe("premium");
+    expect(p.isFeatured).toBe(true);
+    expect(p.infocoinsCount).toBe(4);
+    expect(p.archiveDeletesAt).toBe("2026-12-20T00:00:00.000Z");
+  });
+
+  it("por defecto es común y sin destacar", () => {
+    const p = buildProperty({});
+    expect(p.publicationType).toBe("basic");
+    expect(p.isFeatured).toBe(false);
+    expect(p.archivedAt).toBeNull();
+  });
+});

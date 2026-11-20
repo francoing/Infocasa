@@ -54,6 +54,7 @@ const mapClassification = (item) => ({
 const mapMedia = (item) => ({
   imageUrl: mapImageUrl(item),
   images: item.images || [],
+  videos: item.videos || [],
   priceHistory: (item.price_history || []).map((h) => ({
     oldPrice: parseFloat(h.old_price),
     newPrice: parseFloat(h.new_price),
@@ -85,7 +86,10 @@ const mapMeta = (item) => ({
   infocoinsCount: item.infocoins_count ?? 0,
   
   // 👇 USAMOS CAMEL CASE PARA QUE COINCIDA CON LA TARJETA
-  publicationType: item.publication_type ?? "basic", 
+  publicationType: item.publication_type ?? "basic", // premium = súper destacada (1+ InfoMonedas)
+  isFeatured: !!item.is_featured,
+  archivedAt: item.archived_at || null,
+  archiveDeletesAt: item.archive_deletes_at || null,
   
   isFavorited: item.is_favorited || false,
   status: item.status,

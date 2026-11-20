@@ -2,21 +2,22 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../common/components/Layout";
 import PropertyForm from "../components/PropertyForm";
-import { createProperty, uploadPropertyImages } from "../../../hooks/useProperties";
-import { createPublication } from "../../../hooks/usePublications";
+import { createProperty, uploadPropertyImages, uploadPropertyVideos } from "../../../hooks/useProperties";
+import ArchivePolicyNote from "../../../common/components/ArchivePolicyNote";
 import { useAuth } from "../../../hooks/useAuth";
 import { useToast } from "../../../hooks/useToast";
 
 export default function CreatePropertyPage() {
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const [uploadStatus, setUploadStatus] = useState("");
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
   // Extract the user's active subscription plan for the publication type selector
   const userPlan = user?.subscription?.plan || null;
 
-  const handleSubmit = async (formData, imageFiles) => {
+  const handleSubmit = async (formData, imageFiles, _imageOps, videoOps = {}) => {
     try {
       setLoading(true);
 
@@ -39,18 +40,22 @@ export default function CreatePropertyPage() {
         }
       }
 
-      // Crear la publicación con el tipo seleccionado (basic/featured/premium)
-      const publicationType = formData.get("publication_type") || "basic";
-      try {
-        await createPublication({ property_id: newProperty.id, type: publicationType });
-      } catch (pubErr) {
-        if (pubErr.status === 403) {
-          toast.error("Propiedad creada, pero no tienes una suscripción activa para publicarla. Activa un plan desde tu panel.");
-          navigate("/dashboard");
-          return;
+      // Videos: se suben en partes y el servidor los comprime a 720p en segundo plano.
+      const videoFiles = videoOps.videoFiles || [];
+      if (videoFiles.length > 0) {
+        const failed = await uploadPropertyVideos(newProperty.id, videoFiles, (n, total, fraction) =>
+          setUploadStatus(`Subiendo video ${n} de ${total}… ${Math.round(fraction * 100)}%`),
+        );
+        setUploadStatus("");
+        if (failed > 0) {
+          toast.error("La propiedad se creó, pero no se pudieron subir algunos videos. Podés volver a intentarlo editándola.");
         }
-        throw pubErr;
       }
+
+      // El destacado y las InfoMonedas elegidos viajan en el mismo POST de la propiedad.
+
+      // El alta pudo usar destacados o InfoMonedas: refrescamos los saldos del usuario.
+      await refreshUser?.();
 
       toast.success("Propiedad publicada correctamente.");
       navigate("/dashboard");
@@ -59,6 +64,7 @@ export default function CreatePropertyPage() {
       toast.error(err.message || "Error al crear la propiedad.");
     } finally {
       setLoading(false);
+      setUploadStatus("");
     }
   };
 
@@ -67,12 +73,14 @@ export default function CreatePropertyPage() {
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900">Publicar Nueva Propiedad</h1>
           <p className="text-slate-500 mt-2">Completa la información detallada para atraer a potenciales clientes.</p>
+          <ArchivePolicyNote className="mt-4" />
         </div>
 
         <PropertyForm 
           onSubmit={handleSubmit} 
           onCancel={() => navigate("/dashboard")} 
           loading={loading}
+          uploadStatus={uploadStatus}
           userPlan={userPlan}
         />
       </div>

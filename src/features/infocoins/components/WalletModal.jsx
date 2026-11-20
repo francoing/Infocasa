@@ -8,7 +8,7 @@ import Loader from "@/common/components/Loader";
  * `open: true` dispara el fetch (vía useWallet con enabled: open).
  */
 export default function WalletModal({ open, onClose, onBuyPackages }) {
-  const { balance, transactions, loading, error, refetch } = useWallet({ enabled: open });
+  const { balance, featuredBalance, transactions, loading, error, refetch } = useWallet({ enabled: open });
 
   // Refresca al abrir (por si compró/asignó monedas mientras estaba cerrado)
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function WalletModal({ open, onClose, onBuyPackages }) {
             </div>
             <div>
               <h2 className="font-bold text-lg text-slate-900">Mi billetera</h2>
-              <p className="text-xs text-slate-500">InfoMonedas disponibles</p>
+              <p className="text-xs text-slate-500">InfoMonedas y destacados disponibles</p>
             </div>
           </div>
           <button
@@ -60,6 +60,9 @@ export default function WalletModal({ open, onClose, onBuyPackages }) {
           <p className="text-4xl font-black text-slate-900 mt-1">
             {loading ? "…" : balance}
             <span className="text-base font-bold text-slate-400 ml-2">infomonedas</span>
+          </p>
+          <p className="text-sm font-bold text-amber-600 mt-1">
+            {loading ? "…" : featuredBalance} destacado{featuredBalance === 1 ? "" : "s"} disponible{featuredBalance === 1 ? "" : "s"}
           </p>
           <button
             onClick={onBuyPackages}

@@ -1,7 +1,8 @@
 import React from "react";
-import { Camera, Loader2, Save } from "lucide-react";
+import { Camera, Film, Loader2, Save } from "lucide-react";
 import Loader from "../../../common/components/Loader";
 import ImageUploader from "./ImageUploader";
+import VideoUploader from "./VideoUploader";
 import { usePropertyForm } from "../../../hooks/usePropertyForm";
 import MainInfoSection from "./form/MainInfoSection";
 import TechnicalDetailsSection from "./form/TechnicalDetailsSection";
@@ -12,7 +13,7 @@ import CertificationSection from "./form/CertificationSection";
 import AmenitiesSection from "./form/AmenitiesSection";
 import PublicationTypeSelector from "./form/PublicationTypeSelector";
 
-export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false }) {
+export default function PropertyForm({ initialData = null, onSubmit, onCancel, loading = false, uploadStatus = "" }) {
   const form = usePropertyForm({ initialData, onSubmit });
 
   if (form.loadingRefs) {
@@ -30,6 +31,15 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Fotos de la propiedad</h3>
         </div>
         <ImageUploader images={formData.gallery} onChange={form.handleImagesChange} />
+      </section>
+
+      {/* Videos */}
+      <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <Film className="w-5 h-5 text-blue-600" />
+          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Videos de la propiedad</h3>
+        </div>
+        <VideoUploader videos={formData.videos} onChange={form.handleVideosChange} />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -84,6 +94,9 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
       )}
 
       {/* Acciones */}
+      {loading && uploadStatus && (
+        <p className="text-right text-sm font-bold text-blue-600" role="status">{uploadStatus}</p>
+      )}
       <div className="flex flex-col md:flex-row justify-end gap-6 pt-10 border-t border-slate-200">
         <button type="button" onClick={onCancel} className="px-10 py-5 rounded-3xl font-black text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest text-sm">Cancelar</button>
         <button

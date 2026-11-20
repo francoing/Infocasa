@@ -1,5 +1,7 @@
 import React from "react";
 import { Check, Crown, Gift, Clock, Sparkles, Star, Zap } from "lucide-react";
+import OneTimePaymentNote from "@/common/components/OneTimePaymentNote";
+import ArchivePolicyNote from "@/common/components/ArchivePolicyNote";
 
 const BRAND = {
   red: "#ff0019",
@@ -7,16 +9,13 @@ const BRAND = {
   gray: "#4a4a49",
 };
 
-const PROMO_END_DATE = new Date("2026-11-10T23:59:59");
-const PROMO_END_LABEL = "10/11/2026";
-
 const PLAN_CONFIG = [
   {
     match: ["fundador", "lanzamiento"],
     badge: "Plan Fundador",
     badgeStyle: { bg: BRAND.gold, color: BRAND.gray },
     icon: "gift",
-    promoNote: `Promoción válida hasta el ${PROMO_END_LABEL}`,
+    promoNote: "Duración: 6 meses",
     extraFeatures: ["Soporte 24/7", "Asignación directa de leads"],
   },
   {
@@ -113,8 +112,6 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
     user?.subscription?.plan?.id ||
     user?.plan_id;
 
-  const promoActive = new Date() < PROMO_END_DATE;
-
   const visiblePlans = plans.filter((plan) => {
     if (user?.role === "admin") return true;
     if (!plan.target_role) return true;
@@ -131,6 +128,7 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
         <p className="text-[#4a4a49]/70 mt-2 text-base max-w-lg mx-auto">
           Elegí el plan que mejor se adapte a tu actividad inmobiliaria y empezá a vender más rápido.
         </p>
+        <ArchivePolicyNote variant="plan" className="mt-4 max-w-2xl mx-auto" />
       </div>
 
       {/* 👇 Grilla: máximo 2 columnas, centrada, y con un ancho máximo para que no se estiren */}
@@ -140,7 +138,7 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
           const features = buildFeatures(plan, config);
           const isCurrent = userPlanId && plan.id === userPlanId;
           const isFree = Number(plan.price) === 0;
-          const isPromo = !!config.promoNote && promoActive;
+          const isPromo = !!config.promoNote;
           
           const cardStyle = isCurrent
             ? "bg-gradient-to-b from-white to-red-50/30 border-red-500 shadow-xl shadow-red-500/10 z-10"
@@ -183,7 +181,7 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
                     <span className={`text-4xl font-black ${isFree ? 'text-green-600' : 'text-[#1a1a1a]'}`}>
                       {formatPrice(plan.price)}
                     </span>
-                    <span className="text-sm font-bold text-slate-400">/mes</span>
+                    {!isFree && <span className="text-sm font-bold text-slate-400">por 30 días</span>}
                   </div>
                 </div>
               </div>
@@ -202,6 +200,8 @@ export default function SubscriptionPlans({ plans = [], user, onChoose }) {
               </ul>
 
               <div className="mt-auto">
+                {!isFree && <OneTimePaymentNote className="mb-4" />}
+
                 {isPromo && (
                   <div
                     className="flex items-center justify-center gap-2 text-[11px] font-bold rounded-xl px-3 py-2 mb-4"

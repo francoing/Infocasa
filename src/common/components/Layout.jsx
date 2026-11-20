@@ -5,6 +5,7 @@ import { cn } from "../../lib/utils";
 import { useAuth } from "../../hooks/useAuth";
 import Logo from "./Logo";
 import FooterLogo from "./FooterLogo";
+import { CURRENT_VERSION } from "../../data/versions";
 import UserMenu from "./UserMenu";
 import WhatsAppButton from "./WhatsAppButton";
 import EmailVerificationBanner from "./EmailVerificationBanner";
@@ -486,6 +487,7 @@ function Footer() {
             <li><Link to="/sobre-nosotros" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Nosotros</Link></li>
             <li><Link to="/noticias" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Noticias</Link></li>
             <li><Link to="/contacto" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Contacto</Link></li>
+            <li><Link to="/versiones" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Versiones</Link></li>
           </ul>
         </div>
 
@@ -501,7 +503,10 @@ function Footer() {
 
       <div className="border-t border-white/10 px-12 py-6 max-w-7xl mx-auto w-full">
         <p className="text-xs text-slate-400 font-medium text-center">
-          © 2026 Infocasa. Todos los derechos reservados.
+          © 2026 Infocasa. Todos los derechos reservados. ·{" "}
+          <Link to="/versiones" className="hover:text-[#ffda31] transition-colors">
+            Versión {CURRENT_VERSION}
+          </Link>
         </p>
       </div>
     </footer>

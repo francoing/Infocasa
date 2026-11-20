@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCreateSearchAlert } from '../hooks/useSearchAlerts';
+import { useCreateSearchAlert } from '@/hooks/useSearchAlerts';
 import { Home, DollarSign, MapPin, Ruler, ShieldCheck, Save, Loader2 } from 'lucide-react';
 
 export default function CreateSearchAlertForm() {

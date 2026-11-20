@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-10-06** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-11-20** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -18,20 +18,21 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── features/{home,search,explore,property,auth,dashboard,profile,share,legal}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
+├── api/{infocoins,searchAlerts}.js ← módulos de endpoints (envuelven api.js, sin fetch propio). Solo se importan desde hooks/ (lint)
+├── features/{home,search,explore,property,auth,dashboard,profile,share,legal,infocoins,searchAlerts}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
-│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublications, usePublicationQuota, useWallet, 
-│                            usePackages, useAssignInfocoins,
+│                            usePropertyForm, useMercadoPagoReturn, useFavorites, usePublicationQuota, useWallet, useFeatureProperty, 
+│                            usePackages, useAssignInfocoins, useInfocoinPurchase (checkout + vuelta de MP), useSearchAlerts,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan, useContactForm,
 │                            useNotifications, usePropertyStatus, useQrStats
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, 
-│                            dashboardData.helpers)
+│                            dashboardData.helpers, infocoinPurchase.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, 
-│                            PasswordInput,
+│                            PasswordInput, OneTimePaymentNote, ArchivePolicyNote,
 │                            NotificationBell
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado)
@@ -54,9 +55,11 @@ src/
 | `/sobre-nosotros` | SobreNosotrosPage (contenido institucional estático) | pública |
 | `/noticias` | NoticiasPage (noticias del NOA inmobiliario, estático) | pública |
 | `/contacto` | ContactoPage (formulario de contacto) | pública |
+| `/versiones` | VersionesPage (historial de versiones, estático en `data/versions.js`; la 1ª es la actual y se muestra en el footer) | pública |
 | `/email-verified` | EmailVerifiedPage (aterrizaje del backend, lee `?status`) | pública |
 | `/publicar-gratis` | PublicarGratisPage | pública |
 | `/plan-fundador` | PlanFundadorPage | pública |
+| `/welcome` | WelcomePage (bienvenida post-registro) | auth |
 | `/infocoins/comprar` | PurchaseInfocoinsPage (compra de paquetes de infoMonedas) | auth |
 | `/payment/success` | PaymentResultPage (vuelta de MP con pago aprobado, lee `?status`) | auth |
 | `/payment/failure` | PaymentResultPage (vuelta de MP con pago fallido) | auth |
@@ -82,11 +85,18 @@ Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunc
 
 ## Contrato con backend (`/api/v1`)
 Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
-- **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites` (+ login/register/logout/forgot/reset vía `useAuth`).
-- **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`.
+- **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites`, `me/profile`, `me/password`, `me/avatar`, `auth/email/verification-notification` (+ login/register/logout/forgot/reset vía `useAuthStore`).
+- **Catálogos:** `locations`, `property-types`, `zones`, `property-features`, `agencies` (GET/POST/PUT).
+- **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`, `/{id}/images` (+ `order`, DELETE), `/{id}/videos` (por partes, DELETE), `/{id}/toggle-status` (pausar/reactivar, `usePropertyStatus`), `/{id}/qr-scan` (público, `useRegisterQrScan`), `/{id}/qr-stats` (`useQrStats`).
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
-- **Admin:** `admin/properties`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
-- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota`.
+- **Admin:** `admin/properties`, `admin/properties/{id}/verify`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
+- **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota` (`POST publications` ya no existe).
+- **InfoMonedas** (vía `api/infocoins.js`): `infocoins/wallet`, `infocoins/packages`, `infocoins/purchase/preference`, `infocoins/purchase/verify`, `properties/{id}/infocoins` (POST), `properties/{id}/featured` (POST, destacar). Hooks: `useWallet` (saldo + `featuredBalance`), `usePackages`, `useAssignInfocoins`, `useFeatureProperty`, `useInfocoinPurchase`.
+- **Alertas de búsqueda** (vía `api/searchAlerts.js`): `search-alerts` (CRUD), `my-received-alerts`. Hook: `useSearchAlerts`.
+- **Notificaciones:** `notifications`, `notifications/unread-count`, `notifications/{id}/read`, `notifications/read-all` (polling 30 s, `useNotifications`).
+- **Contacto:** `contact` (POST público, `useContactForm`). ⚠️ `api:surface` lo marca como no documentado en el contrato del backend.
+
+> `api:surface` solo escanea `hooks/` + `store/`: los endpoints que pasan por `src/api/{infocoins,searchAlerts}.js` no aparecen en su listado; revisarlos a mano.
 
 ## Servicios externos
 - **Geoapify** (`VITE_GEOAPIFY_API_KEY`) — SOLO para **creación de propiedad** (`useGeoapifyPlaces` + `geocodeAddress` en `MapLocationSelector`: geocodifica direcciones arbitrarias) y el **gate de ubicación** (`useUserProvince`: reverse geocode del GPS). El **autocomplete de búsqueda NO usa Geoapify**: va por inventario (`useLocationSearch`).
@@ -96,10 +106,53 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `setup.js` (97 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/infocoinPurchase`, `hooks/useInfocoins`, `setup.js` (173 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-11-20 (knip roto en CI)
+- ✅ **`npm run knip` volvió a verde.** `vite.config.js` usaba `__dirname` para el alias `@`; como el proyecto es ESM (`"type": "module"`), knip no podía cargar el config, perdía el entry `index.html → src/main.jsx` y reportaba ~28 archivos "sin usar" y exports falsos (exit ≠ 0 en CI). El alias ahora sale de `fileURLToPath(new URL('./src', import.meta.url))`. Vite y Vitest siguen funcionando igual. Bug-card: `specs/quality/knip_vite_config/bug-knip-vite-dirname.md`.
+
+### Ciclo 2026-11-20 (limpieza)
+- ✅ **`vite.config.js` sin host de ngrok hardcodeado** — `server.allowedHosts` = `localhost` + la lista de `VITE_DEV_ALLOWED_HOSTS` (separada por comas) del `.env.local` de cada uno, p. ej. `VITE_DEV_ALLOWED_HOSTS=mi-tunel.ngrok-free.dev,.ngrok-free.dev`.
+- ✅ Borrados los archivos basura de la raíz (`archivo1.txt` y los vacíos de comandos mal tipeados).
+
+### Ciclo 2026-11-20 (pausar/reanudar sin saltear la moderación)
+- ✅ **Botón pausar/reanudar** (`dashboard/PropertyRow`) — solo aparece para propiedades `published` o `paused`. Antes también ofrecía "Publicar" en borradores y pendientes, y el backend los publicaba sin moderación; ahora el backend responde `422` en esos casos (spec backend `properties/toggle_status_guard`). La etiqueta de estado muestra el estado real (Borrador / En revisión) en vez de "Pausada" para todo lo no publicado.
+- Backend también: `/share/{id}` responde `404` si la propiedad no está publicada.
+- Bug-card `quality/toggle_status/bug-toggle-publishes-drafts`. Test `components/PropertyRow`.
+
+### Ciclo 2026-11-20 (destacados permanentes, súper destacadas y archivo por vencimiento)
+- ✅ **Reglas nuevas** (spec backend `monetization/featured_and_archive`): destacar cuesta 1 destacado de la billetera, es permanente y una sola vez; con 1+ InfoMonedas la propiedad es **súper destacada** (`publication_type: "premium"`, calculado por el back); orden del marketplace: súper (más monedas primero) → destacadas → comunes. Se quitó el tipo "premium" elegible y `POST publications`.
+- ✅ **Alta de propiedad** — `PublicationTypeSelector` ahora es "Visibilidad": Común/Destacada (según `user.featured_balance`) + InfoMonedas opcionales (hasta `user.infocoins_balance`). Todo viaja en el mismo `POST properties`; se borró `hooks/usePublications` (el front creaba una segunda publicación después del alta → 403 engañoso). Tras crear se hace `refreshUser()`.
+- ✅ **Panel** — `PropertyRow`: botón **Destacar** (`FeaturePropertyModal` + `useFeatureProperty`) si no está destacada, badge Destacada/Súper destacada, estado **Archivada** con fecha de borrado y sin editar/destacar/asignar. Filtro "Archivado" en `PropertiesTab`. `AssignInfocoinsModal` lee `infocoinsCount` del objeto mapeado. `WalletModal` muestra destacados.
+- ✅ **Refresco** — asignar monedas o destacar invalida billetera, `me_properties`, `publication_quota`, `["properties"]` (marketplace/home) y el detalle, y refresca el usuario (`invalidateAfterVisibilityChange`).
+- ✅ **Aviso de archivo** — componente común `ArchivePolicyNote` (vence la suscripción → archivadas 30 días → se borran; con `variant="plan"` explica el límite del plan al volver): en `CreatePropertyPage`, `profile/SubscriptionPlans` y `PlanPickerModal`.
+- Mappers: `isFeatured`, `archivedAt`, `archiveDeletesAt`. Tests `components/PropertyRow`, `components/PublicationTypeSelector`, `hooks/useInfocoins`, `hooks/propertyMappers`.
+
+### Ciclo 2026-11-20 (suscripción = pago único, sin renovación automática)
+- ✅ **Sin renovación automática** — decisión de producto: el plan pago es un **pago único** de Checkout Pro (30 días) y no se renueva solo. Se quitó el toggle "Pausar/Reactivar renovación" de `profile/SubscriptionStatusCard` y `common/PlanStatusCard`, el hook `useToggleAutoRenew` (de `useQrStats`) y la prop `isAutoRenew` (`DashboardPage` → `DashboardStats`). El backend quitó `PATCH subscriptions/toggle-auto-renew` y `user.subscription.auto_renew`.
+- ✅ **Aviso "no se renueva"** — componente común `OneTimePaymentNote` (texto único `ONE_TIME_PAYMENT_TEXT`): se muestra en `CheckoutModal`, en las tarjetas de planes pagos (`profile/SubscriptionPlans`, `PlanPickerModal`), en `PlanStatusCard` y en `SubscriptionStatusCard`. Los precios de planes pagos dicen "por 30 días" en vez de "/mes"; el checkout ya no menciona el "sandbox".
+- Vuelta de MP (backend): suscripciones → `/profile?payment=...` (`useMercadoPagoReturn`); infomonedas → `/payment/{estado}?purchase_id=...` (`PaymentResultPage`). Antes compartían las mismas URLs.
+- Bug-card `quality/one_time_payment/bug-auto-renew-toggle`. Tests `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`.
+
+### Ciclo 2026-11-20 (boundary de `src/api/*` + infomonedas en react-query)
+- ✅ **Boundary ampliado a todo `src/api/`** — el lint solo bloqueaba `api/api.js`, así que los módulos de endpoints (`api/infocoins.js`, `api/searchAlerts.js`) se importaban desde páginas sin que saltara nada. Ahora `no-restricted-imports` prohíbe `**/api/*` y `@/api/*` en `features/**` + `common/**`.
+- ✅ **Llamadas directas movidas a hooks** — `PackageStorePage` (crear preferencia de MP) y `PaymentResultPage` (verificar el pago a la vuelta) usan el hook nuevo `useInfocoinPurchase` (`useInfocoinCheckout` + `useInfocoinPaymentResult`); la decisión de la vuelta de MP vive en helpers puros (`infocoinPurchase.helpers`). Fix colateral: con compra pendiente sin `purchase_id` ya no se manda `external_reference=infocoin_undefined`.
+- ✅ **Infomonedas en react-query** — `useWallet` (key `["infocoins_wallet"]`), `usePackages` y `useAssignInfocoins` dejaron `useState/useEffect`. Asignar o verificar una compra invalida la billetera (y `me_properties` al asignar) → el saldo se actualiza en todas las pantallas. Misma API pública para los componentes.
+- ✅ **`useSearchAlerts` movido** de `features/searchAlerts/hooks/` a `src/hooks/` (la capa de datos vive en un solo lugar).
+- Bug-card `quality/api_boundary/bug-api-modules-boundary`. Tests `helpers/infocoinPurchase`, `hooks/useInfocoins`.
+
+### Ciclo 2026-11-18 (tarjeta de propiedad: video y avatar)
+- ✅ **`PropertyCard`** — la foto suma una franja inferior (`MediaBottomBar`): ícono de **video** (solo si hay al menos un video `ready` con `url`, mismo criterio que `PropertyVideos`) junto a la etiqueta de condición, y el **avatar** de quien publica (`owner.avatar_url`) a la derecha. El ícono es un indicador (la tarjeta entera sigue llevando a la ficha). **Backend:** ✅ resuelto el mismo 2026-11-18 — `PropertyResource.owner` ya incluye `avatar_url` y los listados (`PropertySearchController`, `PropertyController@index`) cargan `videos` ready (verificado en el código el 2026-11-20). Pendiente también: ícono de **plano** (campo en backend y en el formulario). Bug-card `property/card_badges/bug-card-video-avatar`. Test `components/PropertyCard`.
+
+### Ciclo 2026-11-17 (versiones de la plataforma)
+- ✅ **Versiones** — página `/versiones` (`VersionesPage`) con el historial cargado en `src/data/versions.js` (`VERSIONS`, la primera es la actual → `CURRENT_VERSION`). El footer muestra "Versión X" con link y suma "Versiones" en la columna Empresa. Arranca en **1.0** (lanzamiento). `package.json` → `1.0.0`. Para una versión nueva: agregarla arriba de `VERSIONS`. Test `components/VersionesPage`.
+
+### Ciclo 2026-11-17 (videos de propiedades + 30 fotos)
+- ✅ **Videos** (spec backend `properties/property_videos`) — `VideoUploader` en `PropertyForm` (hasta 3 videos, 200 MB c/u, MP4/MOV/WEBM). Al guardar, `uploadPropertyVideos` (hooks/useProperties) los sube **en partes de 5 MB** (`POST properties/{id}/videos` con `upload_id`/`chunk_index`/`total_chunks`) y muestra el avance (`uploadStatus` en el form). El backend los comprime a 720p en segundo plano: en edición se ven "Procesando…"/"falló"; en la ficha pública `PropertyVideos` muestra solo los `ready` (`preload="none"`). Al editar, los videos quitados se borran (`deletePropertyVideo`). Helpers puros en `features/property/videoUpload.helpers.js` (test `helpers/videoUpload`).
+- ✅ **Fotos: tope 30** (`ImageUploader maxImages`) y subida **en tandas de 3** (`uploadPropertyImages`) para no pasar los 20 MB por request del nginx de prod ni los 20 archivos de PHP. Fix: el endpoint de imágenes devuelve un array plano y antes se leía `res.data` (quedaba `[]` → el orden de fotos nuevas al editar no se aplicaba).
 
 ### Ciclo 2026-10-06 (header de marca, planes, noticias NOA, amenities)
 - ✅ **Header de marca (Layout)** — rediseño completo del header público con paleta corporativa (dorado `#ffda31` + rojo `#ff0019` + gris `#4a4a49`): fondo dorado, franja roja inferior, nav centrado con hover rojo, logo a la izquierda en desktop / centrado en mobile/tablet, sombra reforzada en páginas con fondo rojo (`RED_BACKGROUND_ROUTES = ["/sobre-nosotros", "/noticias", "/contacto"]`). Footer pasado a gris oscuro `#1a1a1a`. `AdminLayout` con logo agrandado (desktop `h-20`, mobile `h-14`, header mobile `h-10`). `Logo.jsx` apunta al nuevo imagotipo horizontal (`/img/imagotipo-horizontal.png`).
@@ -119,7 +172,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - ✅ **Verdes de CI** — knip: se quitaron deps muertas (`html2canvas`, `qrcode.react`) y el export sin uso `fetchPublicationQuota`; tests: se neutralizó el animador WAAPI de framer-motion en el setup (ver sección Tests). `npm run knip`/`test` vuelven a salir con código 0.
 
 ### Ciclo 2026-09-09 (cupo de publicaciones en el selector)
-- ✅ **Cupo destacadas/premium en "Tipo de Publicación"** — nuevo hook `usePublicationQuota` (`GET /me/publication-quota` → `{ plan, properties, featured, premium }`, cada uno `{ limit, used, available }`; `available === null` = ilimitado). `PublicationTypeSelector` lo consume: por tarjeta muestra "Te quedan N" (o "Cupo ilimitado") y **deshabilita** Destacada/Premium cuando `available <= 0`; Básica ahora también usa el bucket `properties` (muestra "Te quedan N" y se deshabilita si `properties.available <= 0`). Si la opción elegida se queda sin cupo, vuelve a Básica. Además el botón **"Nueva Propiedad"** del `DashboardPage` se deshabilita cuando `properties.available <= 0`. El backend sigue validando con **403** al publicar (no se confía solo en el front). Se recalcula en cada apertura (`staleTime: 0`) → descuenta tras publicar. Nota: el contador "X/Y" de `PlanStatusCard` sigue saliendo de `properties.length` (incluye borradores); migrarlo al endpoint es una mejora pendiente.
+- ✅ **(Superado 2026-11-20 por destacados permanentes: el selector usa la billetera, ya no los cupos featured/premium)** **Cupo destacadas/premium en "Tipo de Publicación"** — nuevo hook `usePublicationQuota` (`GET /me/publication-quota` → `{ plan, properties, featured, premium }`, cada uno `{ limit, used, available }`; `available === null` = ilimitado). `PublicationTypeSelector` lo consume: por tarjeta muestra "Te quedan N" (o "Cupo ilimitado") y **deshabilita** Destacada/Premium cuando `available <= 0`; Básica ahora también usa el bucket `properties` (muestra "Te quedan N" y se deshabilita si `properties.available <= 0`). Si la opción elegida se queda sin cupo, vuelve a Básica. Además el botón **"Nueva Propiedad"** del `DashboardPage` se deshabilita cuando `properties.available <= 0`. El backend sigue validando con **403** al publicar (no se confía solo en el front). Se recalcula en cada apertura (`staleTime: 0`) → descuenta tras publicar. Nota: el contador "X/Y" de `PlanStatusCard` sigue saliendo de `properties.length` (incluye borradores); migrarlo al endpoint es una mejora pendiente.
 
 ### Ciclo 2026-09-09 (Punto Infocasa / QR + limpieza de merge regresivo)
 - ✅ **Punto Infocasa (QR) por propiedad** — `features/dashboard/components/QrModal.jsx`: genera **client-side** (canvas + `qrcode`) una imagen "Punto Infocasa" en alta resolución (2480×3508) con el QR de la propiedad embebido sobre `public/img/punto-infocasa-base.jpg`, con descargar (JPG) e imprimir. Se dispara desde un botón en `PropertyRow` (estado local `qrOpen`). Dep nueva: `qrcode`. Sin cambios de API (todo local).
@@ -172,7 +225,7 @@ La fitness function (ESLint) arrancó verde vía **ratchet**: 16 archivos con de
 
 ## Gobernanza
 - `.ai/` — gobernanza propia del front (`context`, `policies`, `workflows`). Producto = compartido (pointer al backend).
-- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar `api/api.js` (`no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
+- Fitness function: **ESLint con dientes** (`.eslintrc.cjs` lee `.ai/policies/architecture-policies.yaml`; reglas en `error` + `--max-warnings 0`; **`LEGACY` vacío → sin excepciones**). Boundary de red en `features/**`+`common/**`: prohíbe importar cualquier módulo de `src/api/` (`api/api.js` y los módulos de endpoints; `no-restricted-imports`) **y** `fetch(`/`new XMLHttpRequest()` (`no-restricted-syntax`). Corre en CI (`.github/workflows/ci.yml`) y en `.githooks/pre-commit` (que invoca eslint vía `node` directo, no `npm run`, para no depender de bash en Windows).
 - **Guardia de código muerto: `knip`** (`knip.json`) — gate duro en CI (`npm run knip`). Detecta archivos, exports y dependencias huérfanos (lo que dejó pasar `AdminPage`/`ProfilePage` muertos). Debe quedar **limpio**.
 - **Coherencia contrato↔front:** `npm run api:surface` (script `scripts/api-surface.mjs`) + checklist en STEP 3.5 del workflow. Extrae la superficie de API real y la diffea contra el contrato del backend. No es gate de CI (el contrato vive en otro repo); es la ritualización del chequeo que faltaba (causa raíz de los filtros de search ausentes).
 - **Exactitud del PROJECT-MAP con dientes: `npm run map:check`** (`scripts/project-map-check.mjs`) — **gate duro** en CI y pre-commit. Deriva del código rutas/hooks/stores/componentes comunes y **falla si alguno no figura en este archivo**. Chequea PRESENCIA por nombre (no un touch → no se gamea bumpeando la fecha; no valida la descripción, eso sigue siendo criterio humano). Nace de que el mapa driftó (`BackButton`/`FooterLogo` quedaron fuera).

@@ -51,6 +51,20 @@ describe("CheckoutModal", () => {
       expect(screen.getByText("Pagar con Mercado Pago")).toBeInTheDocument();
     });
 
+    it("should warn that paid plans are a one-time payment (no auto-renewal)", () => {
+      render(<CheckoutModal plan={mockPaidPlan} onConfirm={onConfirm} onCancel={onCancel} />);
+
+      expect(screen.getByRole("note")).toHaveTextContent(/pago único/i);
+      expect(screen.getByRole("note")).toHaveTextContent(/no se renueva/i);
+      expect(screen.queryByText(/\/mes/)).not.toBeInTheDocument();
+    });
+
+    it("should not show the one-time payment note for free plans", () => {
+      render(<CheckoutModal plan={mockFreePlan} onConfirm={onConfirm} onCancel={onCancel} />);
+
+      expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    });
+
     it("should show Free Activation button for free plans", () => {
       render(<CheckoutModal plan={mockFreePlan} onConfirm={onConfirm} onCancel={onCancel} />);
 

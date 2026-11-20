@@ -24,8 +24,7 @@ export default function DashboardStats({
   leads, 
   planExpiresAt, 
   onUpgrade,
-  isAutoRenew,   // 👈 NUEVO
-  isFreePlan     // 👈 NUEVO
+  isFreePlan
 }) {
   if (isAdmin) return null;
 
@@ -58,8 +57,7 @@ export default function DashboardStats({
             limit={userPlan.details.limit} 
             expiresAt={planExpiresAt} 
             onUpgrade={onUpgrade} 
-            isAutoRenew={isAutoRenew} // 👈 PASAMOS LA PROP
-            isFreePlan={isFreePlan}   // 👈 PASAMOS LA PROP
+            isFreePlan={isFreePlan}
           />
         ) : (
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
