@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-11-20** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-11-23** — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -33,7 +33,7 @@ src/
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, 
 │                            PasswordInput, OneTimePaymentNote, ArchivePolicyNote,
-│                            NotificationBell
+│                            NotificationBell, PropertyMediaModal
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
 ├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado)
 ├── data/provincias.json  ← datos estáticos de provincias
@@ -87,7 +87,7 @@ Un hook por área de datos; **todas** las llamadas a la API pasan por acá (nunc
 Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Coherencia verificable:** `npm run api:surface -- --contract <ruta al api-contract.md>` lista la superficie real del front (endpoints en `hooks/`+`store/`) y la diffea contra el contrato (drift en ambas direcciones; matching por endpoint, no por query params). Endpoints que el front consume hoy:
 - **Auth/perfil:** `auth/me`, `me/properties`, `me/favorites`, `me/profile`, `me/password`, `me/avatar`, `auth/email/verification-notification` (+ login/register/logout/forgot/reset vía `useAuthStore`).
 - **Catálogos:** `locations`, `property-types`, `zones`, `property-features`, `agencies` (GET/POST/PUT).
-- **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE), `/{id}/view`, `/{id}/favorite`, `/{id}/images` (+ `order`, DELETE), `/{id}/videos` (por partes, DELETE), `/{id}/toggle-status` (pausar/reactivar, `usePropertyStatus`), `/{id}/qr-scan` (público, `useRegisterQrScan`), `/{id}/qr-stats` (`useQrStats`).
+- **Properties:** `properties`, `properties/{id}`, `properties/search` (listado paginado), `properties/map` (mapa, sin paginar, `coordinates.{lat,lng,exact}`), `properties` (POST/PUT/PATCH/DELETE; multipart con `floor_plan` opcional y `remove_floor_plan` al editar → `floor_plan_url`), `/{id}/view`, `/{id}/favorite`, `/{id}/images` (+ `order`, DELETE), `/{id}/videos` (por partes, DELETE), `/{id}/toggle-status` (pausar/reactivar, `usePropertyStatus`), `/{id}/qr-scan` (público, `useRegisterQrScan`), `/{id}/qr-stats` (`useQrStats`).
 - **Leads:** `leads`, `leads/sent`, `leads` (POST), `leads/{id}` (PATCH), `leads/{id}/reply`.
 - **Admin:** `admin/properties`, `admin/properties/{id}/verify`, `users`, `users/{id}/status`, `users/{id}` (DELETE).
 - **Monetización:** `plans`, `subscriptions`, `subscriptions/mercadopago/preference`, `subscriptions/mercadopago/verify`, `me/publication-quota` (`POST publications` ya no existe).
@@ -106,10 +106,19 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/infocoinPurchase`, `hooks/useInfocoins`, `setup.js` (173 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `hooks/useInfocoins`, `setup.js` (180 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-11-23 (tarjeta: botones de plano y video con pop-up)
+- ✅ **`PropertyCard`** — la franja inferior de la foto ahora tiene **botones** de **plano** (solo si hay `floorPlanUrl`) y **video** (solo si hay un video `ready` con `url`). Al apretarlos se abre `common/PropertyMediaModal` (portal, fuera del `<Link>`: sus clics no navegan; cierra con X, fondo o Escape) con el video subido (selector si hay varios) o la imagen del plano. El resto de la tarjeta sigue llevando a la ficha.
+- ✅ **Plano en el formulario** — `form/FloorPlanSection` (opcional, JPG/PNG/WEBP ≤ 10 MB, vista previa, reemplazar/quitar) en crear y editar. Viaja en el mismo multipart de la propiedad (`floor_plan`; `remove_floor_plan` si se quitó el que había). Estado en `usePropertyForm` (`useFloorPlanField`), validación en `propertyForm.helpers` (`validateFloorPlanFile`). Mapper: `floorPlanUrl` ← `floor_plan_url`. **Backend:** spec `properties/floor_plan` (mismo cambio).
+- Spec `property/floor_plan`. Tests `components/PropertyCard`, `helpers/floorPlan`, `hooks/propertyMappers`.
+
+### Ciclo 2026-11-23 (pop up de bienvenida + Plan Fundador en el Home)
+- ✅ **`home/WelcomeModal`** — al abrir el Home aparece un modal de bienvenida a Infocasa con una tarjeta del **Plan Fundador** (200 propiedades, 6 meses sin costo) y CTA "Quiero mi Plan Fundador" → `/plan-fundador`; también "Seguir explorando" y X. Se muestra **una vez por navegador** (localStorage `infocasa_welcome_seen`; cualquier cierre lo marca) y **solo sin sesión** (`HomePage` pasa `enabled={!user}`; `/plan-fundador` redirige a `/profile` si hay usuario). Sin cambios de API.
+- Bug-card `home/welcome_popup/bug-welcome-popup`. Test `components/WelcomeModal`.
 
 ### Ciclo 2026-11-20 (knip roto en CI)
 - ✅ **`npm run knip` volvió a verde.** `vite.config.js` usaba `__dirname` para el alias `@`; como el proyecto es ESM (`"type": "module"`), knip no podía cargar el config, perdía el entry `index.html → src/main.jsx` y reportaba ~28 archivos "sin usar" y exports falsos (exit ≠ 0 en CI). El alias ahora sale de `fileURLToPath(new URL('./src', import.meta.url))`. Vite y Vitest siguen funcionando igual. Bug-card: `specs/quality/knip_vite_config/bug-knip-vite-dirname.md`.
@@ -145,7 +154,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - Bug-card `quality/api_boundary/bug-api-modules-boundary`. Tests `helpers/infocoinPurchase`, `hooks/useInfocoins`.
 
 ### Ciclo 2026-11-18 (tarjeta de propiedad: video y avatar)
-- ✅ **`PropertyCard`** — la foto suma una franja inferior (`MediaBottomBar`): ícono de **video** (solo si hay al menos un video `ready` con `url`, mismo criterio que `PropertyVideos`) junto a la etiqueta de condición, y el **avatar** de quien publica (`owner.avatar_url`) a la derecha. El ícono es un indicador (la tarjeta entera sigue llevando a la ficha). **Backend:** ✅ resuelto el mismo 2026-11-18 — `PropertyResource.owner` ya incluye `avatar_url` y los listados (`PropertySearchController`, `PropertyController@index`) cargan `videos` ready (verificado en el código el 2026-11-20). Pendiente también: ícono de **plano** (campo en backend y en el formulario). Bug-card `property/card_badges/bug-card-video-avatar`. Test `components/PropertyCard`.
+- ✅ **`PropertyCard`** — la foto suma una franja inferior (`MediaBottomBar`): ícono de **video** (solo si hay al menos un video `ready` con `url`, mismo criterio que `PropertyVideos`) junto a la etiqueta de condición, y el **avatar** de quien publica (`owner.avatar_url`) a la derecha. El ícono es un indicador (la tarjeta entera sigue llevando a la ficha). **Backend:** ✅ resuelto el mismo 2026-11-18 — `PropertyResource.owner` ya incluye `avatar_url` y los listados (`PropertySearchController`, `PropertyController@index`) cargan `videos` ready (verificado en el código el 2026-11-20). Ícono de **plano**: ✅ hecho el 2026-11-23 (ver ese ciclo). Bug-card `property/card_badges/bug-card-video-avatar`. Test `components/PropertyCard`.
 
 ### Ciclo 2026-11-17 (versiones de la plataforma)
 - ✅ **Versiones** — página `/versiones` (`VersionesPage`) con el historial cargado en `src/data/versions.js` (`VERSIONS`, la primera es la actual → `CURRENT_VERSION`). El footer muestra "Versión X" con link y suma "Versiones" en la columna Empresa. Arranca en **1.0** (lanzamiento). `package.json` → `1.0.0`. Para una versión nueva: agregarla arriba de `VERSIONS`. Test `components/VersionesPage`.
