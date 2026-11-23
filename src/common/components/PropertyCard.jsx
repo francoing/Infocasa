@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { MapPin, Bed, Bath, Maximize, Heart, Calendar, Car, Crown, Star, Coins, Video } from "lucide-react";
 import { setPropertyFavorite } from "../../hooks/useFavorites";
+import PropertyMediaModal, { readyVideos } from "./PropertyMediaModal";
 import { useToast } from "../../hooks/useToast";
 
 // --- Helpers puros ---
@@ -18,8 +19,9 @@ const locationText = (property) => {
 };
 
 // Misma regla que la ficha pública (PropertyVideos): solo cuentan los videos ya comprimidos.
-const hasVideo = (property) =>
-  Array.isArray(property.videos) && property.videos.some((v) => v.status === 'ready' && v.url);
+const hasVideo = (property) => readyVideos(property).length > 0;
+
+const hasFloorPlan = (property) => Boolean(property.floorPlanUrl);
 
 // Foto de perfil de quien publica (dueño directo o inmobiliaria). null si no tiene.
 // `avatar_url` es la URL completa; `avatar` es solo la ruta relativa en storage y no sirve como src.
@@ -32,25 +34,60 @@ function formatDate(dateStr) {
 
 // --- Sub-componentes ---
 
-// Franja inferior de la foto: ícono de video + condición a la izquierda, avatar de quien publica a la derecha.
-function MediaBottomBar({ property }) {
+// Ícono de plano (planta con paredes), al estilo de los portales de referencia.
+function FloorPlanIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M3 3h18v18H3z" />
+      <path d="M3 12h7v5" />
+      <path d="M14 3v6h7" />
+      <path d="M14 21v-6" />
+    </svg>
+  );
+}
+
+// Botón de medio de la tarjeta: abre el pop-up sin navegar a la ficha (la tarjeta es un <Link>).
+function MediaButton({ label, onClick, children }) {
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={handleClick}
+      className="pointer-events-auto w-9 h-9 rounded-lg bg-white/95 text-slate-700 flex items-center justify-center shadow-md hover:bg-white hover:text-blue-600 transition-colors"
+    >
+      {children}
+    </button>
+  );
+}
+
+// Franja inferior de la foto: botones de plano y video + condición a la izquierda, avatar de quien publica a la derecha.
+// Cada botón aparece solo si la propiedad tiene ese medio.
+function MediaBottomBar({ property, onOpenMedia }) {
   const condLabel = conditionBadge(property.condition);
   const avatar = sellerAvatar(property);
   const video = hasVideo(property);
+  const floorPlan = hasFloorPlan(property);
 
-  if (!condLabel && !avatar && !video) return null;
+  if (!condLabel && !avatar && !video && !floorPlan) return null;
 
   return (
     <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2 pointer-events-none">
       <div className="flex items-center gap-2">
+        {floorPlan && (
+          <MediaButton label="Ver plano" onClick={() => onOpenMedia('floorPlan')}>
+            <FloorPlanIcon className="w-4 h-4" />
+          </MediaButton>
+        )}
         {video && (
-          <span
-            aria-label="Tiene video"
-            title="Tiene video"
-            className="w-8 h-8 rounded-lg bg-white/95 text-slate-700 flex items-center justify-center shadow-md"
-          >
+          <MediaButton label="Ver video" onClick={() => onOpenMedia('video')}>
             <Video className="w-4 h-4" />
-          </span>
+          </MediaButton>
         )}
         {condLabel && (
           <div className="bg-slate-900/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider">
@@ -70,7 +107,7 @@ function MediaBottomBar({ property }) {
   );
 }
 
-function CardMedia({ property, isFavorited, loading, onFavorite }) {
+function CardMedia({ property, isFavorited, loading, onFavorite, onOpenMedia }) {
   const isPremium = property.publicationType === 'premium';
   const isFeatured = property.publicationType === 'featured';
 
@@ -94,7 +131,7 @@ function CardMedia({ property, isFavorited, loading, onFavorite }) {
         </div>
       )}
       
-      <MediaBottomBar property={property} />
+      <MediaBottomBar property={property} onOpenMedia={onOpenMedia} />
 
       <button
         onClick={onFavorite}
@@ -196,6 +233,7 @@ export default function PropertyCard({ property }) {
   const toast = useToast();
   const [isFavorited, setIsFavorited] = useState(property?.isFavorited || false);
   const [loading, setLoading] = useState(false);
+  const [openMedia, setOpenMedia] = useState(null); // 'video' | 'floorPlan' | null
 
   if (!property) return null;
 
@@ -227,11 +265,18 @@ export default function PropertyCard({ property }) {
   };
 
   return (
+    <>
     <Link
       to={`/property/${property.id}`}
       className={`rounded-xl overflow-hidden transition-all duration-300 group flex flex-col h-full ${borderClass}`}
     >
-      <CardMedia property={property} isFavorited={isFavorited} loading={loading} onFavorite={handleFavoriteClick} />
+      <CardMedia
+        property={property}
+        isFavorited={isFavorited}
+        loading={loading}
+        onFavorite={handleFavoriteClick}
+        onOpenMedia={setOpenMedia}
+      />
       <div className="p-6 flex flex-col justify-between flex-1 relative overflow-hidden">
         
         {/* Un toque de luz roja muy sutil en la esquina */}
@@ -263,5 +308,8 @@ export default function PropertyCard({ property }) {
         </div>
       </div>
     </Link>
+    {/* Fuera del <Link>: los clics dentro del pop-up no navegan a la ficha. */}
+    {openMedia && <PropertyMediaModal type={openMedia} property={property} onClose={() => setOpenMedia(null)} />}
+    </>
   );
 }

@@ -55,6 +55,7 @@ const mapMedia = (item) => ({
   imageUrl: mapImageUrl(item),
   images: item.images || [],
   videos: item.videos || [],
+  floorPlanUrl: item.floor_plan_url || null,
   priceHistory: (item.price_history || []).map((h) => ({
     oldPrice: parseFloat(h.old_price),
     newPrice: parseFloat(h.new_price),

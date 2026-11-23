@@ -70,3 +70,13 @@ describe("buildProperty — visibilidad (spec backend featured_and_archive)", ()
     expect(p.archivedAt).toBeNull();
   });
 });
+
+describe("buildProperty — plano (floor_plan_url)", () => {
+  it("expone floorPlanUrl desde floor_plan_url", () => {
+    expect(buildProperty({ floor_plan_url: "https://x/plano.webp" }).floorPlanUrl).toBe("https://x/plano.webp");
+  });
+
+  it("sin plano queda null", () => {
+    expect(buildProperty({}).floorPlanUrl).toBeNull();
+  });
+});
