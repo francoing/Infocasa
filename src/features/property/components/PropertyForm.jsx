@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, Film, Loader2, Save } from "lucide-react";
+import { Camera, Film, Loader2, Save, LayoutPanelLeft } from "lucide-react";
 import Loader from "../../../common/components/Loader";
 import ImageUploader from "./ImageUploader";
 import VideoUploader from "./VideoUploader";
@@ -10,6 +10,7 @@ import ConditionSection from "./form/ConditionSection";
 import LocationSection from "./form/LocationSection";
 import ExpensesSection from "./form/ExpensesSection";
 import CertificationSection from "./form/CertificationSection";
+import FloorPlanSection from "./form/FloorPlanSection";
 import AmenitiesSection from "./form/AmenitiesSection";
 import PublicationTypeSelector from "./form/PublicationTypeSelector";
 
@@ -40,6 +41,20 @@ export default function PropertyForm({ initialData = null, onSubmit, onCancel, l
           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Videos de la propiedad</h3>
         </div>
         <VideoUploader videos={formData.videos} onChange={form.handleVideosChange} />
+      </section>
+
+      {/* Plano (opcional) */}
+      <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          <LayoutPanelLeft className="w-5 h-5 text-blue-600" />
+          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Plano de la propiedad</h3>
+        </div>
+        <FloorPlanSection
+          floorPlan={formData.floor_plan}
+          error={form.floorPlanError}
+          onChange={form.handleFloorPlanChange}
+          onClear={form.clearFloorPlan}
+        />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">

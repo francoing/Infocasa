@@ -6,9 +6,37 @@ import {
   findClosestLocation,
   buildPropertyPayload,
   buildImageOps,
+  validateFloorPlanFile,
 } from "../features/property/propertyForm.helpers";
 import { buildVideoOps } from "../features/property/videoUpload.helpers";
 import { UBICACIONES_NOA } from "../data/ubicacionesNOA"; // 👈 Importamos el archivo estático
+
+// Plano (opcional): elegir/validar el archivo y quitarlo. Quitar el que ya estaba cargado
+// marca `floor_plan_removed` para que el backend lo borre (spec properties/floor_plan).
+const useFloorPlanField = (setFormData) => {
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    e.target.value = ""; // permite volver a elegir el mismo archivo
+    if (!file) return;
+    const problem = validateFloorPlanFile(file);
+    setError(problem || "");
+    if (problem) return;
+    setFormData((prev) => ({ ...prev, floor_plan: file, floor_plan_removed: false }));
+  };
+
+  const clear = () => {
+    setError("");
+    setFormData((prev) => ({
+      ...prev,
+      floor_plan: null,
+      floor_plan_removed: prev.floor_plan_removed || Boolean(prev.floor_plan?.existingUrl),
+    }));
+  };
+
+  return { error, handleChange, clear };
+};
 
 export const usePropertyForm = ({ initialData, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +44,8 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     infocoins: 0,
   });
   
+  const floorPlan = useFloorPlanField(setFormData);
+
   const { locations, propertyTypes, availableFeatures, loadingRefs } = usePropertyFormRefs();
   
   const [formError, setFormError] = useState("");
@@ -172,6 +202,9 @@ export const usePropertyForm = ({ initialData, onSubmit }) => {
     handleVideosChange,
     handleCertDocChange,
     clearCertDoc,
+    floorPlanError: floorPlan.error,
+    handleFloorPlanChange: floorPlan.handleChange,
+    clearFloorPlan: floorPlan.clear,
     setPublicationType,
     setInfocoins,
     handleFeatureToggle,

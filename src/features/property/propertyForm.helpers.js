@@ -38,6 +38,21 @@ export const INITIAL_STATE = {
   professional_use: false,
   features: [],
   certification_document: null,
+  floor_plan: null, // File nuevo | { existingUrl } (ya cargado) | null
+  floor_plan_removed: false, // true si se quitó el plano que ya tenía (al editar)
+};
+
+// Plano (opcional): una imagen. Mismos límites que valida el backend (spec properties/floor_plan).
+export const FLOOR_PLAN_ACCEPT = "image/jpeg,image/png,image/webp";
+const FLOOR_PLAN_TYPES = FLOOR_PLAN_ACCEPT.split(",");
+export const FLOOR_PLAN_MAX_MB = 10;
+
+/** Devuelve el mensaje de error si el archivo no sirve como plano, o null si está bien. */
+export const validateFloorPlanFile = (file) => {
+  if (!file) return null;
+  if (!FLOOR_PLAN_TYPES.includes(file.type)) return "El plano tiene que ser una imagen JPG, PNG o WEBP.";
+  if (file.size > FLOOR_PLAN_MAX_MB * 1024 * 1024) return `El plano no puede pesar más de ${FLOOR_PLAN_MAX_MB} MB.`;
+  return null;
 };
 
 const STATUS_BY_OPERATION = {
@@ -108,11 +123,22 @@ export const mapInitialToForm = (initialData) => ({
   certification_document: initialData.certificationDocumentUrl
     ? { existingUrl: initialData.certificationDocumentUrl, name: "Comprobante ya cargado" }
     : null,
+  floor_plan: initialData.floorPlanUrl ? { existingUrl: initialData.floorPlanUrl } : null,
+  floor_plan_removed: false,
 });
 
 // Agrega al FormData solo si el valor está seteado (no vacío/null/undefined).
 const appendIfSet = (fd, key, val, fn = (v) => v) => {
   if (val !== "" && val !== null && val !== undefined) fd.append(key, fn(val));
+};
+
+// Plano: un archivo nuevo lo reemplaza; si se quitó el que ya tenía, se pide borrarlo.
+const appendFloorPlan = (fd, formData) => {
+  if (formData.floor_plan instanceof File) {
+    fd.append("floor_plan", formData.floor_plan);
+  } else if (formData.floor_plan_removed) {
+    fd.append("remove_floor_plan", "1");
+  }
 };
 
 /** Construye el multipart/form-data que espera el backend a partir del estado del form. */
@@ -166,6 +192,7 @@ export const buildPropertyPayload = (formData, selectedProvince, selectedDepartm
   if (formData.certification_document instanceof File) {
     fd.append("certification_document", formData.certification_document);
   }
+  appendFloorPlan(fd, formData);
   return fd;
 };
 
