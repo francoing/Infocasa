@@ -135,3 +135,25 @@ describe("PropertyCard - botones de plano y video", () => {
     expect(screen.getByText("Ficha de la propiedad")).toBeInTheDocument();
   });
 });
+
+describe("PropertyCard - vistas", () => {
+  it("muestra la cantidad de vistas en todas las tarjetas", () => {
+    renderCard({ viewsCount: 1234 });
+    expect(screen.getByText("1.234 vistas")).toBeInTheDocument();
+  });
+
+  it("usa singular con una vista y muestra 0 si no hay dato", () => {
+    const { unmount } = renderCard({ viewsCount: 1 });
+    expect(screen.getByText("1 vista")).toBeInTheDocument();
+    unmount();
+
+    renderCard({});
+    expect(screen.getByText("0 vistas")).toBeInTheDocument();
+  });
+
+  it("en súper destacadas muestra las vistas al lado de las InfoMonedas", () => {
+    renderCard({ publicationType: "premium", infocoinsCount: 5, viewsCount: 42 });
+    expect(screen.getByText("42 vistas")).toBeInTheDocument();
+    expect(screen.getByText("5 InfoMonedas")).toBeInTheDocument();
+  });
+});
