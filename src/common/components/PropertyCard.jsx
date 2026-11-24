@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
-import { MapPin, Bed, Bath, Maximize, Heart, Calendar, Car, Crown, Star, Coins, Video } from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, Heart, Calendar, Car, Crown, Star, Coins, Video, Eye } from "lucide-react";
 import { setPropertyFavorite } from "../../hooks/useFavorites";
 import PropertyMediaModal, { readyVideos } from "./PropertyMediaModal";
 import { useToast } from "../../hooks/useToast";
@@ -26,6 +26,12 @@ const hasFloorPlan = (property) => Boolean(property.floorPlanUrl);
 // Foto de perfil de quien publica (dueño directo o inmobiliaria). null si no tiene.
 // `avatar_url` es la URL completa; `avatar` es solo la ruta relativa en storage y no sirve como src.
 const sellerAvatar = (property) => property.owner?.avatar_url || null;
+
+// "1 vista" / "N vistas" (con separador de miles es-AR).
+const viewsLabel = (count) => {
+  const n = Number(count) || 0;
+  return `${n.toLocaleString('es-AR')} ${n === 1 ? 'vista' : 'vistas'}`;
+};
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -218,13 +224,24 @@ function CardFooter({ property }) {
         </span>
       </div>
       
-      {/* Contador de InfoMonedas (Solo si es Súper Destacada y tiene monedas) */}
-      {isPremium && property.infocoinsCount > 0 && (
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 text-amber-600 px-3 py-1.5 rounded-lg shadow-sm">
-          <Coins className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-          <span className="text-[11px] font-black">{property.infocoinsCount} InfoMonedas</span>
+      <div className="flex items-center gap-2">
+        {/* Contador de vistas (todas las tarjetas) */}
+        <div
+          className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 text-slate-500 px-3 py-1.5 rounded-lg"
+          title="Vistas de la propiedad"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span className="text-[11px] font-black">{viewsLabel(property.viewsCount)}</span>
         </div>
-      )}
+
+        {/* Contador de InfoMonedas (Solo si es Súper Destacada y tiene monedas) */}
+        {isPremium && property.infocoinsCount > 0 && (
+          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 text-amber-600 px-3 py-1.5 rounded-lg shadow-sm">
+            <Coins className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+            <span className="text-[11px] font-black">{property.infocoinsCount} InfoMonedas</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
