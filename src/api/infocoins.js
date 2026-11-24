@@ -10,9 +10,9 @@ export const infocoinsApi = {
   /** Billetera del usuario autenticado. GET /infocoins/wallet */
   getWallet: () => api.get("/infocoins/wallet"),
 
-  /** Crea una preferencia de pago para un paquete. */
-  createPurchasePreference: (packageId) =>
-    api.post("/infocoins/purchase/preference", { package_id: packageId }),
+  /** Crea una preferencia de pago para un paquete. `tracking` = cookies de Meta (`fbp`, `fbc`), opcionales. */
+  createPurchasePreference: (packageId, tracking = {}) =>
+    api.post("/infocoins/purchase/preference", { package_id: packageId, ...tracking }),
 
   /** Verifica el pago al volver del checkout. */
   verifyPurchase: ({ paymentId, externalReference, preferenceId, purchaseId } = {}) =>

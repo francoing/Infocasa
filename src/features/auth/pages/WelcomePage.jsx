@@ -1,14 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, ArrowRight, Home } from "lucide-react";
-import { consumeJustRegistered, trackRegistration } from "../../../lib/tracking";
 
 export default function WelcomePage() {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (consumeJustRegistered()) trackRegistration();
-  }, []);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-6 py-12 bg-slate-50">

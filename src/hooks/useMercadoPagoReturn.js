@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../store/useAuthStore";
 import { useToast } from "./useToast";
+import { approvedPaymentConversion, trackPayment } from "../lib/tracking";
 
 // Query params que MercadoPago agrega a la URL de retorno (se limpian al volver).
 const MP_PARAMS = [
@@ -58,6 +59,9 @@ export const useMercadoPagoReturn = (verifyMercadoPagoPayment) => {
       }
       queryClient.invalidateQueries({ queryKey: ["userPlan"] });
       queryClient.invalidateQueries({ queryKey: ["auth_me"] });
+      // Conversión solo con el pago confirmado (no en la rama de error).
+      const payment = approvedPaymentConversion(res, "plan");
+      if (payment) trackPayment(payment);
       toast.success("¡Tu suscripción ha sido activada con éxito!");
     };
 
