@@ -8,7 +8,7 @@ export function DatosIdentificatorios() {
   const filas = [
     ["Denominación / Titular", "InfoCasa — Actividad Unipersonal"],
     ["CUIT", "27-44189540-8"],
-    ["Correo de atención / reclamos", "soporte@infocasa.com.ar · admin@infocasa.com.ar"],
+    ["Correo de atención / reclamos", "soporte@infocasa.com.ar"],
     ["URL oficial", "www.infocasa.com.ar"],
     ["Contacto", "3812066967"],
   ];

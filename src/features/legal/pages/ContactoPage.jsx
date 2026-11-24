@@ -91,8 +91,8 @@ export default function ContactoPage() {
               <ContactItem
                 icon={<Mail className="w-5 h-5" />}
                 title="Email"
-                value="infocasa.admin@gmail.com"
-                href="mailto:infocasa.admin@gmail.com"
+                value="soporte@infocasa.com.ar"
+                href="mailto:soporte@infocasa.com.ar"
               />
               <ContactItem
                 icon={<Phone className="w-5 h-5" />}
@@ -103,7 +103,7 @@ export default function ContactoPage() {
               <ContactItem
                 icon={<MapPin className="w-5 h-5" />}
                 title="Zona"
-                value="NOA — Noroeste Argentino"
+                value="NOA · especializados en Tucumán"
               />
               <ContactItem
                 icon={<Clock className="w-5 h-5" />}

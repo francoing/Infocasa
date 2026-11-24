@@ -85,7 +85,7 @@ export default function RegisterPage() {
       >
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-slate-900 mb-3">Crea tu cuenta</h1>
-          <p className="text-slate-500 text-sm font-medium">Únete a la red inmobiliaria más exclusiva del país.</p>
+          <p className="text-slate-500 text-sm font-medium">Sumate al nuevo portal inmobiliario de Tucumán.</p>
         </div>
 
         {error && (
