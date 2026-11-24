@@ -7,7 +7,7 @@ export const VERSIONS = [
     date: "2026-11-17",
     title: "Lanzamiento de InfoCasa",
     highlights: [
-      "Buscador de propiedades con mapa interactivo para todo el NOA.",
+      "Buscador de propiedades con mapa interactivo para el NOA, especializado en Tucumán.",
       "Publicación de propiedades con hasta 30 fotos y hasta 3 videos, comprimidos automáticamente en calidad 720p.",
       "Planes para dueños directos e inmobiliarias, incluido el Plan Fundador.",
       "Marketplace con propiedades destacadas y súper destacadas.",

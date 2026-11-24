@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { infocoinsApi } from "../api/infocoins";
 import { WALLET_QUERY_KEY } from "./useWallet";
+import { approvedPaymentConversion, getMetaCookies, trackPayment } from "../lib/tracking";
 import {
   PENDING_PURCHASE_KEY,
   buildPendingPurchase,
@@ -30,7 +31,7 @@ const safeStorage = () => {
  */
 export function useInfocoinCheckout() {
   const mutation = useMutation({
-    mutationFn: (pkg) => infocoinsApi.createPurchasePreference(pkg.id),
+    mutationFn: (pkg) => infocoinsApi.createPurchasePreference(pkg.id, getMetaCookies()),
     onSuccess: (preference, pkg) => {
       safeStorage()?.setItem(PENDING_PURCHASE_KEY, JSON.stringify(buildPendingPurchase(preference, pkg)));
     },
@@ -71,6 +72,9 @@ export function useInfocoinPaymentResult({ variant, query }) {
     }
     if (verify.isSuccess) {
       queryClient.invalidateQueries({ queryKey: WALLET_QUERY_KEY });
+      // Conversión con el monto real verificado por el backend (una vez por payment_id).
+      const payment = approvedPaymentConversion(verify.data, "infomonedas");
+      if (payment) trackPayment(payment);
     }
   }, [decision.kind, verify.isSuccess]);
 

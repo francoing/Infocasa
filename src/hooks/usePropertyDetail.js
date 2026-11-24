@@ -5,6 +5,7 @@ import { fetchPropertyById, mapProperty } from "./useProperties";
 import { buildSearchQueryString } from "./properties.query";
 import { useToast } from "./useToast";
 import { useAuthStore } from "../store/useAuthStore";
+import { trackLead } from "../lib/tracking";
 import { DEFAULT_LEAD_FORM, leadFormForUser, buildRelatedFilters, rankRelatedProperties, optimisticToggleFavorite } from "./usePropertyDetail.helpers";
 
 export const usePropertyDetail = (id) => {
@@ -109,6 +110,7 @@ export const usePropertyDetail = (id) => {
       return api.post("/leads", leadData);
     },
     onSuccess: () => {
+      trackLead(id);
       // Reset: si hay sesión, vuelve a quedar precargado con los datos del usuario.
       setFormData(user ? leadFormForUser(user) : DEFAULT_LEAD_FORM);
       toast.success("Consulta enviada con éxito. La inmobiliaria te contactará a la brevedad.");

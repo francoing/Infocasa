@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/api";
 import { useAuthStore } from "../store/useAuthStore";
+import { getMetaCookies } from "../lib/tracking";
 
 // Trae los planes del backend y los devuelve tal cual vienen.
 // Las features / badges / promos se definen en SubscriptionPlans.jsx
@@ -103,6 +104,7 @@ export const usePlans = () => {
   const payWithMercadoPago = useCallback(async (planId) => {
     const res = await api.post("/subscriptions/mercadopago/preference", {
       plan_id: planId,
+      ...getMetaCookies(),
     });
     return res;
   }, []);

@@ -78,7 +78,7 @@ export default function WelcomeModal({ enabled = true }) {
                 ¡Bienvenido a Infocasa!
               </h2>
               <p className="text-slate-500 text-sm leading-relaxed">
-                El nuevo portal inmobiliario de Tucumán y Santiago del Estero. Encontrá tu próximo
+                El nuevo portal inmobiliario del NOA, especializado en Tucumán. Encontrá tu próximo
                 hogar o publicá tu propiedad en venta o alquiler.
               </p>
             </div>

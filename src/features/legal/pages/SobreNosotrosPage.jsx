@@ -70,7 +70,7 @@ export default function SobreNosotrosPage() {
             ¿Quiénes somos?
           </span>
           <h2 className="text-3xl md:text-4xl font-black text-[#4a4a49] mb-6">
-            Una plataforma pensada para el NOA
+            Una plataforma pensada para el NOA, especializada en Tucumán
           </h2>
           <p className="text-[#4a4a49]/85 text-lg leading-relaxed">
             InfoCasa es una plataforma digital creada para conectar propiedades,
@@ -164,7 +164,7 @@ export default function SobreNosotrosPage() {
         <section className="max-w-4xl mx-auto px-6 pb-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <a
-              href="mailto:infocasa.admin@gmail.com"
+              href="mailto:soporte@infocasa.com.ar"
               className="flex items-center gap-4 bg-white rounded-2xl p-5 border border-slate-200 hover:border-[#ff0019] hover:shadow-lg transition-all"
             >
               <div
@@ -178,7 +178,7 @@ export default function SobreNosotrosPage() {
                   Email
                 </p>
                 <p className="text-[#4a4a49] font-bold truncate">
-                  infocasa.admin@gmail.com
+                  soporte@infocasa.com.ar
                 </p>
               </div>
             </a>
@@ -217,7 +217,7 @@ export default function SobreNosotrosPage() {
               ¿Listo para encontrar tu próximo hogar?
             </h2>
             <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-              Explorá miles de propiedades en venta, alquiler y temporario.
+              Descubrí las primeras propiedades en venta, alquiler y temporario del nuevo portal inmobiliario de Tucumán.
             </p>
             <Link
               to="/search"

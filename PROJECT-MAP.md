@@ -35,7 +35,7 @@ src/
 │                            PasswordInput, OneTimePaymentNote, ArchivePolicyNote,
 │                            NotificationBell, PropertyMediaModal
 ├── router/               ← AppRouter (rutas) + ProtectedRoute (auth + allowedRoles)
-├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado)
+├── lib/                  ← utils.js (clsx/tailwind-merge) · queryClient.js (singleton react-query) · pagination.js (helpers puros de paginado) · tracking.js (eventos ic_* al dataLayer de GTM)
 ├── data/provincias.json  ← datos estáticos de provincias
 ├── mock/                 ← mockApi + handlers/searchProperties + data (switch por VITE_USE_MOCK)
 └── test/                 ← Vitest (components, hooks, store, setup)
@@ -102,14 +102,21 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Geoapify** (`VITE_GEOAPIFY_API_KEY`) — SOLO para **creación de propiedad** (`useGeoapifyPlaces` + `geocodeAddress` en `MapLocationSelector`: geocodifica direcciones arbitrarias) y el **gate de ubicación** (`useUserProvince`: reverse geocode del GPS). El **autocomplete de búsqueda NO usa Geoapify**: va por inventario (`useLocationSearch`).
 - **Leaflet** — mapas / clustering (Home, Explore, PropertyMap, MapLocationSelector).
 - **MercadoPago** — checkout vía `preference` del backend (CheckoutModal).
+- **Google Tag Manager** `GTM-5W5C5Z79` (único tag en `index.html`): reparte los eventos `ic_*` del `dataLayer` a Google Ads, GA4, Meta Pixel y TikTok. **No** pegar gtag/fbq/ttq en el código. Spec `tracking/conversions`.
 - **Vercel** — hosting/deploy.
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `hooks/useInfocoins`, `setup.js` (180 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `helpers/tracking`, `hooks/useInfocoins`, `setup.js` (225 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-11-24 (medición de conversiones con GTM)
+- ✅ **`index.html`**: se sacaron el gtag de Google Ads y el Meta Pixel hardcodeados; queda solo **GTM `GTM-5W5C5Z79`** (head + noscript). Las etiquetas (Ads, GA4 `G-F8TH52L574`, Meta `1855426478797746`, TikTok) viven en el contenedor.
+- ✅ **`lib/tracking.js`** reescrito: empuja `ic_sign_up` (sin valor, todos los registros), `ic_purchase` / `ic_subscribe` (monto real de MP que devuelve verify, `event_id mp_<payment_id>`, una vez por pago), `ic_lead` y `ic_whatsapp` (botón flotante). Se borró la marca `ic_just_registered` y el disparo en `WelcomePage`.
+- ✅ Preferencias de pago mandan `_fbp`/`_fbc` al backend (Conversions API de Meta con dedup). **Backend:** spec `monetization/conversion_tracking` (mismo cambio, contrato de verify con `payment`).
+- Spec `tracking/conversions`. Test `helpers/tracking`.
 
 ### Ciclo 2026-11-23 (tarjeta: botones de plano y video con pop-up)
 - ✅ **`PropertyCard`** — la franja inferior de la foto ahora tiene **botones** de **plano** (solo si hay `floorPlanUrl`) y **video** (solo si hay un video `ready` con `url`). Al apretarlos se abre `common/PropertyMediaModal` (portal, fuera del `<Link>`: sus clics no navegan; cierra con X, fondo o Escape) con el video subido (selector si hay varios) o la imagen del plano. El resto de la tarjeta sigue llevando a la ficha.

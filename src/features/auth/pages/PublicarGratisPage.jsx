@@ -115,7 +115,7 @@ export default function PublicarGratisPage() {
           <div className="space-y-3">
             <div className="w-16 h-16 mx-auto text-[#ff0019] flex items-center justify-center"><Eye className="w-12 h-12" /></div>
             <h3 className="font-black text-lg text-[#0a192f]">Más visibilidad</h3>
-            <p className="text-slate-500 text-sm font-medium">Tu propiedad en un portal 100% de Tucumán.</p>
+            <p className="text-slate-500 text-sm font-medium">Tu propiedad en el nuevo portal del NOA, especializado en Tucumán.</p>
           </div>
           <div className="space-y-3">
             <div className="w-16 h-16 mx-auto text-[#ff0019] flex items-center justify-center"><Rocket className="w-12 h-12" /></div>

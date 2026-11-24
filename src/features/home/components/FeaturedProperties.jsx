@@ -12,7 +12,7 @@ export default function FeaturedProperties({ properties = [], loading, error }) 
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-900">Propiedades Destacadas</h2>
-          <p className="text-slate-500 mt-2">Propiedades de lujo seleccionadas por su excelencia.</p>
+          <p className="text-slate-500 mt-2">Las primeras propiedades publicadas en el NOA, con foco en Tucumán.</p>
         </div>
         <Link to="/search" className="text-blue-600 font-semibold border-b-2 border-blue-600/20 pb-1 hover:border-blue-600 transition-all">
           Ver todas las propiedades

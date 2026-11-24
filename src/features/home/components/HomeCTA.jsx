@@ -11,7 +11,7 @@ export default function HomeCTA() {
             ¿Tenés una propiedad para <span className="underline decoration-white/50 underline-offset-8">vender o alquilar</span>?
           </h2>
           <p className="text-lg text-white/90">
-            Publicá tu propiedad y llegá a miles de personas buscando exactamente lo que ofrecés.
+            Sé de los primeros en publicar en el nuevo portal inmobiliario de Tucumán.
           </p>
           <div className="flex flex-wrap gap-4 pt-4">
             <Link

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../../hooks/useAuth";
 import PasswordInput from "../../../common/components/PasswordInput";
 import { formatCuit } from "../../../lib/utils";
-import { markJustRegistered } from "../../../lib/tracking";
+import { trackSignUp } from "../../../lib/tracking";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -51,11 +51,13 @@ export default function RegisterPage() {
         business_name: businessName,
         agency_address: agencyAddress,
       });
-      
+
+      // Conversión de registro (sin valor): cuenta todos los registros, no solo los de landing.
+      trackSignUp(role);
+
       // 👇 LÓGICA DE REDIRECCIÓN
       if (fromLanding) {
         // Si venía de /publicar-gratis o /plan-fundador, va a bienvenida
-        markJustRegistered();
         navigate("/welcome", { replace: true });
       } else if (role === "owner" || role === "agent") {
         navigate("/dashboard");
@@ -83,7 +85,7 @@ export default function RegisterPage() {
       >
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-slate-900 mb-3">Crea tu cuenta</h1>
-          <p className="text-slate-500 text-sm font-medium">Únete a la red inmobiliaria más exclusiva del país.</p>
+          <p className="text-slate-500 text-sm font-medium">Sumate al nuevo portal inmobiliario de Tucumán.</p>
         </div>
 
         {error && (
