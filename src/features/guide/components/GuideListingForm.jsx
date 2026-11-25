@@ -1,5 +1,6 @@
 import React from "react";
 import { SCHEDULE_DAYS, SOCIAL_NETWORKS } from "@/hooks/guide.mappers";
+import MapLocationSelector from "@/features/property/components/MapLocationSelector";
 import { Checkbox, GUIDE_PROVINCES, Select, TextArea, TextInput } from "./GuideFields";
 
 const Section = ({ title, hint, children }) => (
@@ -25,6 +26,7 @@ export default function GuideListingForm({ form, setForm, errors = {}, categorie
   const tradeOptions = categories.flatMap((c) =>
     c.trades.filter((t) => t.active).map((t) => ({ value: String(t.id), label: `${c.name} · ${t.name}` }))
   );
+  const hasCoords = form.latitude != null && form.longitude != null && form.latitude !== "" && form.longitude !== "";
   const inherit = (value) => (value ? `Vacío = usa el de tu perfil (${value})` : undefined);
 
   return (
@@ -46,6 +48,24 @@ export default function GuideListingForm({ form, setForm, errors = {}, categorie
           <TextInput label="Localidad" value={form.city} onChange={set("city")} error={errors.city} />
           <TextInput label="Barrio / zona" value={form.neighborhood} onChange={set("neighborhood")} error={errors.neighborhood} />
           <TextInput label="Dirección" value={form.address} onChange={set("address")} error={errors.address} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ubicación en el mapa (opcional)</span>
+            {hasCoords && (
+              <button type="button" onClick={() => setForm((f) => ({ ...f, latitude: null, longitude: null }))} className="text-xs font-bold text-red-600 hover:underline">
+                Quitar ubicación
+              </button>
+            )}
+          </div>
+          <MapLocationSelector
+            latitude={hasCoords ? Number(form.latitude) : null}
+            longitude={hasCoords ? Number(form.longitude) : null}
+            address=""
+            province={form.province}
+            onChange={({ latitude, longitude }) => setForm((f) => ({ ...f, latitude, longitude }))}
+          />
+          <p className="text-xs text-slate-400">Marcá el punto en el mapa: así te encuentran con el filtro “Cerca mío”.</p>
         </div>
         <Select
           label="Zona de cobertura"

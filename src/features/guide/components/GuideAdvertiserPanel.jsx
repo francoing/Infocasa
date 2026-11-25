@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, LifeBuoy } from "lucide-react";
 import Loader from "@/common/components/Loader";
 import { useMyGuideAdvertiser } from "@/hooks/useGuideAdvertiser";
 import { useMyGuideListings } from "@/hooks/useGuideListings";
@@ -46,9 +46,14 @@ export default function GuideAdvertiserPanel({ initialTab = "publicaciones" }) {
           <p className="font-bold text-slate-900 truncate">{advertiser.name}</p>
           <GuideStatusBadge status={advertiser.status} />
         </div>
-        <Link to={`/guia/${advertiser.slug}`} className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline">
-          Ver mi perfil público <ExternalLink className="w-4 h-4" />
-        </Link>
+        <div className="flex flex-wrap gap-4">
+          <Link to={`/guia/${advertiser.slug}`} className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline">
+            Ver mi perfil público <ExternalLink className="w-4 h-4" />
+          </Link>
+          <Link to="/contacto" className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:underline">
+            <LifeBuoy className="w-4 h-4" /> Solicitar asistencia
+          </Link>
+        </div>
       </div>
 
       {suspended && (

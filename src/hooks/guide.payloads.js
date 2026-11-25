@@ -4,6 +4,9 @@
  */
 import { SCHEDULE_DAYS, cleanSocial } from "./guide.mappers";
 
+/** Coordenada numérica o null (el mapa es opcional). */
+const toCoord = (v) => (v === null || v === undefined || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
+
 const nullIfEmpty = (v) => (v === "" || v === undefined ? null : v);
 
 /** Formulario de perfil → body de POST/PUT `guide/me/advertiser`. */
@@ -51,6 +54,8 @@ export function toListingPayload(form, { asDraft = false } = {}) {
     province: nullIfEmpty(form.province),
     city: nullIfEmpty(form.city?.trim()),
     neighborhood: nullIfEmpty(form.neighborhood?.trim()),
+    latitude: toCoord(form.latitude),
+    longitude: toCoord(form.longitude),
     coverage_type: form.coverageType === "province" ? "province" : "cities",
     coverage_cities: form.coverageType === "province" ? [] : coverageCities,
     home_service: !!form.homeService,
@@ -61,28 +66,25 @@ export function toListingPayload(form, { asDraft = false } = {}) {
   };
 }
 
+/** Copia campos con un valor por defecto (`obj` puede ser null). */
+const withDefaults = (obj, defaults) =>
+  Object.fromEntries(Object.entries(defaults).map(([k, fallback]) => [k, obj?.[k] ?? fallback]));
+
+const LISTING_FORM_DEFAULTS = {
+  title: "", description: "", videoUrl: "", address: "", province: "", city: "", neighborhood: "",
+  latitude: null, longitude: null, coverageType: "cities", homeService: false, hasStore: false, storeOnly: false,
+};
+
 /** Publicación mapeada (o null) → estado inicial del formulario de edición. */
 export function listingToForm(listing) {
   const own = listing?.ownContact ?? {};
   return {
+    ...withDefaults(listing, LISTING_FORM_DEFAULTS),
     tradeId: listing?.trade?.id ? String(listing.trade.id) : "",
-    title: listing?.title ?? "",
-    description: listing?.description ?? "",
-    videoUrl: listing?.videoUrl ?? "",
-    phone: own.phone ?? "",
-    whatsapp: own.whatsapp ?? "",
+    ...withDefaults(own, { phone: "", whatsapp: "", website: "" }),
     contactEmail: own.email ?? "",
-    website: own.website ?? "",
     social: cleanSocial(own.social),
-    address: listing?.address ?? "",
-    province: listing?.province ?? "",
-    city: listing?.city ?? "",
-    neighborhood: listing?.neighborhood ?? "",
-    coverageType: listing?.coverageType ?? "cities",
     coverageCities: (listing?.coverageCities ?? []).join(", "),
-    homeService: listing?.homeService ?? false,
-    hasStore: listing?.hasStore ?? false,
-    storeOnly: listing?.storeOnly ?? false,
     schedule: { ...(listing?.schedule ?? {}) },
   };
 }
@@ -140,6 +142,8 @@ export function buildListingPreview(form, { advertiser = null, categories = [], 
     province: form.province ?? "",
     city: form.city ?? "",
     neighborhood: form.neighborhood ?? "",
+    latitude: toCoord(form.latitude),
+    longitude: toCoord(form.longitude),
     coverageType: form.coverageType === "province" ? "province" : "cities",
     coverageCities: form.coverageType === "province" ? [] : cities,
     homeService: !!form.homeService,

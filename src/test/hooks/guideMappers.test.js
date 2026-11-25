@@ -126,6 +126,12 @@ describe("payloads", () => {
     expect(payload.schedule).toMatchObject({ mon: "9 a 18", tue: null, sun: null });
   });
 
+  it("publicación: coordenadas del mapa numéricas u omitidas (null)", () => {
+    expect(toListingPayload({ ...listingToForm(null), latitude: "-26.81", longitude: -65.3 })).toMatchObject({ latitude: -26.81, longitude: -65.3 });
+    expect(toListingPayload(listingToForm(null))).toMatchObject({ latitude: null, longitude: null });
+    expect(listingToForm(mapGuideListing(apiListing))).toMatchObject({ latitude: -26.8, longitude: null });
+  });
+
   it("publicación: con provincia entera no manda localidades", () => {
     const payload = toListingPayload({ ...listingToForm(null), coverageType: "province", coverageCities: "Lules" });
     expect(payload.coverage_type).toBe("province");
