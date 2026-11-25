@@ -73,7 +73,7 @@ export default function WelcomeModal({ enabled = true }) {
             </button>
 
             <div className="px-6 pt-8 pb-5 sm:px-8 text-center">
-              <Logo className="mx-auto mb-5" />
+              <Logo className="mx-auto mb-5 w-auto !h-20 sm:!h-24" />
               <h2 id="welcome-modal-title" className="text-2xl font-black text-slate-900 mb-2">
                 ¡Bienvenido a Infocasa!
               </h2>
