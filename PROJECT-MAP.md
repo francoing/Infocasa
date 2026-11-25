@@ -1,6 +1,6 @@
 # PROJECT MAP — Frontend (Front-inmob / InfoCasa)
 
-> ⏱ **Última sincronización: 2026-11-23** — actualizar al terminar cualquier feature (Regla de oro #5).
+> ⏱ **Última sincronización: 2026-11-25** (InfoCasa Guía Etapa 1) — actualizar al terminar cualquier feature (Regla de oro #5).
 
 > **Capa 4 (Estado real).** Fuente de verdad del ESTADO del frontend. El código manda sobre este mapa.
 > Sincronizar tras cada feature (STEP 7 de `.ai/workflows/create-feature.workflow.md`).
@@ -18,8 +18,8 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── api/{infocoins,searchAlerts}.js ← módulos de endpoints (envuelven api.js, sin fetch propio). Solo se importan desde hooks/ (lint)
-├── features/{home,search,explore,property,auth,dashboard,profile,share,legal,infocoins,searchAlerts}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
+├── api/{infocoins,searchAlerts,guide}.js ← módulos de endpoints (envuelven api.js, sin fetch propio). Solo se importan desde hooks/ (lint)
+├── features/{home,search,explore,property,auth,dashboard,profile,share,legal,infocoins,searchAlerts,guide}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
 │                            useDashboardData (queries/mutations), useAuth, useAgencies, usePropertyFormRefs,
@@ -27,9 +27,10 @@ src/
 │                            usePackages, useAssignInfocoins, useInfocoinPurchase (checkout + vuelta de MP), useSearchAlerts,
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan, useContactForm,
-│                            useNotifications, usePropertyStatus, useQrStats
+│                            useNotifications, usePropertyStatus, useQrStats,
+│                            Guía: useGuideDirectory, useGuideAdvertiser, useGuideListings, useGuideInquiries, useGuideAdmin, useDocumentMeta
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, 
-│                            dashboardData.helpers, infocoinPurchase.helpers)
+│                            dashboardData.helpers, infocoinPurchase.helpers, guide.mappers, guide.payloads, guide.query)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, 
 │                            PasswordInput, OneTimePaymentNote, ArchivePolicyNote,
@@ -69,6 +70,12 @@ src/
 | `/dashboard/properties/create` | CreatePropertyPage | owner / agent / admin |
 | `/dashboard/properties/edit/:id` | EditPropertyPage | owner / agent / admin |
 | `/dashboard/search-alerts/create` | CreateSearchAlertPage | buyer |
+| `/guia` | GuideHomePage (InfoCasa Guía: buscador + categorías y rubros) | pública |
+| `/guia/buscar` | GuideSearchPage (resultados, filtros por query params) | pública |
+| `/guia/publicacion/:slug` | GuideListingPage (ficha + contacto + consulta/presupuesto) | pública |
+| `/guia/:slug` | GuideAdvertiserPage (perfil público del anunciante) | pública |
+| `/dashboard/guia/publicaciones/nueva` | GuideListingFormPage (alta con vista previa) | owner / agent / admin / buyer |
+| `/dashboard/guia/publicaciones/:id/editar` | GuideListingFormPage (edición) | owner / agent / admin / buyer |
 | `/admin` | → redirige a `/dashboard` | — |
 | `*` | HomePage (fallback) | — |
 
@@ -94,6 +101,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **InfoMonedas** (vía `api/infocoins.js`): `infocoins/wallet`, `infocoins/packages`, `infocoins/purchase/preference`, `infocoins/purchase/verify`, `properties/{id}/infocoins` (POST), `properties/{id}/featured` (POST, destacar). Hooks: `useWallet` (saldo + `featuredBalance`), `usePackages`, `useAssignInfocoins`, `useFeatureProperty`, `useInfocoinPurchase`.
 - **Alertas de búsqueda** (vía `api/searchAlerts.js`): `search-alerts` (CRUD), `my-received-alerts`. Hook: `useSearchAlerts`.
 - **Notificaciones:** `notifications`, `notifications/unread-count`, `notifications/{id}/read`, `notifications/read-all` (polling 30 s, `useNotifications`).
+- **InfoCasa Guía** (vía `api/guide.js`, spec `guide/directory`): públicas `guide/categories`, `guide/listings` (búsqueda), `guide/listings/{slug}` (+ `/view`, `/inquiries`), `guide/advertisers/{slug}`; panel `guide/me/advertiser` (GET/POST/PUT, `/logo`), `guide/me/listings` (CRUD, `/toggle-status`, `/duplicate`, `/photos`, `/photos/order`, `/photos/{photo}`), `guide/me/inquiries` (+ `/{id}/read`); admin `guide/admin/{advertisers,listings,categories,trades}` (+ `/moderate`, `/status`). Hooks: `useGuideDirectory`, `useGuideAdvertiser`, `useGuideListings`, `useGuideInquiries`, `useGuideAdmin`.
 - **Contacto:** `contact` (POST público, `useContactForm`). ⚠️ `api:surface` lo marca como no documentado en el contrato del backend.
 
 > `api:surface` solo escanea `hooks/` + `store/`: los endpoints que pasan por `src/api/{infocoins,searchAlerts}.js` no aparecen en su listado; revisarlos a mano.
@@ -107,10 +115,17 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `helpers/tracking`, `hooks/useInfocoins`, `setup.js` (225 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `helpers/tracking`, `hooks/useInfocoins`, `hooks/guideMappers`, `hooks/guideQuery`, `hooks/useGuide`, `components/GuideComponents`, `setup.js` (270 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-11-25 (InfoCasa Guía — Etapa 1)
+- ✅ **Sección nueva `features/guide/`** (spec `guide/directory`; backend spec `guide/directory`, dominio `Guide`): `/guia` (buscador + 4 categorías con rubros y conteos), `/guia/buscar` (filtros en la URL: texto, categoría, rubro, provincia, "trabaja en la localidad", domicilio, local, cerca mío por geolocalización; paginado; el orden lo da el backend), ficha `/guia/publicacion/:slug` (galería, cobertura, horarios, video YouTube/Vimeo, contacto, consulta y "Pedir presupuesto") y perfil `/guia/:slug`. Entrada "InfoCasa Guía" en el nav (header/mobile) y el footer. Títulos/meta por página con `useDocumentMeta`.
+- ✅ **Contacto**: `WhatsAppButton` ahora acepta `phone`/`message`/`variant="inline"`/`trackingParams` (sin props sigue siendo el flotante de soporte). `trackWhatsApp(pathname, extra)` reusa **`ic_whatsapp`** con `section: "guia"` + `guide_listing_id`/`guide_advertiser_id` (sin evento nuevo en GTM; en GTM se puede segmentar por `section`).
+- ✅ **Panel** = pestaña "InfoCasa Guía" del dashboard para todos los roles (`?tab=guia`, sub-pestaña `?guia=publicaciones|consultas|visitas|perfil`): alta de perfil con términos, mis publicaciones (estado, motivo de rechazo, pausar/activar, duplicar, editar, eliminar), consultas recibidas (marcar leída) y visitas. Admin: pestaña "InfoCasa Guía" con moderación (aprobar / rechazar con motivo / suspender / editar textos / eliminar), anunciantes (suspender/reactivar) y ABM de categorías y rubros. Sin pestañas de suscripción/estadísticas (Etapa 2).
+- ✅ **Registro → panel de la Guía**: `RegisterPage` respeta `location.state.next` (ruta interna) antes de la lógica por rol.
+- Pendiente Etapa 2/3 (roadmap del backend): suscripciones, pagos, destacados, estadísticas; mapa, favoritos, calificaciones, denuncias.
 
 ### Ciclo 2026-11-24 (medición de conversiones con GTM)
 - ✅ **`index.html`**: se sacaron el gtag de Google Ads y el Meta Pixel hardcodeados; queda solo **GTM `GTM-5W5C5Z79`** (head + noscript). Las etiquetas (Ads, GA4 `G-F8TH52L574`, Meta `1855426478797746`, TikTok) viven en el contenedor.
