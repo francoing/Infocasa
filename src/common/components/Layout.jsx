@@ -28,6 +28,7 @@ const RED_BACKGROUND_ROUTES = [
   "/explore",             // ← Explorar mapa
   "/dashboard",           // ← Dashboard
   "/profile",             // ← Perfil
+  "/guia",                // ← InfoCasa Guía
 ];
 
 export default function Layout({ children }) {
@@ -78,6 +79,7 @@ function Header({ isHome = false }) {
   const navItems = [
     { name: "Marketplace", path: "/search" },
     { name: "Explorar mapa", path: "/explore" },
+    { name: "InfoCasa Guía", path: "/guia" },
     { name: "Sobre nosotros", path: "/sobre-nosotros" },
     { name: "Noticias", path: "/noticias" },
     { name: "Contacto", path: "/contacto" },
@@ -476,6 +478,7 @@ function Footer() {
             <li><Link to="/search" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Alquilar</Link></li>
             <li><Link to="/search" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Temporario</Link></li>
             <li><Link to="/register" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">Publicar propiedad</Link></li>
+            <li><Link to="/guia" className="text-xs text-slate-300 font-medium hover:text-[#ffda31] hover:translate-x-0.5 transition-all block">InfoCasa Guía</Link></li>
           </ul>
         </div>
 

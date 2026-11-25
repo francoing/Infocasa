@@ -28,6 +28,7 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
           <TabButton id="search_alerts" {...tabProps}>Mis Avisos de Búsqueda</TabButton>
           <TabButton id="favorites" {...tabProps}>Mis Favoritos</TabButton>
           <TabButton id="sent_leads" {...tabProps}>Mis Consultas</TabButton>
+          <TabButton id="guia" {...tabProps}>InfoCasa Guía</TabButton>
         </>
       ) : (
         <>
@@ -35,6 +36,7 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
           {!isAdmin && <TabButton id="properties" {...tabProps}>Mis Propiedades</TabButton>}
           {!isAdmin && <TabButton id="received_alerts" {...tabProps}>Clientes Interesados</TabButton>}
           <TabButton id="leads" {...tabProps}>Consultas Recibidas</TabButton>
+          {!isAdmin && <TabButton id="guia" {...tabProps}>InfoCasa Guía</TabButton>}
           {isAdmin && (
             <>
               <TabButton id="admin_users" accent="amber" {...tabProps}>Gestión de Usuarios</TabButton>
@@ -49,6 +51,7 @@ export default function DashboardTabs({ isBuyer, isAdmin, activeTab, setActiveTa
                   )}
                 </span>
               </TabButton>
+              <TabButton id="guia" accent="amber" {...tabProps}>InfoCasa Guía</TabButton>
             </>
           )}
         </>

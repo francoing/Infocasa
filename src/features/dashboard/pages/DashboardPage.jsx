@@ -1,6 +1,6 @@
 import { useTogglePropertyStatus } from "@/hooks/usePropertyStatus";
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import Loader from "@/common/components/Loader";
 import CheckoutModal from "@/features/dashboard/components/CheckoutModal";
@@ -20,6 +20,8 @@ import AssignInfocoinsModal from "@/features/infocoins/components/AssignInfocoin
 import FeaturePropertyModal from "@/features/infocoins/components/FeaturePropertyModal";
 import MySearchAlertsList from "@/features/searchAlerts/components/MySearchAlertsList";
 import ReceivedSearchAlertsList from "@/features/searchAlerts/components/ReceivedSearchAlertsList";
+import GuideAdvertiserPanel from "@/features/guide/components/GuideAdvertiserPanel";
+import GuideAdminPanel from "@/features/guide/components/GuideAdminPanel";
 
 export default function DashboardPage() {
 
@@ -42,11 +44,14 @@ export default function DashboardPage() {
     quota.properties.available !== null &&
     quota.properties.available <= 0;
 
-  const [activeTab, setActiveTab] = useState("properties");
+  // `?tab=guia` (CTA de la Guía, mail de consultas) abre la pestaña InfoCasa Guía; `?guia=` su sub-pestaña.
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab") === "guia" ? "guia" : null;
+  const [activeTab, setActiveTab] = useState(requestedTab ?? "properties");
 
   useEffect(() => {
-    setActiveTab(isBuyer ? "search_alerts" : isAdmin ? "admin_properties" : "properties");
-  }, [isBuyer, isAdmin]);
+    setActiveTab(requestedTab ?? (isBuyer ? "search_alerts" : isAdmin ? "admin_properties" : "properties"));
+  }, [isBuyer, isAdmin, requestedTab]);
 
   const [expandedId, setExpandedId] = useState(null);
   const [replyingLeadId, setReplyingLeadId] = useState(null);
@@ -122,6 +127,8 @@ export default function DashboardPage() {
 
   const renderTab = () => {
     switch (activeTab) {
+      case "guia":
+        return isAdmin ? <GuideAdminPanel /> : <GuideAdvertiserPanel initialTab={searchParams.get("guia") ?? undefined} />;
       case "search_alerts":
         return <MySearchAlertsList />;
       case "received_alerts":

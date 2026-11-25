@@ -32,6 +32,13 @@ const PublicarGratisPage = lazy(() => import('../features/auth/pages/PublicarGra
 const PlanFundadorPage = lazy(() => import('../features/auth/pages/PlanFundadorPage'));
 const WelcomePage = lazy(() => import('../features/auth/pages/WelcomePage')); // 👈 NUEVO
 
+// InfoCasa Guía (directorio comercial)
+const GuideHomePage = lazy(() => import('../features/guide/pages/GuideHomePage'));
+const GuideSearchPage = lazy(() => import('../features/guide/pages/GuideSearchPage'));
+const GuideListingPage = lazy(() => import('../features/guide/pages/GuideListingPage'));
+const GuideAdvertiserPage = lazy(() => import('../features/guide/pages/GuideAdvertiserPage'));
+const GuideListingFormPage = lazy(() => import('../features/guide/pages/GuideListingFormPage'));
+
 // InfoMonedas
 const PackageStorePage = lazy(() => import('../features/infocoins/pages/PackageStorePage'));
 const PaymentResultPage = lazy(() => import('../features/infocoins/pages/PaymentResultPage'));
@@ -67,6 +74,12 @@ const AppRouter = () => {
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/:operation" element={<ExplorePage />} />
 
+            {/* INFOCASA GUÍA (rutas propias, no se mezcla con propiedades) */}
+            <Route path="/guia" element={<GuideHomePage />} />
+            <Route path="/guia/buscar" element={<GuideSearchPage />} />
+            <Route path="/guia/publicacion/:slug" element={<GuideListingPage />} />
+            <Route path="/guia/:slug" element={<GuideAdvertiserPage />} />
+
             {/* LANDINGS PÚBLICAS */}
             <Route path="/publicar-gratis" element={<PublicarGratisPage />} />
             <Route path="/plan-fundador" element={<PlanFundadorPage />} />
@@ -87,6 +100,9 @@ const AppRouter = () => {
             <Route path="/dashboard/properties/create" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}><CreatePropertyPage /></ProtectedRoute>} />
             <Route path="/dashboard/properties/edit/:id" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin']}><EditPropertyPage /></ProtectedRoute>} />
             <Route path="/dashboard/search-alerts/create" element={<ProtectedRoute allowedRoles={['buyer']}><CreateSearchAlertPage /></ProtectedRoute>} />
+
+            <Route path="/dashboard/guia/publicaciones/nueva" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}><GuideListingFormPage /></ProtectedRoute>} />
+            <Route path="/dashboard/guia/publicaciones/:id/editar" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}><GuideListingFormPage /></ProtectedRoute>} />
 
             {/* INFOMONEDAS */}
             <Route path="/infocoins/comprar" element={<ProtectedRoute allowedRoles={['owner', 'agent', 'admin', 'buyer']}><PackageStorePage /></ProtectedRoute>} />

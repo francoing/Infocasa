@@ -31,6 +31,8 @@ export default function RegisterPage() {
 
   // 👇 Leemos si viene de una landing
   const fromLanding = location.state?.fromLanding;
+  // Destino explícito post-registro (ej. InfoCasa Guía → panel para crear el perfil de anunciante).
+  const next = typeof location.state?.next === "string" && location.state.next.startsWith("/") ? location.state.next : null;
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -56,7 +58,9 @@ export default function RegisterPage() {
       trackSignUp(role);
 
       // 👇 LÓGICA DE REDIRECCIÓN
-      if (fromLanding) {
+      if (next) {
+        navigate(next, { replace: true });
+      } else if (fromLanding) {
         // Si venía de /publicar-gratis o /plan-fundador, va a bienvenida
         navigate("/welcome", { replace: true });
       } else if (role === "owner" || role === "agent") {
