@@ -123,13 +123,19 @@ export function propertyIdFromPath(pathname) {
 }
 
 /**
- * Clic en WhatsApp. El sitio solo tiene el botón flotante (visible en todas las páginas):
- * si se toca desde una ficha, el evento lleva el `property_id`.
+ * Clic en WhatsApp. Botón flotante (visible en todas las páginas): si se toca desde una
+ * ficha, el evento lleva el `property_id`. La InfoCasa Guía reusa el mismo evento con
+ * `extra = { section: "guia", guide_listing_id?, guide_advertiser_id? }` (spec `guide/directory`)
+ * para separarlo en GTM sin crear un evento nuevo.
  */
-export function trackWhatsApp(pathname) {
-  const propertyId = propertyIdFromPath(pathname);
+export function trackWhatsApp(pathname, extra = {}) {
+  const propertyId = extra.section ? undefined : propertyIdFromPath(pathname);
+  const params = Object.fromEntries(
+    Object.entries(extra).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, String(v)])
+  );
   push("ic_whatsapp", {
     ...(propertyId ? { property_id: propertyId } : {}),
+    ...params,
     method: "whatsapp",
     page_path: pathname,
     event_id: newEventId("wa"),
