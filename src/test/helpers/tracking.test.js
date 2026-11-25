@@ -77,6 +77,14 @@ describe("lib/tracking (dataLayer para GTM)", () => {
     expect(lastEvent().page_path).toBe("/search");
   });
 
+  it("WhatsApp desde la Guía: mismo evento con sección guía y sin property_id", () => {
+    trackWhatsApp("/guia/publicacion/electricista", { section: "guia", guide_listing_id: 7, guide_advertiser_id: undefined });
+    const ev = lastEvent();
+    expect(ev).toMatchObject({ event: "ic_whatsapp", section: "guia", guide_listing_id: "7", method: "whatsapp" });
+    expect(ev).not.toHaveProperty("guide_advertiser_id");
+    expect(ev).not.toHaveProperty("property_id");
+  });
+
   it("propertyIdFromPath", () => {
     expect(propertyIdFromPath("/property/abc")).toBe("abc");
     expect(propertyIdFromPath("/profile")).toBeUndefined();
