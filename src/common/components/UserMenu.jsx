@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, PlusCircle, LogOut, ChevronDown, Wallet, User } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogOut, ChevronDown, Wallet, User, FileSpreadsheet } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import WalletModal from "../../features/infocoins/components/WalletModal";
 
@@ -127,6 +127,13 @@ export default function UserMenu() {
                   icon={<PlusCircle className="w-4 h-4" />}
                   label="Publicar"
                   onClick={() => go("/dashboard/properties/create")}
+                />
+              )}
+              {!isBuyer && isPublisher && (
+                <MenuItem
+                  icon={<FileSpreadsheet className="w-4 h-4" />}
+                  label="Importar desde CSV"
+                  onClick={() => go("/dashboard?import=csv")}
                 />
               )}
               

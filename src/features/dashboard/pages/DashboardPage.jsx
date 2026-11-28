@@ -1,5 +1,5 @@
 import { useTogglePropertyStatus } from "@/hooks/usePropertyStatus";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import Loader from "@/common/components/Loader";
@@ -16,6 +16,8 @@ import AdminPropertiesTab from "../components/AdminPropertiesTab";
 import CertificationsTab from "../components/CertificationsTab";
 import LeadsTab from "../components/LeadsTab";
 import PlanPickerModal from "../components/PlanPickerModal";
+import PublishPropertyMenu from "../components/PublishPropertyMenu";
+import CsvImportModal from "../components/CsvImportModal";
 import AssignInfocoinsModal from "@/features/infocoins/components/AssignInfocoinsModal";
 import FeaturePropertyModal from "@/features/infocoins/components/FeaturePropertyModal";
 import MySearchAlertsList from "@/features/searchAlerts/components/MySearchAlertsList";
@@ -45,8 +47,24 @@ export default function DashboardPage() {
     quota.properties.available <= 0;
 
   // `?tab=guia` (CTA de la Guía, mail de consultas) abre la pestaña InfoCasa Guía; `?guia=` su sub-pestaña.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab") === "guia" ? "guia" : null;
+
+  // "Importar desde CSV" (menú Publicar o `?import=csv` desde el menú de usuario). Spec dashboard/csv_import.
+  const [showCsvImport, setShowCsvImport] = useState(searchParams.get("import") === "csv");
+  const [csvImportId, setCsvImportId] = useState(null);
+  const importRequested = searchParams.get("import") === "csv";
+  useEffect(() => {
+    if (importRequested) setShowCsvImport(true);
+  }, [importRequested]);
+  const closeCsvImport = useCallback(() => {
+    setShowCsvImport(false);
+    if (searchParams.get("import")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("import");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [activeTab, setActiveTab] = useState(requestedTab ?? "properties");
 
   useEffect(() => {
@@ -221,12 +239,10 @@ export default function DashboardPage() {
 
           {!isBuyer && !isAdmin && (
             userPlan && !noPropsLeft ? (
-              <Link to="/dashboard/properties/create" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20">
-                <Plus className="w-5 h-5" /> Nueva Propiedad
-              </Link>
+              <PublishPropertyMenu onImportCsv={() => setShowCsvImport(true)} />
             ) : (
               <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-slate-200 text-slate-400 cursor-not-allowed select-none shadow-sm" title={noPropsLeft ? "Alcanzaste el límite de propiedades de tu plan" : "Necesitás un plan activo para publicar"}>
-                <Plus className="w-5 h-5" /> Nueva Propiedad
+                <Plus className="w-5 h-5" /> Publicar propiedad
               </span>
             )
           )}
@@ -296,6 +312,15 @@ export default function DashboardPage() {
         onClose={() => setFeatureTarget(null)}
         onSuccess={handleFeatureSuccess}
       />
+
+      {!isBuyer && !isAdmin && (
+        <CsvImportModal
+          open={showCsvImport}
+          onClose={closeCsvImport}
+          importId={csvImportId}
+          onImportStarted={setCsvImportId}
+        />
+      )}
     </>
   );
 }

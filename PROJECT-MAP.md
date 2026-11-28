@@ -18,7 +18,7 @@
 ```
 src/
 ├── api/api.js            ← ÚNICO cliente HTTP. Proxy mock/real (VITE_USE_MOCK), base /api/v1, Bearer de useAuthStore
-├── api/{infocoins,searchAlerts,guide}.js ← módulos de endpoints (envuelven api.js, sin fetch propio). Solo se importan desde hooks/ (lint)
+├── api/{infocoins,searchAlerts,guide,propertyImports}.js ← módulos de endpoints (envuelven api.js, sin fetch propio). Solo se importan desde hooks/ (lint)
 ├── features/{home,search,explore,property,auth,dashboard,profile,share,legal,infocoins,searchAlerts,guide}/{pages,components}   ← admin vive dentro de dashboard (no hay feature `admin`); `legal` = páginas de contenido estático (Términos/Privacidad)
 ├── store/                ← Zustand: useAuthStore · useToastStore
 ├── hooks/                ← capa de datos (react-query): useProperties, useMapProperties, usePropertyDetail, usePlans,
@@ -28,9 +28,10 @@ src/
 │                            useHomeSearch, useLocationSearch, useGeoapifyPlaces, useUserProvince, useToast,
 │                            useRegisterQrScan, useContactForm,
 │                            useNotifications, usePropertyStatus, useQrStats,
+│                            usePropertyImport (importación CSV: subida + polling del estado),
 │                            Guía: useGuideDirectory, useGuideAdvertiser, useGuideListings, useGuideInquiries, useGuideAdmin, useDocumentMeta
 │                            (+ helpers puros: property.mappers, properties.query, usePropertyDetail.helpers, 
-│                            dashboardData.helpers, infocoinPurchase.helpers, guide.mappers, guide.payloads, guide.query)
+│                            dashboardData.helpers, infocoinPurchase.helpers, guide.mappers, guide.payloads, guide.query, propertyImport.helpers)
 ├── common/components/    ← Layout, AdminLayout, PropertyCard, PlanStatusCard, ToastContainer, Pagination,
 │                            WhatsAppButton, Loader, Logo, FooterLogo, EmailVerificationBanner, BackButton, UserMenu, 
 │                            PasswordInput, OneTimePaymentNote, ArchivePolicyNote,
@@ -102,6 +103,7 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 - **Alertas de búsqueda** (vía `api/searchAlerts.js`): `search-alerts` (CRUD), `my-received-alerts`. Hook: `useSearchAlerts`.
 - **Notificaciones:** `notifications`, `notifications/unread-count`, `notifications/{id}/read`, `notifications/read-all` (polling 30 s, `useNotifications`).
 - **InfoCasa Guía** (vía `api/guide.js`, spec `guide/directory`): públicas `guide/categories`, `guide/listings` (búsqueda), `guide/listings/{slug}` (+ `/view`, `/inquiries`), `guide/advertisers/{slug}`; panel `guide/me/advertiser` (GET/POST/PUT, `/logo`), `guide/me/listings` (CRUD, `/toggle-status`, `/duplicate`, `/photos`, `/photos/order`, `/photos/{photo}`), `guide/me/inquiries` (+ `/{id}/read`); admin `guide/admin/{advertisers,listings,categories,trades}` (+ `/moderate`, `/status`). Hooks: `useGuideDirectory`, `useGuideAdvertiser`, `useGuideListings`, `useGuideInquiries`, `useGuideAdmin`.
+- **Importación CSV** (vía `api/propertyImports.js`, spec `dashboard/csv_import`): `properties/import` (POST multipart), `properties/imports/{id}` (polling cada 3 s mientras `queued|processing`), `properties/import/template` (link directo de descarga, `API_BASE_URL`). Hook: `usePropertyImport` (`useUploadPropertyImport`, `usePropertyImportStatus`; al terminar invalida `me_properties` y `publication_quota`).
 - **Contacto:** `contact` (POST público, `useContactForm`). ⚠️ `api:surface` lo marca como no documentado en el contrato del backend.
 
 > `api:surface` solo escanea `hooks/` + `store/`: los endpoints que pasan por `src/api/{infocoins,searchAlerts}.js` no aparecen en su listado; revisarlos a mano.
@@ -115,10 +117,14 @@ Fuente de verdad: `Backend-Inmobiliaria/.ai/contracts/api-contract.md`. **Cohere
 
 ## Tests (`src/test/`)
 
-**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `helpers/tracking`, `hooks/useInfocoins`, `hooks/guideMappers`, `hooks/guideQuery`, `hooks/useGuide`, `components/GuideComponents`, `setup.js` (271 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
+**Vitest + Testing Library sobre `happy-dom`** (entorno en `vite.config.js`). **Gate duro en CI** (`npm run test`). Hoy: `components/CheckoutModal`, `components/PlanStatusCard`, `components/SubscriptionStatusCard`, `components/PropertyRow`, `components/SearchFilters`, `components/Loader`, `components/LocationGateModal`, `components/WelcomeModal`, `components/Pagination`, `components/PropertyCard`, `hooks/usePlans`, `hooks/useUserProvince`, `hooks/useHomeSearch`, `hooks/propertiesQuery`, `hooks/propertyMappers`, `store/useAuthStore`, `helpers/crossNav`, `helpers/userProvince`, `helpers/locationSearch`, `helpers/pagination`, `helpers/videoUpload`, `helpers/floorPlan`, `helpers/infocoinPurchase`, `helpers/tracking`, `hooks/useInfocoins`, `hooks/guideMappers`, `hooks/guideQuery`, `hooks/useGuide`, `components/GuideComponents`, `components/PublishPropertyMenu`, `components/CsvImportModal`, `hooks/propertyImportHelpers`, `setup.js` (285 tests). **`setup.js`** quita `Element.prototype.animate` para que framer-motion use su animador JS en happy-dom (evita las unhandled rejections de `Animation.cancel` que hacían salir a vitest con código 1). **Regla:** funcionalidad importante nueva (botón con lógica, componente, hook, helper) suma test — ver `.ai/policies/architecture-policies.yaml` → `testing.reglas`. Cobertura a ampliar en hooks de datos críticos (ver deuda).
 
 
 ## Deuda técnica / drift conocido
+
+### Ciclo 2026-11-28 (importación de propiedades por CSV)
+- ✅ **"Publicar propiedad" del panel = menú** (`dashboard/components/PublishPropertyMenu`): "Crear publicación" (formulario, misma ruta) e "Importar desde CSV". Accesible (aria-haspopup/expanded, flechas, Escape devuelve el foco, click/touch afuera cierra). Deshabilitado igual que antes sin plan o sin cupo. El menú de usuario suma "Importar desde CSV" → `/dashboard?import=csv` (abre el modal).
+- ✅ **`CsvImportModal`** (+ `CsvImportGuide`, `CsvImportResult`, contenido en `dashboard/csvImportGuide.js`): mini-guía (pasos, columnas obligatorias/opcionales con valores, reglas, qué pasa), "Descargar plantilla", drop zone, "Importando…" con progreso (polling) y resumen con filas con errores/avisos. El `importId` vive en `DashboardPage` (cerrar y reabrir sigue mostrando la importación). Spec `dashboard/csv_import`; backend spec `properties/csv_import`.
 
 ### Ciclo 2026-11-25 (InfoCasa Guía — Etapa 1)
 - ✅ **Sección nueva `features/guide/`** (spec `guide/directory`; backend spec `guide/directory`, dominio `Guide`): `/guia` (buscador + 4 categorías con rubros y conteos), `/guia/buscar` (filtros en la URL: texto, categoría, rubro, provincia, "trabaja en la localidad", domicilio, local, cerca mío por geolocalización; paginado; el orden lo da el backend), ficha `/guia/publicacion/:slug` (galería, cobertura, horarios, video YouTube/Vimeo, contacto, consulta y "Pedir presupuesto") y perfil `/guia/:slug`. Entrada "InfoCasa Guía" en el nav (header/mobile) y el footer. Títulos/meta por página con `useDocumentMeta`.

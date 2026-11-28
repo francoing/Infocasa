@@ -3,6 +3,9 @@ import { useAuthStore } from "../store/useAuthStore";
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
+/** Base de la API (para links directos, ej. descargas públicas como la plantilla CSV). */
+export const API_BASE_URL = API_URL;
+
 const getHeaders = (isMultipart = false) => {
   const headers = {
     "Accept": "application/json"
